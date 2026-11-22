@@ -1538,7 +1538,7 @@ function setupChart(pts,host=$('market')){
   };
   cv.onmouseleave=()=>{drawChart(cv,pts,-1);host.querySelector('#chTip')?.classList.add('hidden')};
 }
-window.addEventListener('resize',()=>{const cv=host.querySelector('#chart');if(cv&&chartPts.length) drawChart(cv,chartPts,-1)});
+window.addEventListener('resize',()=>{if(!chartPts.length) return;document.querySelectorAll('canvas#chart').forEach(cv=>drawChart(cv,chartPts,-1))});
 
 /* ---------- isolated opt-in launched-token trading bot ---------- */
 const BOT_VAULT_KEY='fuji-forge:bot-wallet:encrypted:v1',BOT_POSITION_KEY='fuji-forge:bot-position:v1';
