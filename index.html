@@ -82,6 +82,7 @@ input[type=checkbox]{width:auto;accent-color:var(--acc)}
 .kv{display:flex;justify-content:space-between;gap:12px;margin:7px 0;font-size:13px}
 .kv span{color:var(--mute)}
 .empty{color:var(--mute);text-align:center;padding:28px}
+.av.avimg{background:none;padding:0;overflow:hidden}.av.avimg img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block}
 /* table */
 .tablewrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:13px}
@@ -223,6 +224,7 @@ input:focus{border-color:#ff6a1a;box-shadow:0 0 0 3px rgba(255,106,26,.18)}
     <button data-view="pools"><i>≋</i>Pools</button>
     <button data-view="earn"><i>⧉</i>Earn</button>
     <button data-view="launch"><i>🚀</i>Launch</button>
+    <button data-view="casino"><i>🎲</i>Casino</button>
     <button data-view="port"><i>◎</i>Portfolio</button>
   </nav>
   <div class="navr">
@@ -324,6 +326,7 @@ input:focus{border-color:#ff6a1a;box-shadow:0 0 0 3px rgba(255,106,26,.18)}
           <div><label>Token name</label><input id="tName" placeholder="Grotto Coin"></div>
           <div><label>Symbol</label><input id="tSym" placeholder="GRC"></div>
           <div class="full"><label>Total supply (whole tokens, 18 decimals)</label><input id="tSup" type="text" inputmode="numeric" placeholder="1000000"></div>
+          <div class="full"><label>Token image (optional, shown in the app)</label><div class="row"><input type="file" id="tImg" accept="image/*" style="flex:1"><img id="tImgPrev" class="hidden" alt="" style="width:46px;height:46px;border-radius:50%;object-fit:cover"></div></div>
           <div class="full"><label>Max supply cap (whole tokens; 0 = fixed supply, no minting)</label><input id="tCap" type="text" inputmode="numeric" placeholder="0"></div>
         </div>
         <div class="actions"><button class="btn" id="launch">Deploy token</button></div>
@@ -375,6 +378,27 @@ input:focus{border-color:#ff6a1a;box-shadow:0 0 0 3px rgba(255,106,26,.18)}
     </div>
     <div class="actions"><button class="btn danger sm" id="ttRenounce">Renounce ownership</button></div>
   </div>
+  </section>
+
+  <section id="v-casino" class="view hidden">
+    <div class="pagehead"><div><h1>Casino</h1><p>Three house games played against a token's own bankroll. Bets are capped as a % of the house.</p></div></div>
+    <div class="card">
+      <label>Token</label><select id="cgTok"></select>
+      <div class="grid3" id="cgStats" style="margin:14px 0"></div>
+      <div id="cgDeploy"></div>
+      <div id="cgPanel" class="hidden">
+        <div class="seg" id="cgGame"><button class="on" data-g="0">Coin flip</button><button data-g="1">Dice</button><button data-g="2">2d6 over/under</button></div>
+        <div class="row" id="cgPickRow"></div>
+        <div class="grid2" style="margin-top:14px">
+          <div><label>Your bet (tokens)</label><input id="cgBet" type="text" inputmode="decimal" placeholder="10"></div>
+          <div><label>Fund or withdraw the house (tokens)</label><div class="row"><input id="cgFund" type="text" inputmode="decimal" placeholder="10000" style="flex:1"><button class="btn ghost sm" id="cgFundBtn">Fund</button><button class="btn ghost sm" id="cgWd">Withdraw</button></div></div>
+        </div>
+        <div class="actions"><button class="btn" id="cgPlay">Place bet</button></div>
+        <div id="cgLog" style="margin-top:12px"></div>
+        <h3 style="margin:18px 0 8px;font-size:14px">Recent bets (this session)</h3>
+        <div id="cgHist"></div>
+      </div>
+    </div>
   </section>
 
   <!-- PORTFOLIO -->
@@ -680,11 +704,11 @@ async function compile(){
   if(compiled) return compiled;
   log('Loading Solidity compiler (first run only)…');
   await getCompiler();
-  const input={language:'Solidity',sources:{'Token.sol':{content:TOKEN_SRC},'Staking.sol':{content:STAKING_SRC},'StakingV2.sol':{content:STAKING2_SRC}},settings:{outputSelection:{'*':{'*':['abi','evm.bytecode.object']}}}};
+  const input={language:'Solidity',sources:{'Token.sol':{content:TOKEN_SRC},'Staking.sol':{content:STAKING_SRC},'StakingV2.sol':{content:STAKING2_SRC},'Casino.sol':{content:CASINO_SRC}},settings:{outputSelection:{'*':{'*':['abi','evm.bytecode.object']}}}};
   const out=JSON.parse(await new Promise((res,rej)=>{const id=++reqId;pending.set(id,{res,rej});worker.postMessage({id,input:JSON.stringify(input)})}));
   const errs=(out.errors||[]).filter(e=>e.severity==='error');
   if(errs.length) throw new Error(errs[0].formattedMessage);
-  return compiled={token:out.contracts['Token.sol'].Token,staking:out.contracts['Staking.sol'].Staking,staking2:out.contracts['StakingV2.sol'].StakingV2};
+  return compiled={token:out.contracts['Token.sol'].Token,staking:out.contracts['Staking.sol'].Staking,staking2:out.contracts['StakingV2.sol'].StakingV2,casino:out.contracts['Casino.sol'].Casino};
 }
 
 /* ---------- state (persisted in localStorage; migrates from v2) ---------- */
@@ -715,6 +739,7 @@ const slipBps=()=>BigInt(Math.round((+state.slippage||1)*100));
 const deadline=()=>Math.floor(Date.now()/1000)+60*(+state.deadline||20);
 function av(t,size=''){
   if(t.addr==='native') return `<span class="av avax ${size}">A</span>`;
+  if(t.img) return `<span class="av avimg ${size}"><img src="${t.img}" alt=""></span>`;
   return `<span class="av ${size}" style="--h:${hue(t.addr)}">${esc((t.sym||'?').slice(0,3).toUpperCase())}</span>`;
 }
 const pairAv=t=>`<span class="pairav">${av(t)}${av(NATIVE)}</span>`;
@@ -1467,7 +1492,7 @@ async function deploy(c,args){
 function renderPreview(){
   const n=$('tName').value.trim()||'Token name',s=($('tSym').value.trim()||'SYM').toUpperCase();
   const sup=$('tSup').value.replace(/\D/g,'');
-  $('pvAv').innerHTML=av({addr:'0x'+s,sym:s},'lg');
+  $('pvAv').innerHTML=av({addr:'0x'+s,sym:s,img:window.pendingImg},'lg');
   $('pvName').textContent=n;$('pvSym').textContent=s;
   $('pvSup').textContent=(sup?Number(sup).toLocaleString():'0')+' supply';
 }
@@ -1482,7 +1507,7 @@ $('launch').onclick=()=>run(async()=>{
   const addr=await deploy(c.token,[name,sym,BigInt(sup),cap]);
   log(`${sym} deployed at ${addr}`,'ok','/address/'+addr);
   toast(`${sym} launched`,'ok');
-  state.tokens.unshift({addr,name,sym,dec:18,owner:account,time:new Date().toLocaleDateString()});
+  state.tokens.unshift({addr,name,sym,dec:18,owner:account,time:new Date().toLocaleDateString(),img:window.pendingImg||null});
   save();renderTokList_dl();
   $('poolToken').value=addr;
   $('launchDone').classList.remove('hidden');$('ldAddr').textContent=addr;launched=addr;
@@ -1662,7 +1687,7 @@ document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('.m
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.modal.open').forEach(m=>m.classList.remove('open'));$('drawer').classList.remove('open');$('acct').classList.add('hidden')}});
 
 /* ---------- views ---------- */
-const VIEWS=['swap','pools','earn','launch','port'];
+const VIEWS=['swap','pools','earn','launch','casino','port'];
 function show(view){
   if(!VIEWS.includes(view)) view='swap';
   VIEWS.forEach(v=>$('v-'+v).classList.toggle('hidden',v!==view));
@@ -1673,6 +1698,7 @@ function show(view){
   if(view==='earn') renderPoolCards();
   if(view==='port'){renderPort();loadPools()}
   if(view==='launch') run(renderTT);
+  if(view==='casino') run(renderCasino);
   window.scrollTo(0,0);
 }
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>show(b.dataset.view));
@@ -1717,7 +1743,7 @@ async function deployTokenRaw(name,sym,sup,cap){
   log(`Deploying ${sym}…`);
   const addr=await deploy(c.token,[name,sym,sup,cap]);
   log(`${sym} deployed at ${addr}`,'ok','/address/'+addr);
-  state.tokens.unshift({addr,name,sym,dec:18,owner:account,time:new Date().toLocaleDateString()});
+  state.tokens.unshift({addr,name,sym,dec:18,owner:account,time:new Date().toLocaleDateString(),img:window.pendingImg||null});
   save();renderTokList_dl();
   return addr;
 }
@@ -1731,15 +1757,21 @@ async function deployPoolRaw(tok,apr,mech){
   return addr;
 }
 async function lockLP(t){
-  const pd=await pairData(t.addr);
-  if(!pd.pair||!hasPos(pd)) throw new Error('No LP position found to lock');
+  let pd=null;
+  for(let i=0;i<8;i++){ // the read RPC can lag the wallet's node right after the add-liquidity tx, so retry
+    pd=await pairData(t.addr);
+    if(pd.pair&&hasPos(pd)) break;
+    log('Waiting for LP balance to index ('+(i+1)+'/8)…');
+    await new Promise(r=>setTimeout(r,3000));
+  }
+  if(!pd||!pd.pair||!hasPos(pd)) throw new Error('No LP position found to lock (RPC has not indexed it yet; retry later)');
   const p=wr(pd.pair,LBPAIR_ABI);
   await sendTx('Lock LP (sent to burn address)',p.safeBatchTransferFrom(account,DEAD,pd.pos.map(m=>m.id),pd.pos.map(m=>m.bal),'0x'));
 }
 function renderLaunches(){
   const L=state.launches||[];
   const link=(a,t)=>`<a href="${FUJI.explorer}/address/${a}" target="_blank">${t}</a>`;
-  $('plHistory').innerHTML=L.length?L.map(l=>`<div class="kv"><span>${esc(l.name)} (${esc(l.sym)}) · ${esc(l.time)}</span><span>${l.token?link(l.token,'token'):''}${l.pair?' · '+link(l.pair,'pool'):''}${l.pool?' · '+link(l.pool,'staking'):''}${l.locked?' · <span class="ok">LP locked</span>':''}${l.renounced?' · <span class="warn">ownership renounced</span>':''}</span></div>`).join(''):'<div class="dim">No launches yet.</div>';
+  $('plHistory').innerHTML=L.length?L.map(l=>`<div class="kv"><span>${av(tokenOf(l.token)||{addr:l.token,sym:l.sym},'sm')} ${esc(l.name)} (${esc(l.sym)}) · ${esc(l.time)}</span><span>${l.token?link(l.token,'token'):''}${l.pair?' · '+link(l.pair,'pool'):''}${l.pool?' · '+link(l.pool,'staking'):''}${l.locked?' · <span class="ok">LP locked</span>':''}${l.renounced?' · <span class="warn">ownership renounced</span>':''}</span></div>`).join(''):'<div class="dim">No launches yet.</div>';
 }
 async function runLaunch(){
   needWallet();
@@ -1759,7 +1791,7 @@ async function runLaunch(){
   const ctx={token:null,pair:null,pool:null,locked:false,renounced:false};
   const plan=[{label:'Deploy token',run:async()=>{ctx.token=await deployTokenRaw(name,sym,sup,cap)}}];
   if(n.on) plan.push({label:'Seed LFJ pool with liquidity',run:async()=>{await lqAdd(tokenOf(ctx.token),n.lpW,n.avaxW);ctx.pair=(await pairData(ctx.token)).pair}});
-  if(n.on&&burn) plan.push({label:'Lock LP (burn)',run:async()=>{await lockLP(tokenOf(ctx.token));ctx.locked=true}});
+  if(n.on&&burn) plan.push({label:'Lock LP (burn)',soft:true,run:async()=>{await lockLP(tokenOf(ctx.token));ctx.locked=true}});
   if(n.st) plan.push({label:'Deploy staking pool',run:async()=>{ctx.pool=await deployPoolRaw(ctx.token,apr,mech)}});
   if(n.st&&n.rwW>0n) plan.push({label:'Fund reward reserve',run:async()=>{await sendTx('Fund staking rewards',wr(ctx.token,ERC20_ABI).transfer(ctx.pool,n.rwW))}});
   if(renounce) plan.push({label:'Renounce ownership',run:async()=>{await sendTx('Renounce ownership',wr(ctx.token,TOKEN2_ABI).renounceOwnership());ctx.renounced=true}});
@@ -1767,11 +1799,15 @@ async function runLaunch(){
   const status=plan.map(()=>'todo');
   const draw=()=>{$('plLog').innerHTML=plan.map((s,i)=>`<div class="kv"><span>${i+1}. ${esc(s.label)}</span><b class="${status[i]==='ok'?'ok':status[i]==='err'?'err':status[i]==='run'?'warn':'dim'}">${{ok:'done',err:'failed',run:'running…',todo:'pending'}[status[i]]}</b></div>`).join('')};
   draw();
-  let failure=null;
+  let failure=null,failLabel='';const softFails=[];
   for(let k=0;k<plan.length;k++){
     status[k]='run';draw();
     try{await plan[k].run();status[k]='ok';draw()}
-    catch(e){status[k]='err';draw();failure=e;break}
+    catch(e){
+      status[k]='err';draw();
+      if(plan[k].soft){softFails.push(plan[k].label);log(plan[k].label+' failed: '+String(e.shortMessage||e.reason||e.message||e),'err')}
+      else{failure=e;failLabel=plan[k].label;break}
+    }
   }
   if(ctx.token){
     state.launches=state.launches||[];
@@ -1782,9 +1818,10 @@ async function runLaunch(){
   refreshBalances();
   if(failure){
     const m=String(failure.shortMessage||failure.reason||failure.message||failure);
-    throw new Error('Stopped at "'+plan[status.indexOf('err')].label+'": '+m+'. Completed steps are kept; finish the rest from Earn or Liquidity.');
+    throw new Error('Stopped at "'+failLabel+'": '+m+'. Completed steps are kept; finish the rest from Earn or Liquidity.');
   }
-  toast(`${sym} launched with ${plan.length} steps`,'ok');
+  if(softFails.length) toast(`${sym} launched, but not finished: ${softFails.join(', ')}`,'warn');
+  else toast(`${sym} launched with ${plan.length} steps`,'ok');
   log(`Launch complete: ${sym}`,'ok','/address/'+ctx.token);
 }
 $('plGo').onclick=()=>{
@@ -1819,6 +1856,166 @@ $('ttPause').onclick=()=>ttAct(async s=>{const p=!(await rd(s.addr,TOKEN2_ABI).p
 $('ttXfer').onclick=()=>ttAct(async s=>{const to=$('ttNewOwner').value.trim();if(!isAddr(to)) throw new Error('Invalid address');if(!confirm('Transfer ownership? You lose owner powers.')) return;await sendTx('Transfer ownership',wr(s.addr,TOKEN2_ABI).transferOwnership(ethers.getAddress(to)))});
 $('ttRenounce').onclick=()=>ttAct(async s=>{if(!confirm('Renounce ownership permanently? Minting and pausing become impossible.')) return;await sendTx('Renounce ownership',wr(s.addr,TOKEN2_ABI).renounceOwnership())});
 
+/* ---------- token image ---------- */
+window.pendingImg=null;
+function shrinkImg(file,px){return new Promise((res,rej)=>{const img=new Image();img.onload=()=>{const k=Math.min(px/img.width,px/img.height,1);const cv=document.createElement('canvas');cv.width=Math.round(img.width*k);cv.height=Math.round(img.height*k);cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);res(cv.toDataURL('image/webp',0.85))};img.onerror=()=>rej(new Error('Could not read that image'));img.src=URL.createObjectURL(file)})}
+$('tImg').onchange=async e=>{
+  const f=e.target.files[0];
+  if(!f){window.pendingImg=null;$('tImgPrev').classList.add('hidden');renderPreview();return}
+  try{window.pendingImg=await shrinkImg(f,128)}catch(err){toast(err.message,'err');return}
+  $('tImgPrev').src=window.pendingImg;$('tImgPrev').classList.remove('hidden');renderPreview();
+};
+
+/* ---------- casino ---------- */
+const CASINO_SRC=`// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+interface IERC20T {
+    function transfer(address to, uint256 amt) external returns (bool);
+    function transferFrom(address from, address to, uint256 amt) external returns (bool);
+    function balanceOf(address who) external view returns (uint256);
+}
+contract Casino {
+    IERC20T public immutable token;
+    address public immutable owner;
+    uint16 public immutable maxBetBps;
+    uint256 public nonce;
+    event HouseFunded(address indexed from, uint256 amount);
+    event HouseWithdrawn(uint256 amount);
+    event Bet(address indexed player, uint8 game, uint256 amount, uint256 payout, bool won, uint256 roll);
+    constructor(address _token, uint16 _maxBetBps) {
+        require(_maxBetBps > 0 && _maxBetBps <= 1000, "bps");
+        token = IERC20T(_token);
+        owner = msg.sender;
+        maxBetBps = _maxBetBps;
+    }
+    function house() public view returns (uint256) { return token.balanceOf(address(this)); }
+    function maxBet() public view returns (uint256) { return house() * maxBetBps / 10000; }
+    function payoutOf(uint8 g) public pure returns (uint256) {
+        if (g == 0) return 198;
+        if (g == 1) return 570;
+        return 230;
+    }
+    function fund(uint256 amt) external {
+        require(token.transferFrom(msg.sender, address(this), amt), "transfer");
+        emit HouseFunded(msg.sender, amt);
+    }
+    function withdraw(uint256 amt) external {
+        require(msg.sender == owner, "owner");
+        require(token.transfer(owner, amt), "transfer");
+        emit HouseWithdrawn(amt);
+    }
+    function play(uint8 game, uint256 amt, uint8 pick) external returns (uint256 payout) {
+        require(game < 3, "game");
+        require(amt > 0 && amt <= maxBet(), "bet over cap");
+        require(pick < (game == 1 ? 6 : 2), "pick");
+        require(token.transferFrom(msg.sender, address(this), amt), "transfer");
+        uint256 n = nonce++;
+        uint256 rnd = uint256(keccak256(abi.encodePacked(blockhash(block.number - 1), block.timestamp, msg.sender, n)));
+        uint256 roll;
+        bool won;
+        if (game == 0) {
+            roll = rnd % 2;
+            won = uint256(pick) == roll;
+        } else if (game == 1) {
+            roll = (rnd % 6) + 1;
+            won = uint256(pick) + 1 == roll;
+        } else {
+            roll = ((rnd % 6) + 1) + (((rnd >> 32) % 6) + 1);
+            won = pick == 0 ? roll < 7 : roll > 7;
+        }
+        if (won) {
+            payout = amt * payoutOf(game) / 100;
+            require(house() >= payout, "house short");
+            require(token.transfer(msg.sender, payout), "transfer");
+        }
+        emit Bet(msg.sender, game, amt, payout, won, roll);
+    }
+}
+`;
+const CG_ABI=['function house() view returns (uint256)','function maxBet() view returns (uint256)','function fund(uint256 amt)','function withdraw(uint256 amt)','function play(uint8 game,uint256 amt,uint8 pick) returns (uint256)','event Bet(address indexed player,uint8 game,uint256 amount,uint256 payout,bool won,uint256 roll)'];
+const CG_GAMES=['Coin flip','Dice','2d6 over / under 7'];
+const CG_PICKS=[['Heads','Tails'],['1','2','3','4','5','6'],['Under 7','Over 7']];
+const CG_PAYX=[198,570,230];
+let cgGame=0,cgPick=0;window.cgHist=[];window.cgState=null;
+function cgRollText(g,r){r=Number(r);return g===0?(r===0?'Heads':'Tails'):g===1?'Rolled '+r:'Rolled '+r+' (2d6)'}
+function renderCgPicks(){
+  $('cgPickRow').innerHTML=CG_PICKS[cgGame].map((p,i)=>`<button class="chip ${i===cgPick?'on':''}" data-p="${i}">${p}</button>`).join('')+`<span class="dim" style="align-self:center;margin-left:6px">Pays ${(CG_PAYX[cgGame]/100).toFixed(2)}x</span>`;
+  $('cgPickRow').querySelectorAll('.chip').forEach(b=>b.onclick=()=>{cgPick=+b.dataset.p;renderCgPicks()});
+}
+function renderCgHist(){
+  $('cgHist').innerHTML=window.cgHist.length?window.cgHist.slice(0,8).map(h=>`<div class="kv"><span>${esc(h.game)} · bet ${esc(h.bet)}</span><span class="${h.won?'ok':'err'}">${h.won?'Won '+esc(h.pay):'Lost'} · ${esc(h.roll)}</span></div>`).join(''):'<div class="dim">No bets yet this session.</div>';
+}
+async function renderCasino(){
+  const sel=$('cgTok'),keep=sel.value;
+  sel.innerHTML=state.tokens.map(t=>`<option value="${t.addr}">${esc(t.sym)} · ${esc(t.name)}</option>`).join('');
+  if(!state.tokens.length){sel.innerHTML='<option value="">Launch a token first</option>';$('cgStats').innerHTML='';$('cgDeploy').innerHTML='';$('cgPanel').classList.add('hidden');window.cgState=null;return}
+  if(keep&&state.tokens.some(t=>t.addr===keep)) sel.value=keep;
+  const tok=tokenOf(sel.value);
+  const cas=(state.casinos||[]).find(c=>K(c.token)===K(sel.value));
+  const stat=(l,v)=>`<div class="stat"><span>${esc(l)}</span><b>${esc(v)}</b></div>`;
+  if(!cas){
+    window.cgState=null;$('cgStats').innerHTML='';$('cgPanel').classList.add('hidden');
+    $('cgDeploy').innerHTML=`<div class="row"><span class="dim">No casino for ${esc(tok.sym)} yet. Max bet as % of house:</span><input id="cgBps" type="text" inputmode="decimal" value="2" style="width:90px"><button class="btn sm" id="cgDeployBtn">Deploy casino</button></div>`;
+    $('cgDeployBtn').onclick=()=>run(cgDeploy);
+    return;
+  }
+  const c=rd(cas.addr,CG_ABI);
+  const [house,maxBet]=await Promise.all([c.house(),c.maxBet()]);
+  const d=tok.dec||18;
+  window.cgState={addr:cas.addr,token:tok.addr,dec:d,sym:tok.sym,bps:cas.bps,owner:cas.owner};
+  $('cgDeploy').innerHTML='';$('cgPanel').classList.remove('hidden');
+  $('cgStats').innerHTML=stat('House bankroll',fmt(house,d,2)+' '+tok.sym)+stat('Max bet right now',fmt(maxBet,d,2)+' '+tok.sym)+stat('Cap',(cas.bps/100)+'% of house per bet');
+  renderCgPicks();renderCgHist();
+}
+async function cgDeploy(){
+  needWallet();
+  const tok=tokenOf($('cgTok').value);if(!tok) throw new Error('Pick a token');
+  const bps=Math.round(parseFloat($('cgBps').value||'0')*100);
+  if(!(bps>0&&bps<=1000)) throw new Error('Max bet must be between 0.01% and 10% of the house');
+  const c=await compile();
+  log(`Deploying ${tok.sym} casino…`);
+  const addr=await deploy(c.casino,[tok.addr,bps]);
+  log('Casino deployed at '+addr,'ok','/address/'+addr);
+  state.casinos=state.casinos||[];
+  state.casinos.unshift({addr,token:tok.addr,bps,owner:account,time:new Date().toLocaleDateString()});
+  save();await renderCasino();
+}
+async function cgFund(){
+  needWallet();const s=window.cgState;if(!s) throw new Error('Pick a token with a casino');
+  const amt=parseAmt($('cgFund').value,s.dec);if(amt<=0n) throw new Error('Enter an amount');
+  await ensureAllowance(s.token,s.addr,amt);
+  await sendTx('Fund house',wr(s.addr,CG_ABI).fund(amt));
+  $('cgFund').value='';await renderCasino();await refreshBalances();
+}
+async function cgWithdraw(){
+  needWallet();const s=window.cgState;if(!s) throw new Error('Pick a token with a casino');
+  if(!s.owner||K(s.owner)!==K(account)) throw new Error('Only the casino creator can withdraw');
+  const amt=parseAmt($('cgFund').value,s.dec);if(amt<=0n) throw new Error('Enter an amount in the field');
+  await sendTx('Withdraw from house',wr(s.addr,CG_ABI).withdraw(amt));
+  $('cgFund').value='';await renderCasino();await refreshBalances();
+}
+async function cgPlay(){
+  needWallet();const s=window.cgState;if(!s) throw new Error('Pick a token with a casino');
+  const amt=parseAmt($('cgBet').value,s.dec);if(amt<=0n) throw new Error('Enter a bet');
+  const cap=await rd(s.addr,CG_ABI).maxBet();
+  if(amt>cap) throw new Error('Bet is above the cap of '+fmt(cap,s.dec,2)+' '+s.sym);
+  await ensureAllowance(s.token,s.addr,amt);
+  const tx=await sendTx(`Bet on ${CG_GAMES[cgGame]}`,wr(s.addr,CG_ABI).play(cgGame,amt,cgPick));
+  const rc=await tx.wait();
+  const iface=new ethers.Interface(CG_ABI);let ev=null;
+  for(const l of rc.logs){try{const p=iface.parseLog(l);if(p&&p.name==='Bet') ev=p.args}catch(e){}}
+  if(!ev) throw new Error('Bet confirmed but the result could not be read');
+  const pay=fmt(ev.payout,s.dec,2)+' '+s.sym;
+  window.cgHist.unshift({game:CG_GAMES[cgGame],bet:fmt(amt,s.dec,2)+' '+s.sym,won:ev.won,pay,roll:cgRollText(cgGame,ev.roll)});
+  $('cgLog').innerHTML=`<div class="kv"><span>${esc(cgRollText(cgGame,ev.roll))}</span><b class="${ev.won?'ok':'err'}">${ev.won?'You won '+esc(pay):'You lost'}</b></div>`;
+  await renderCasino();await refreshBalances();
+}
+$('cgTok').onchange=()=>run(renderCasino);
+$('cgDeployBtn')&&($('cgDeployBtn').onclick=()=>run(cgDeploy));
+$('cgFundBtn').onclick=()=>run(cgFund);
+$('cgWd').onclick=()=>run(cgWithdraw);
+$('cgPlay').onclick=()=>run(cgPlay);
+document.querySelectorAll('#cgGame button').forEach(b=>b.onclick=()=>{cgGame=+b.dataset.g;cgPick=0;document.querySelectorAll('#cgGame button').forEach(x=>x.classList.toggle('on',x===b));renderCgPicks()});
 /* ---------- boot ---------- */
 renderTokList_dl();renderLog();renderHeader();renderPreview();renderPools();renderPort();
 plPreview();renderLaunches();
