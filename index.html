@@ -274,14 +274,14 @@ input:focus{border-color:#ff6a1a;box-shadow:0 0 0 3px rgba(255,106,26,.18)}
     <button class="pillbtn" id="actBtn" title="Activity">🕘</button>
     <span class="pill" id="netPill">Not connected</span>
     <span class="pill" id="hBal"></span>
-    <button class="btn ghost sm" id="browserWalletBtn">Browser wallet</button><button class="btn" id="connect">Connect wallet</button>
+    <button class="btn" id="connect">Connect wallet</button>
     <button class="pillbtn" id="setBtn" title="Settings">⚙</button>
   </div>
 </header>
 <div class="menu hidden" id="acct">
   <button id="acCopy">Copy address</button>
   <a id="acExp" target="_blank">View on Snowtrace ↗</a>
-  <button id="acRef">Refresh balances</button><button id="acLock" class="hidden">Lock browser wallet</button>
+  <button id="acRef">Refresh balances</button>
 </div>
 <div class="banner hidden" id="banner">Swaps and pools use the LFJ Liquidity Book router. <button class="btn sm" id="bannerBtn">Set router</button></div>
 
@@ -306,36 +306,6 @@ input:focus{border-color:#ff6a1a;box-shadow:0 0 0 3px rgba(255,106,26,.18)}
         <button class="btn big" id="swBtn">Connect wallet</button>
       </div>
       <div class="card" id="market"></div>
-    </div>
-    <div class="card" id="botCard" style="margin-top:18px">
-      <div class="cardhead"><h2>Launch-token paper bot</h2><span class="tag">Paper mode</span></div>
-      <p class="sub">Paper mode: the bot watches live quotes and logs the buys and sells it would make. It sends no transactions and needs no funded wallet.</p>
-      <div class="card hidden" style="padding:14px;margin-bottom:16px;background:var(--bg)">
-        <div class="cardhead"><b>Dedicated bot wallet · Fuji</b><span class="tag" id="botWalletState">Not created</span></div>
-        <div class="fields">
-          <div class="full"><label>Bot wallet address</label><div class="row"><input id="botWalletAddress" readonly placeholder="Create or unlock the bot wallet" style="flex:1"><button class="btn ghost sm" id="botCopyAddress" type="button">Copy</button></div></div>
-          <div class="full"><label>Bot wallet password</label><input id="botWalletPassword" type="password" autocomplete="new-password" placeholder="Create a password or enter existing password"></div>
-          <div class="full row"><button class="btn sm" id="botWalletCreate" type="button">Create bot wallet</button><button class="btn ghost sm" id="botWalletUnlock" type="button">Unlock bot wallet</button><button class="btn ghost sm" id="botWalletLock" type="button" disabled>Lock</button></div>
-          <div class="full"><label>Recovery phrase (shown only when first created — write it down)</label><textarea id="botWalletPhrase" rows="2" readonly placeholder="Your recovery phrase appears here once"></textarea></div>
-          <div class="full dim" id="botWalletInfo" style="font-size:12px">Wallet is encrypted in this browser. Fund it with Fuji AVAX and the token stays separate from your main wallet.</div>
-        </div>
-      </div>
-      <div class="fields">
-        <div class="full"><label>Token to trade</label><select id="botToken"></select></div>
-        <div><label>Buy when price is at or below (AVAX per token)</label><input id="botTrigger" inputmode="decimal" placeholder="0.0001"></div>
-        <div><label>AVAX per buy</label><input id="botSpend" inputmode="decimal" value="0.05"></div>
-        <div><label>Take profit (%)</label><input id="botTP" inputmode="decimal" value="20"></div>
-        <div><label>Stop loss (%)</label><input id="botSL" inputmode="decimal" value="10"></div>
-        <div><label>Trailing stop (%) · 0 disables</label><input id="botTrail" inputmode="decimal" value="8"></div>
-        <div><label>Maximum buys per run</label><input id="botMaxBuys" inputmode="numeric" value="3"></div>
-        <div><label>Check interval (seconds, 10–300)</label><input id="botInterval" inputmode="numeric" value="20"></div>
-      </div>
-      <label class="chk" style="margin-top:14px"><input type="checkbox" id="botRiskAck"> I understand this is a paper-trading simulation: it sends no transactions, and its fills are estimates from live quotes.</label>
-      <div class="row" style="margin-top:14px"><button class="btn" id="botStart">Start paper bot</button><button class="btn danger" id="botStop" disabled>Stop bot</button><span class="dim" id="botStatus">Stopped · no automated trades running</span></div>
-      <div class="kv"><span>Current position</span><b id="botPosition">None</b></div>
-      <div class="kv"><span>Buys completed</span><b id="botCount">0</b></div>
-      <div class="kv"><span>Last observed price</span><b id="botPrice">—</b></div>
-      <div class="dim" id="botLog" style="font-size:12px;max-height:110px;overflow:auto"></div>
     </div>
   </section>
 
@@ -606,10 +576,6 @@ input:focus{border-color:#ff6a1a;box-shadow:0 0 0 3px rgba(255,106,26,.18)}
   <label>LFJ LBRouter V2.2 (Fuji, fixed)</label>
   <input id="router" class="mono" readonly>
   <button class="btn" id="verifyRouter" style="width:100%;margin-top:10px">Check contracts on-chain</button>
-  <label style="margin-top:18px">Fuji RPC URL (optional, your own endpoint)</label>
-  <input id="rpcUrl" class="mono" placeholder="https://…">
-  <div class="row" style="margin-top:8px"><button class="btn sm" id="rpcSave">Save</button><button class="btn ghost sm" id="rpcReset">Use default</button></div>
-  <p class="dim" style="font-size:12px">Stored only in this browser. Reload after saving. Never paste a secret key into a public page or chat: anyone who sees a URL with a key can use it.</p>
   <p id="routerStatus" class="dim"></p>
   <label style="margin-top:16px">Slippage tolerance</label>
   <div class="row" id="slipPresets"><button class="chip" data-s="0.1">0.1%</button><button class="chip" data-s="0.5">0.5%</button><button class="chip" data-s="1">1%</button><button class="chip" data-s="3">3%</button><input id="slip" type="text" inputmode="decimal" style="width:80px" placeholder="custom"></div>
@@ -619,26 +585,6 @@ input:focus{border-color:#ff6a1a;box-shadow:0 0 0 3px rgba(255,106,26,.18)}
   <div class="row"><button class="btn ghost sm" id="exportData">Export JSON</button><button class="btn ghost sm" id="importData">Import JSON</button><button class="btn ghost sm" id="clearData">Clear</button></div>
   <input type="file" id="importFile" accept="application/json" class="hidden">
   <p class="dim" style="font-size:12px;margin-top:14px">Testnet only. Contracts are unaudited. Tokens, pools and activity are stored in this browser.</p>
-</div></div>
-
-<!-- encrypted in-browser wallet vault -->
-<div class="modal" id="walletModal"><div class="sheet">
-  <div class="sheethead"><h3>Browser wallet · Fuji</h3><button class="x" data-close>✕</button></div>
-  <p class="dim">Create a wallet stored as an encrypted keystore in this browser, or unlock the wallet already saved here. Your password is never saved.</p>
-  <div id="vaultExisting" class="hidden">
-    <label>Wallet password</label><input id="vaultPassword" type="password" autocomplete="current-password" placeholder="Enter your wallet password">
-    <div class="actions"><button class="btn" id="vaultUnlock">Unlock wallet</button><button class="btn ghost" id="vaultDelete">Delete encrypted wallet</button></div>
-  </div>
-  <div id="vaultCreate">
-    <label>Create password (12+ characters recommended)</label><input id="vaultNewPassword" type="password" autocomplete="new-password" placeholder="Create a strong password">
-    <button class="btn big" id="vaultCreateBtn">Create browser wallet</button>
-  </div>
-  <div id="vaultBackup" class="hidden" style="margin-top:14px">
-    <p class="warn"><b>Back up this recovery phrase now.</b> It is shown once and is not stored by the app. Anyone with it can control this wallet.</p>
-    <textarea id="vaultPhrase" rows="3" readonly></textarea>
-    <div class="actions"><button class="btn ghost" id="vaultCopyPhrase">Copy recovery phrase</button><button class="btn" id="vaultBackupDone">I have backed it up</button></div>
-  </div>
-  <p class="dim" id="vaultStatus" style="font-size:12px;margin-top:12px">Fuji testnet only. Keep your password and recovery phrase private.</p>
 </div></div>
 
 <!-- activity drawer -->
@@ -652,7 +598,7 @@ input:focus{border-color:#ff6a1a;box-shadow:0 0 0 3px rgba(255,106,26,.18)}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
 <script>
-const FUJI={chainId:43113,hex:'0xa869',name:'Avalanche Fuji Testnet',rpc:['https://avalanche-fuji-c-chain-rpc.publicnode.com','https://api.avax-test.network/ext/bc/C/rpc'],currency:{name:'AVAX',symbol:'AVAX',decimals:18},explorer:'https://testnet.snowtrace.io'};
+const FUJI={chainId:43113,hex:'0xa869',name:'Avalanche Fuji Testnet',rpc:['https://api.avax-test.network/ext/bc/C/rpc'],currency:{name:'AVAX',symbol:'AVAX',decimals:18},explorer:'https://testnet.snowtrace.io'};
 const ERC20_ABI=['function name() view returns (string)','function symbol() view returns (string)','function decimals() view returns (uint8)','function totalSupply() view returns (uint256)','function balanceOf(address) view returns (uint256)','function allowance(address,address) view returns (uint256)','function approve(address,uint256) returns (bool)','function transfer(address,uint256) returns (bool)'];
 const STAKE_ABI=['function token() view returns (address)','function aprBps() view returns (uint256)','function totalStaked() view returns (uint256)','function staked(address) view returns (uint256)','function pendingReward(address) view returns (uint256)','function stake(uint256)','function withdraw(uint256)','function claim()'];
 const STAKE2_ABI=['function token() view returns (address)','function aprBps() view returns (uint256)','function totalStaked() view returns (uint256)','function staked(address) view returns (uint256)','function pendingReward(address) view returns (uint256)','function positionOf(address) view returns (uint256 amount,uint256 pending,uint8 tier,uint256 unlockAt,uint256 weight)','function stake(uint256,uint8)','function withdraw(uint256)','function claim()','function compound()'];
@@ -963,54 +909,7 @@ function needWallet(){if(!signer) throw new Error('Connect your wallet first')}
 
 /* ---------- chain access ---------- */
 let provider=null,signer=null,account=null,rawProv=null,bound=false;
-// Public Fuji RPCs rate-limit bursts (HTTP 429). Every read goes through this gate:
-// at most 2 requests in flight, a gap between them, and exponential backoff on 429.
-const RPC_CACHE=new Map();           // shared by all endpoints: key -> {t,p}
-const RPC_TTL={eth_call:2500,eth_getBalance:2500,eth_blockNumber:2500,eth_gasPrice:5000,eth_getCode:600000,eth_getLogs:60000};
-function clearRpcCache(){RPC_CACHE.clear()}
-class ThrottledProvider extends ethers.JsonRpcProvider{
-  constructor(url,chainId,retries=3){super(url,chainId,{staticNetwork:true,batchMaxCount:10});this._active=0;this._waiters=[];this._max=2;this._gap=150;this._last=0;this._retries=retries}
-  _slot(){return new Promise(res=>{const go=()=>{if(this._active<this._max){this._active++;res()}else this._waiters.push(go)};go()})}
-  _free(){this._active--;const w=this._waiters.shift();if(w) w()}
-  // Identical reads inside a short window share one network request (and one result).
-  send(method,params){
-    const ttl=RPC_TTL[method];
-    if(!ttl) return this._send(method,params);
-    const key=this._getConnection().url+'|'+method+'|'+JSON.stringify(params);
-    const hit=RPC_CACHE.get(key);
-    if(hit&&Date.now()-hit.t<ttl) return hit.p;
-    const p=this._send(method,params);
-    RPC_CACHE.set(key,{t:Date.now(),p});
-    p.catch(()=>{if(RPC_CACHE.get(key)?.p===p) RPC_CACHE.delete(key)});
-    if(RPC_CACHE.size>500){const now=Date.now();for(const [k,v] of RPC_CACHE) if(now-v.t>60000) RPC_CACHE.delete(k)}
-    return p;
-  }
-  async _send(method,params){
-    await this._slot();
-    try{
-      for(let attempt=0;;attempt++){
-        const wait=this._last+this._gap-Date.now();if(wait>0) await new Promise(r=>setTimeout(r,wait));
-        this._last=Date.now();
-        try{return await super.send(method,params)}
-        catch(e){
-          const text=String(e?.message||e?.shortMessage||'')+' '+String(e?.info?.error?.message||'')+' '+String(e?.info?.responseStatus||'');
-          const limited=/429|rate.?limit|too many requests/i.test(text);
-          if(!limited||attempt>=this._retries) throw e;
-          await new Promise(r=>setTimeout(r,800*2**attempt));
-        }
-      }
-    }finally{this._free()}
-  }
-}
-// Reads go to the first endpoint that answers. A saved RPC URL (Settings) goes first.
-// If one endpoint rate-limits or fails, the next one is tried.
-const CUSTOM_RPC=localStorage.getItem('fuji-forge:rpc-url');
-const RPC_POOL=[...new Set([CUSTOM_RPC,...FUJI.rpc].filter(Boolean))];
-const readP=new ethers.FallbackProvider(RPC_POOL.map(u=>({
-  provider:new ThrottledProvider(u,FUJI.chainId,RPC_POOL.length>1?1:3),
-  priority:(CUSTOM_RPC&&u===CUSTOM_RPC)?1:2,
-  stallTimeout:1500,weight:1
-})),FUJI.chainId,{quorum:1});
+const readP=new ethers.JsonRpcProvider(FUJI.rpc[0],FUJI.chainId,{staticNetwork:true});
 const wallets=[];
 window.addEventListener('eip6963:announceProvider',e=>{if(!wallets.some(w=>w.info.uuid===e.detail.info.uuid)) wallets.push(e.detail)});
 const rd=(addr,abi)=>new ethers.Contract(addr,abi,readP);
@@ -1033,7 +932,6 @@ async function sendTx(label,txPromise){
   const tx=await txPromise;
   log(label+' submitted…','','/tx/'+tx.hash);
   await tx.wait();
-  pdTTL.clear();clearRpcCache();
   log(label+' confirmed','ok');
   toast(label+' confirmed','ok');
   return tx;
@@ -1044,7 +942,7 @@ const bals={};
 const pdCache={};
 const tokenOf=a=>{if(!a) return null;if(a==='native') return NATIVE;return state.tokens.find(t=>K(t.addr)===K(a))||null};
 const allTokens=()=>[NATIVE,...state.tokens];
-function renderTokList_dl(){$('tokList').innerHTML=state.tokens.map(t=>`<option value="${t.addr}">${esc(t.sym)} · ${esc(t.name)}</option>`).join('');if($('botToken'))renderBotTokens()}
+function renderTokList_dl(){$('tokList').innerHTML=state.tokens.map(t=>`<option value="${t.addr}">${esc(t.sym)} · ${esc(t.name)}</option>`).join('')}
 async function importToken(addr){
   const raw=String(addr||'').trim();
   if(!isAddr(raw)) throw new Error('Invalid token address');
@@ -1058,7 +956,7 @@ async function importToken(addr){
   const t={addr,name:name||sym,sym,dec:Number(dec),owner:null,time:new Date().toLocaleDateString(),imported:true};
   state.tokens.push(t);save();
   if(account) try{bals[K(addr)]=await c.balanceOf(account)}catch(e){}
-  renderTokList_dl();renderBotTokens();renderPort();
+  renderTokList_dl();renderPort();
   log(`Imported ${sym}`,'ok','/address/'+addr);
   return t;
 }
@@ -1113,7 +1011,7 @@ function findProvider(timeout){
 function walletMissingMsg(){
   return location.protocol==='file:'
     ?'Wallets do not inject into file:// pages. Serve the app locally (python3 -m http.server 8000) and open http://localhost:8000'
-    :'No wallet extension detected. Install MetaMask, Rabby or Core, allow it on this site and refresh. Or use the Browser wallet option below.';
+    :'No wallet detected. Install MetaMask or Core, allow it on this site, then refresh.';
 }
 async function connect(silent=false){
   try{ await connectInner(silent) }
@@ -1135,7 +1033,7 @@ async function connectInner(silent){
   rawProv=raw;
   provider=new ethers.BrowserProvider(raw);
   signer=await provider.getSigner();
-  account=await signer.getAddress();$('acLock').classList.add('hidden');
+  account=await signer.getAddress();
   $('connect').textContent=short(account);
   $('netPill').textContent='Fuji · 43113';$('netPill').classList.add('live');
   $('acExp').href=FUJI.explorer+'/address/'+account;
@@ -1145,59 +1043,9 @@ async function connectInner(silent){
   loadPools();
   if(cur) loadPool(cur.addr).catch(()=>{});
 }
-const VAULT_KEY='fuji-forge:encrypted-wallet:v1';
-let vaultWallet=null,vaultBackupPhrase='';
-function renderWalletVault(){
-  const exists=!!localStorage.getItem(VAULT_KEY);
-  $('vaultExisting').classList.toggle('hidden',!exists);
-  $('vaultCreate').classList.toggle('hidden',exists);
-  $('vaultBackup').classList.add('hidden');$('vaultStatus').textContent=exists?'Encrypted wallet found on this browser. Enter its password to unlock it.':'No browser wallet saved on this browser yet.';
-}
-function setWalletConnected(w){
-  vaultWallet=w;provider=readP;signer=w.connect(readP);account=w.address;rawProv=null;$('acLock').classList.remove('hidden');
-  $('connect').textContent=short(account);$('netPill').textContent='Fuji · 43113';$('netPill').classList.add('live');$('acExp').href=FUJI.explorer+'/address/'+account;
-  log('Browser wallet unlocked '+account,'ok');closeM('walletModal');refreshBalances();loadPools();if(cur)loadPool(cur.addr).catch(()=>{});
-}
-$('vaultCreateBtn').onclick=()=>run(async()=>{
-  const pw=$('vaultNewPassword').value;
-  if(pw.length<12) throw new Error('Use a password with at least 12 characters.');
-  if(localStorage.getItem(VAULT_KEY)) throw new Error('A browser wallet already exists. Unlock or delete it first.');
-  $('vaultCreateBtn').disabled=true;$('vaultStatus').textContent='Generating and encrypting wallet…';
-  try{
-    const w=ethers.Wallet.createRandom();
-    const encrypted=await w.encrypt(pw);
-    localStorage.setItem(VAULT_KEY,encrypted);
-    vaultBackupPhrase=w.mnemonic?.phrase||'';
-    $('vaultPhrase').value=vaultBackupPhrase;
-    $('vaultBackup').classList.remove('hidden');$('vaultCreate').classList.add('hidden');
-    $('vaultStatus').textContent='Wallet encrypted and saved. Back up the recovery phrase before continuing.';
-    vaultWallet=w;
-  }finally{$('vaultCreateBtn').disabled=false}
-});
-$('vaultCopyPhrase').onclick=()=>{if(vaultBackupPhrase)navigator.clipboard?.writeText(vaultBackupPhrase).then(()=>toast('Recovery phrase copied','ok'))};
-$('vaultBackupDone').onclick=()=>run(async()=>{
-  if(!vaultWallet) throw new Error('Wallet creation did not complete.');
-  setWalletConnected(vaultWallet);vaultBackupPhrase='';$('vaultPhrase').value='';$('vaultNewPassword').value='';
-});
-$('vaultUnlock').onclick=()=>run(async()=>{
-  const encrypted=localStorage.getItem(VAULT_KEY),pw=$('vaultPassword').value;
-  if(!encrypted) throw new Error('No encrypted browser wallet found.');
-  if(!pw) throw new Error('Enter your wallet password.');
-  $('vaultUnlock').disabled=true;$('vaultStatus').textContent='Decrypting wallet…';
-  try{const w=await ethers.Wallet.fromEncryptedJson(encrypted,pw);setWalletConnected(w);$('vaultPassword').value=''}
-  finally{$('vaultUnlock').disabled=false}
-});
-$('vaultDelete').onclick=()=>run(async()=>{
-  if(!confirm('Delete the encrypted wallet stored in this browser? This cannot recover a lost recovery phrase.'))return;
-  localStorage.removeItem(VAULT_KEY);vaultWallet=null;renderWalletVault();toast('Encrypted wallet deleted from this browser');
-});
-$('acRef').onclick=()=>{run(refreshBalances);$('acct').classList.add('hidden')};
-$('acLock').onclick=()=>{vaultWallet=null;signer=null;provider=null;account=null;Object.keys(bals).forEach(k=>delete bals[k]);$('connect').textContent='Connect wallet';$('netPill').textContent='Not connected';$('netPill').classList.remove('live');$('hBal').textContent='';$('acLock').classList.add('hidden');$('acct').classList.add('hidden');updateSwapUI();toast('Browser wallet locked','ok')};
-
-$('browserWalletBtn').onclick=()=>{renderWalletVault();openM('walletModal')};
 $('connect').onclick=()=>{
   if(account){$('acct').classList.toggle('hidden');return}
-  run(async()=>{const raw=await findProvider(700);if(raw)return connect(false);toast(walletMissingMsg(),'err');renderWalletVault();openM('walletModal')});
+  run(()=>connect(false));
 };
 $('acCopy').onclick=()=>{navigator.clipboard?.writeText(account);toast('Address copied','ok');$('acct').classList.add('hidden')};
 $('acRef').onclick=()=>{run(refreshBalances);$('acct').classList.add('hidden')};
@@ -1382,16 +1230,7 @@ function avaxPerTok(id,bs,tokIsX,decT){
   return isFinite(p)&&p>0?p:null;
 }
 const hasPos=pd=>!!(pd&&pd.pair&&pd.pos&&pd.pos.length);
-const pdTTL=new Map();
 async function pairData(tok){
-  const k=K(tok)+'|'+(account||'');
-  const hit=pdTTL.get(k);
-  if(hit&&Date.now()-hit.t<15000) return hit.v;
-  const v=await pairDataRaw(tok);
-  pdTTL.set(k,{t:Date.now(),v});
-  return v;
-}
-async function pairDataRaw(tok){
   const W=await wavax();
   const t=tokenOf(tok),decT=t?t.dec:18;
   const infos=await rd(LFJ.factory,FACTORY_ABI).getAllLBPairs(tok,W);
@@ -1428,39 +1267,28 @@ async function pairDataRaw(tok){
 const priceOf=pd=>(pd&&pd.pair)?pd.price:null;
 const withTimeout=(p,ms,msg)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error(msg)),ms))]);
 // Scans swap history newest-first within a time budget, so the page never waits on a slow RPC indefinitely.
-async function fetchPairLogs(pair,budgetMs=30000){
+async function fetchPairLogs(pair,budgetMs=25000){
   const started=Date.now();
-  const latest=await withTimeout(readP.getBlockNumber(),12000,'RPC timed out while reading latest block');
-  // Fuji public RPCs can reject broad eth_getLogs requests. Filter by the exact LB Swap topic,
-  // scan smaller ranges, and split rejected ranges until the endpoint accepts them.
-  const CH=800,MAX_BLOCKS=12000,topic=PAIR_EVT.getEvent('Swap').topicHash;
-  const floor=Math.max(0,latest-MAX_BLOCKS+1),ranges=[];
-  for(let to=latest;to>=floor;to-=CH) ranges.push([Math.max(floor,to-CH+1),to]);
-  let failed=0,done=0,scanned=0,lastErr='';const out=[];
-  async function scan(from,to,depth){
-    if(Date.now()-started>budgetMs)return null;
-    try{
-      const logs=await withTimeout(readP.getLogs({address:pair,topics:[topic],fromBlock:from,toBlock:to}),10000,'getLogs request timed out');
-      scanned+=to-from+1;return logs;
-    }catch(e){
+  const latest=await withTimeout(readP.getBlockNumber(),10000,'RPC timed out');
+  const CH=1000,MAXCH=60,starts=[];
+  for(let i=0;i<MAXCH;i++){const to=latest-i*CH;if(to<0) break;starts.push([Math.max(0,to-CH+1),to])}
+  let failed=0,done=0,lastErr='';
+  async function scan(x,y,depth){
+    try{return await withTimeout(readP.getLogs({address:pair,fromBlock:x,toBlock:y}),15000,'request timed out')}
+    catch(e){
       lastErr=String(e.shortMessage||e.info?.error?.message||e.message||e);
-      if(to-from>199&&depth<2&&Date.now()-started<budgetMs){
-        const mid=Math.floor((from+to)/2);
-        const left=await scan(from,mid,depth+1),right=await scan(mid+1,to,depth+1);
-        if(left===null||right===null)return null;
-        return left.concat(right);
-      }
+      if(y-x>99&&depth<2&&Date.now()-started<budgetMs){const m=Math.floor((x+y)/2);return [...(await scan(x,m,depth+1)||[]),...(await scan(m+1,y,depth+1)||[])]}
       failed++;return null;
     }
   }
-  for(let i=0;i<ranges.length&&Date.now()-started<budgetMs;i+=3){
-    const batch=await Promise.all(ranges.slice(i,i+3).map(async r=>{const x=await scan(r[0],r[1],0);done++;return x}));
-    batch.forEach(x=>{if(x)out.push(...x)});
+  const out=[];
+  for(let i=0;i<starts.length&&Date.now()-started<budgetMs;i+=3){
+    const batch=await Promise.all(starts.slice(i,i+3).map(async c=>{const r=await scan(c[0],c[1],0);done++;return r}));
+    batch.forEach(x=>{if(x) out.push(...x)});
   }
-  out.sort((a,b)=>a.blockNumber-b.blockNumber||a.index-b.index);
-  return {logs:out,latest,scanned,failed,chunks:done,lastErr,limited:latest-floor+1};
+  out.sort((x,y)=>x.blockNumber-y.blockNumber);
+  return {logs:out,latest,scanned:done*CH,failed,chunks:done,lastErr};
 }
-
 async function loadMarket(tok,host=$('market')){
   const id=++mkId,t=tokenOf(tok);
   host.innerHTML='<div class="skel" style="width:40%"></div><div class="skel" style="height:200px"></div><div class="skel"></div>';
@@ -1505,7 +1333,7 @@ function paintMarket(host,tok,pd,price,st){
   const t=tokenOf(tok),{loading,pts=[],trades=[],hist}=st;
   const chg=pts.length>1?(pts[pts.length-1].p/pts[0].p-1)*100:null;
   const tvl=Number(ethers.formatEther(pd.avaxRes))+Number(ethers.formatUnits(pd.tokRes,t.dec))*(price||0);
-  const scanInfo=loading?'loading swap history…':`${trades.length} swaps · ${(hist?.scanned||0).toLocaleString()} blocks scanned${hist?.failed?` · <span class="err" title="${esc(hist.lastErr||'')}">${hist.failed}/${hist.chunks} reads failed</span>`:''}`;
+  const scanInfo=loading?'loading swap history…':`${trades.length} swaps · ${Math.round((hist?.scanned||0)/1800)}h scanned${hist?.failed?` · <span class="err" title="${esc(hist.lastErr||'')}">${hist.failed}/${hist.chunks} reads failed</span>`:''}`;
   const table=trades.length?`<table><tbody>${trades.map(x=>`<tr><td class="${x.buy?'ok':'err'}">${x.buy?'Buy':'Sell'}</td><td>${fmt(x.tok,t.dec,4)} ${esc(t.sym)}</td><td class="r">${fmt(x.av,18,4)} AVAX</td><td class="r dim"><a href="${FUJI.explorer}/tx/${x.tx}" target="_blank">tx ↗</a></td></tr>`).join('')}</tbody></table>`:'<div class="dim">No swaps found in the scanned blocks yet.</div>';
   host.innerHTML=`
     <div class="mkhead"><div class="tcell">${pairAv(t)}<div><b>${esc(t.sym)} / AVAX</b><small>${esc(t.name)}</small></div></div>
@@ -1569,127 +1397,7 @@ function setupChart(pts,host=$('market')){
   };
   cv.onmouseleave=()=>{drawChart(cv,pts,-1);host.querySelector('#chTip')?.classList.add('hidden')};
 }
-window.addEventListener('resize',()=>{if(!chartPts.length) return;document.querySelectorAll('canvas#chart').forEach(cv=>drawChart(cv,chartPts,-1))});
-
-/* ---------- isolated opt-in launched-token trading bot ---------- */
-const BOT_VAULT_KEY='fuji-forge:bot-wallet:encrypted:v1',BOT_POSITION_KEY='fuji-forge:bot-position:v1';
-let botWallet=null,botSigner=null,botAccount=null,botTimer=null,botBusy=false,botRun={token:null,buys:0,position:0n,entryPrice:0,spent:0n,peakPnl:0,config:null};
-function botNote(msg){$('botLog').textContent=new Date().toLocaleTimeString()+' · '+msg+'\n'+$('botLog').textContent}
-function saveBotPosition(){try{if(botRun.position>0n)localStorage.setItem(BOT_POSITION_KEY,JSON.stringify({token:botRun.token,buys:botRun.buys,position:botRun.position.toString(),entryPrice:botRun.entryPrice,spent:botRun.spent.toString(),peakPnl:botRun.peakPnl}));else localStorage.removeItem(BOT_POSITION_KEY)}catch(e){botNote('Could not save bot position locally: '+e.message)}}
-function loadBotPosition(){try{const x=JSON.parse(localStorage.getItem(BOT_POSITION_KEY)||'null');if(x?.token&&x.position&&BigInt(x.position)>0n)botRun={...botRun,token:x.token,buys:Number(x.buys)||0,position:BigInt(x.position),entryPrice:Number(x.entryPrice)||0,spent:BigInt(x.spent||'0'),peakPnl:Number(x.peakPnl)||0}}catch(e){botNote('Saved bot position could not be restored: '+e.message)}}
-function renderBotTokens(){
-  const sel=$('botToken'),old=sel.value;
-  sel.innerHTML=state.tokens.map(t=>`<option value="${t.addr}">${esc(t.sym)} · ${esc(t.name)}</option>`).join('')||'<option value="">No saved tokens yet</option>';
-  if(state.tokens.some(t=>K(t.addr)===K(old)))sel.value=old;
-}
-function renderBotWallet(){
-  const saved=!!localStorage.getItem(BOT_VAULT_KEY);
-  $('botWalletState').textContent=botWallet?'Unlocked':saved?'Locked · encrypted':'Not created';
-  $('botWalletAddress').value=botAccount||'';
-  $('botWalletCreate').disabled=saved;
-  $('botWalletUnlock').disabled=!saved||!!botWallet;
-  $('botWalletLock').disabled=!botWallet;
-  $('botWalletInfo').textContent=botWallet?'Dedicated wallet unlocked. Bot transactions use this wallet only. Main app wallet is unchanged.':saved?'Encrypted bot wallet found. Enter its password and unlock it.':'Create a dedicated wallet. Its encrypted keystore is stored separately from the app wallet.';
-}
-function lockBotWallet(){if(botTimer)stopBot('Bot wallet locked; bot stopped.');botWallet=null;botSigner=null;botAccount=null;$('botWalletPhrase').value='';renderBotWallet();}
-$('botWalletCreate').onclick=()=>run(async()=>{
-  if(localStorage.getItem(BOT_VAULT_KEY))throw new Error('A bot wallet already exists. Unlock it instead.');
-  const pw=$('botWalletPassword').value;if(pw.length<12)throw new Error('Use a password of at least 12 characters.');
-  $('botWalletCreate').disabled=true;
-  try{
-    const w=ethers.Wallet.createRandom();
-    const encrypted=await w.encrypt(pw);
-    localStorage.setItem(BOT_VAULT_KEY,encrypted);
-    botWallet=w;botSigner=w.connect(readP);botAccount=w.address;
-    $('botWalletPhrase').value=w.mnemonic?.phrase||'';
-    $('botWalletPassword').value='';renderBotWallet();
-    botNote('Dedicated bot wallet created. Back up the recovery phrase displayed above before funding it.');
-    toast('Dedicated bot wallet created','ok');
-  }finally{$('botWalletCreate').disabled=false}
-});
-$('botWalletUnlock').onclick=()=>run(async()=>{
-  const enc=localStorage.getItem(BOT_VAULT_KEY),pw=$('botWalletPassword').value;
-  if(!enc)throw new Error('No saved bot wallet found.');if(!pw)throw new Error('Enter the bot wallet password.');
-  const w=await ethers.Wallet.fromEncryptedJson(enc,pw);
-  botWallet=w;botSigner=w.connect(readP);botAccount=w.address;$('botWalletPassword').value='';renderBotWallet();
-  botNote('Dedicated bot wallet unlocked: '+botAccount);toast('Bot wallet unlocked','ok');
-});
-$('botWalletLock').onclick=lockBotWallet;
-$('botCopyAddress').onclick=()=>{if(!botAccount)return toast('Unlock the bot wallet first','err');navigator.clipboard?.writeText(botAccount).then(()=>toast('Bot wallet address copied','ok'))};
-async function botSendTx(label,txPromise){const tx=await txPromise;botNote(label+' submitted · '+tx.hash);await tx.wait();botNote(label+' confirmed');return tx}
-function botRouterW(){if(!botSigner)throw new Error('Unlock the dedicated bot wallet first');return new ethers.Contract(LFJ.router,ROUTER_ABI,botSigner)}
-async function botSwapBuy(tok,avaxAmount){
-  // Paper mode: quote only, no transaction is sent.
-  const q=await getQuote('native',tok.addr,avaxAmount);if(!q)throw new Error('No buy route available');
-  botNote(`PAPER buy ${tok.sym}: about ${fmt(q.out,tok.dec,5)} for ${fmt(avaxAmount,18,4)} AVAX (no transaction sent)`);
-  return q.out;
-}
-async function botSwapSell(tok,amount){
-  // Paper mode: quote only, no transaction is sent.
-  const q=await getQuote(tok.addr,'native',amount);if(!q)throw new Error('No sell route available');
-  botNote(`PAPER sell ${tok.sym}: about ${fmt(q.out,18,5)} AVAX (no transaction sent)`);
-}
-async function botTick(){
-  if(!botTimer||botBusy||!botRun.token)return;
-  botBusy=true;
-  try{
-    const tok=tokenOf(botRun.token);if(!tok)throw new Error('Selected token is no longer saved');
-    const pd=await pairData(tok.addr);if(!pd.pair)throw new Error('No LFJ AVAX pool exists for '+tok.sym);
-    const spot=priceOf(pd);if(!(spot>0))throw new Error('Pool price unavailable');
-    $('botPrice').textContent=spot.toPrecision(7)+' AVAX (pool spot)';
-    if(botRun.position>0n){
-      // Estimate exit PnL from a fresh executable sell quote, not the pool spot price.
-      const exitQ=await getQuote(tok.addr,'native',botRun.position);if(!exitQ)throw new Error('No executable sell quote for open bot position');
-      const pnl=(Number(ethers.formatEther(exitQ.out))/Number(ethers.formatEther(botRun.spent))-1)*100;
-      botRun.peakPnl=Math.max(botRun.peakPnl,pnl);
-      $('botPosition').textContent=fmt(botRun.position,tok.dec,5)+' '+tok.sym+' · est. '+pnl.toFixed(2)+'% · peak '+botRun.peakPnl.toFixed(2)+'%';
-      const trailingHit=botRun.config.trail>0&&botRun.peakPnl>=botRun.config.trail&&pnl<=botRun.peakPnl-botRun.config.trail;
-      if(pnl>=botRun.config.tp||pnl<=-botRun.config.sl||trailingHit){
-        const reason=pnl>=botRun.config.tp?'Take-profit':pnl<=-botRun.config.sl?'Stop-loss':'Trailing stop';
-        botNote(`${reason} reached using live sell quote (${pnl.toFixed(2)}%). Selling bot position…`);
-        await botSwapSell(tok,botRun.position);botRun.position=0n;botRun.entryPrice=0;botRun.spent=0n;botRun.peakPnl=0;
-        $('botPosition').textContent='None';saveBotPosition();botNote('Bot position sold and confirmed.');
-      }
-    }else if(botRun.buys<botRun.config.maxBuys){
-      const spend=botRun.config.spend;
-      const buyQ=await getQuote('native',tok.addr,spend);if(!buyQ)throw new Error('No executable buy quote');
-      const executablePrice=Number(ethers.formatEther(spend))/Number(ethers.formatUnits(buyQ.out,tok.dec));
-      if(!Number.isFinite(executablePrice)||executablePrice<=0)throw new Error('Invalid executable buy price');
-      if(executablePrice<=botRun.config.trigger){
-        botNote(`Buy trigger reached using live trade-size quote: ${executablePrice.toPrecision(7)} AVAX/token. Submitting buy…`);
-        const got=await botSwapBuy(tok,spend);botRun.position=got;botRun.spent=spend;botRun.entryPrice=Number(ethers.formatEther(spend))/Number(ethers.formatUnits(got,tok.dec));botRun.peakPnl=0;botRun.buys++;
-        $('botPosition').textContent=fmt(got,tok.dec,5)+' '+tok.sym+' · entry '+botRun.entryPrice.toPrecision(6)+' AVAX';
-        $('botCount').textContent=botRun.buys;saveBotPosition();botNote('Buy confirmed. Position saved locally; monitoring live sell quotes.');
-      }
-    }
-    if(botRun.buys>=botRun.config.maxBuys&&botRun.position===0n)stopBot('Maximum buys completed.');
-  }catch(e){botNote('Error: '+String(e.shortMessage||e.message||e));toast('Trading bot: '+String(e.shortMessage||e.message||e).slice(0,120),'err');stopBot('Stopped after an error.');}
-  finally{botBusy=false}
-}
-function stopBot(message='Stopped by user.'){
-  if(botTimer){clearInterval(botTimer);botTimer=null}
-  $('botStart').disabled=false;$('botStop').disabled=true;$('botStatus').textContent=message;botNote(message);
-}
-$('botStart').onclick=()=>run(async()=>{
-  ensureRouter();
-  if(botTimer)throw new Error('Bot is already running');
-  if(!$('botRiskAck').checked)throw new Error('Confirm the automated-trading risk notice first');
-  const addr=$('botToken').value,tok=tokenOf(addr);if(!tok)throw new Error('Choose a saved launched token');
-  const cfg={trigger:Number($('botTrigger').value),spend:parseAmt($('botSpend').value,18),tp:Number($('botTP').value),sl:Number($('botSL').value),trail:Number($('botTrail').value),maxBuys:Math.floor(Number($('botMaxBuys').value)),interval:Math.floor(Number($('botInterval').value))};
-  if(!(Number.isFinite(cfg.trigger)&&cfg.trigger>0&&cfg.spend>0n&&cfg.tp>0&&cfg.tp<=1000&&cfg.sl>0&&cfg.sl<=90&&Number.isFinite(cfg.trail)&&cfg.trail>=0&&cfg.trail<=90&&cfg.maxBuys>=1&&cfg.maxBuys<=50&&cfg.interval>=10&&cfg.interval<=300))throw new Error('Check trigger, spend, take-profit (0–1000%), stop-loss (0–90%), trailing stop (0–90%), max buys (1–50) and interval (10–300s).');
-  const pd=await pairData(tok.addr);if(!pd.pair)throw new Error('This token has no LFJ AVAX pool yet.');
-  const savedPos=JSON.parse(localStorage.getItem(BOT_POSITION_KEY)||'null');
-  if(savedPos?.position&&BigInt(savedPos.position)>0n&&K(savedPos.token)!==K(tok.addr))throw new Error('A different token position is saved. Select that token and manage/close it before switching.');
-  if(savedPos?.position&&BigInt(savedPos.position)>0n){
-    
-    botRun={token:tok.addr,buys:Number(savedPos.buys)||0,position:BigInt(savedPos.position),entryPrice:Number(savedPos.entryPrice)||0,spent:BigInt(savedPos.spent||'0'),peakPnl:Number(savedPos.peakPnl)||0,config:cfg};
-  }else botRun={token:tok.addr,buys:0,position:0n,entryPrice:0,spent:0n,peakPnl:0,config:cfg};
-  $('botCount').textContent=String(botRun.buys);$('botPosition').textContent=botRun.position>0n?fmt(botRun.position,tok.dec,5)+' '+tok.sym+' · restored position':'None';$('botStart').disabled=true;$('botStop').disabled=false;$('botStatus').textContent='Paper mode · '+tok.sym;
-  botNote('Started in PAPER mode. No transactions will be sent.');
-  botTimer=setInterval(botTick,cfg.interval*1000);await botTick();
-});
-$('botStop').onclick=()=>stopBot();
-loadBotPosition();renderBotTokens();renderBotWallet();if(botRun.position>0n){$('botCount').textContent=String(botRun.buys);$('botPosition').textContent='Saved position awaiting bot wallet unlock';}
+window.addEventListener('resize',()=>{const cv=host.querySelector('#chart');if(cv&&chartPts.length) drawChart(cv,chartPts,-1)});
 
 /* ---------- pools ---------- */
 async function loadPools(){
@@ -1917,29 +1625,9 @@ $('impBtn').onclick=()=>run(async()=>{
 });
 
 /* ---------- launch ---------- */
-// Turns the raw ethers/RPC error into a message that says what to do.
-function explainTxError(e){
-  const raw=[e?.shortMessage,e?.reason,e?.info?.error?.message,e?.error?.message,e?.message].filter(Boolean).join(' | ');
-  if(/429|rate.?limit|too many requests/i.test(raw)) return 'The RPC is rate-limiting requests (429). Wait a minute, then retry. If it keeps happening, set one working Fuji RPC in Settings and in your wallet.';
-  if(/insufficient funds/i.test(raw)) return 'Not enough Fuji AVAX in this wallet to pay deployment gas. Add AVAX and retry.';
-  if(/revert|CALL_EXCEPTION/i.test(raw)) return 'The contract constructor reverted'+(e?.reason?': '+e.reason:'.')+' Check the inputs (pool address, pool depth, exposure %).';
-  if(/could not coalesce/i.test(raw)) return 'The wallet or RPC returned an unreadable error. This is usually a rate limit or an RPC outage. Retry in a minute, or set the same working Fuji RPC in Settings and in your wallet.';
-  return 'Deployment failed: '+raw.slice(0,200);
-}
 async function deploy(c,args){
   const f=new ethers.ContractFactory(c.abi,'0x'+c.evm.bytecode.object,signer);
-  let k;
-  for(let attempt=0;;attempt++){
-    try{k=await f.deploy(...args);break}
-    catch(e){
-      const raw=[e?.shortMessage,e?.reason,e?.info?.error?.message,e?.error?.message,e?.message].filter(Boolean).join(' | ');
-      if(/429|rate.?limit|too many requests/i.test(raw)&&!e?.transaction?.hash&&attempt<2&&!/user rejected|ACTION_REJECTED/i.test(raw)){
-        log('RPC rate-limited, retrying in '+(3*(attempt+1))+'s…');
-        await new Promise(r=>setTimeout(r,3000*(attempt+1)));continue;
-      }
-      throw new Error(explainTxError(e));
-    }
-  }
+  const k=await f.deploy(...args);
   log('Waiting for deployment…');
   await k.waitForDeployment();
   return k.getAddress();
@@ -2091,14 +1779,7 @@ function renderSettings(){
   document.querySelectorAll('#slipPresets .chip').forEach(b=>b.classList.toggle('on',+b.dataset.s===+state.slippage));
   $('routerStatus').innerHTML=state.verified?`<span class="ok">LFJ LBRouter V2.2</span> ${esc(state.router)}`:'';
 }
-function openSettings(){renderSettings();$('rpcUrl').value=localStorage.getItem('fuji-forge:rpc-url')||'';openM('setModal')}
-$('rpcSave').onclick=()=>run(async()=>{
-  const v=($('rpcUrl').value||'').trim();
-  if(v&&!/^https:\/\/[^\s]+$/.test(v)) throw new Error('RPC URL must start with https:// and contain no spaces');
-  if(v) localStorage.setItem('fuji-forge:rpc-url',v); else localStorage.removeItem('fuji-forge:rpc-url');
-  toast(v?'RPC saved. Reload the page to use it.':'Default RPC will be used after reload.','ok');
-});
-$('rpcReset').onclick=()=>{localStorage.removeItem('fuji-forge:rpc-url');$('rpcUrl').value='';toast('Default RPC restored. Reload the page to apply.','ok')};
+function openSettings(){renderSettings();openM('setModal')}
 $('setBtn').onclick=openSettings;$('bannerBtn').onclick=openSettings;
 $('verifyRouter').onclick=()=>run(async()=>{
   $('routerStatus').textContent='Checking contracts…';
@@ -2700,7 +2381,7 @@ async function renderMining(){
   $('mnDeploy').innerHTML='';$('mnPanel').classList.remove('hidden');
   const c=rd(m.addr,MN_ABI),dec=tok.dec||18;
   const [price,max,minted,counted,supply,rate,pool,owner]=await Promise.all([c.price(),c.maxSupply(),c.minted(),c.totalCounted(),c.totalSupply(),c.rate(),rd(tok.addr,ERC20_ABI).balanceOf(m.addr),c.owner()]);
-  const n=Math.min(Number(minted),40);
+  const n=Math.min(Number(minted),100);
   const all=await Promise.all(Array.from({length:n},(_,i)=>i+1).map(async id=>({id,o:await c.ownerOf(id),p:await c.powerOf(id)})));
   const mine=account?all.filter(x=>K(x.o)===K(account)):[];
   const myShares=account?await c.balanceOf(account):0n;
@@ -2708,7 +2389,7 @@ async function renderMining(){
   window.mnState={addr:m.addr,token:tok.addr,dec,sym:tok.sym,shareSym:m.sym,price,owner};
   const share=counted>0n?(Number(myShares*10000n/counted)/100).toFixed(2):'0.00';
   const stat=(l,v)=>`<div class="stat"><span>${esc(l)}</span><b>${esc(v)}</b></div>`;
-  $('mnNote').textContent=`${Number(minted)}/${Number(max)} minted${Number(minted)>40?' · showing first 40':''}`;
+  $('mnNote').textContent=`${Number(minted)}/${Number(max)} minted${Number(minted)>100?' · showing first 100':''}`;
   $('mnStats').innerHTML=stat('Shares earning',fmt(counted,18,0)+' '+m.sym)+stat('Emission / day',fmt(rate*86400n,dec,2)+' '+tok.sym)+stat('Reward pool',fmt(pool,dec,2)+' '+tok.sym)+stat('Your share',share+'%');
   $('mnPend').textContent=fmt(pend,dec,4)+' '+tok.sym;
   $('mnPrice').textContent=`Mint: ${fmt(price,dec,2)} ${tok.sym} → 1 NFT + power in ${m.sym} · ${Number(max)-Number(minted)} left · you hold ${fmt(myShares,18,2)} ${m.sym}`;
@@ -2744,7 +2425,7 @@ $('mnFundBtn').onclick=()=>mnAct(async s=>{const a=parseAmt($('mnFund').value,s.
 $('mnRateBtn').onclick=()=>mnAct(async s=>{if(!s.owner||K(s.owner)!==K(account)) throw new Error('Only the collection creator can change emission');const d=parseAmt($('mnRate').value,s.dec);await sendTx('Set emission',wr(s.addr,MN_ABI).setRate(d/86400n));$('mnRate').value=''});
 $('mnExclBtn').onclick=()=>mnAct(async s=>{if(!s.owner||K(s.owner)!==K(account)) throw new Error('Only the creator can exclude addresses');const a=$('mnExcl').value.trim();if(!isAddr(a)) throw new Error('Enter a valid address');await sendTx('Exclude address from rewards',wr(s.addr,MN_ABI).setExcluded(ethers.getAddress(a),true));$('mnExcl').value=''});
 $('mnPool').onclick=()=>run(async()=>{const s=window.mnState;if(!s) throw new Error('Pick a token with miners');openLiq(s.addr,'add')});
-setInterval(async()=>{const s=window.mnState;if(!s||!account||$('v-mine').classList.contains('hidden')) return;try{const p=await rd(s.addr,MN_ABI).pendingOf(account);$('mnPend').textContent=fmt(p,s.dec,4)+' '+s.sym}catch(e){}},15000);
+setInterval(async()=>{const s=window.mnState;if(!s||!account||$('v-mine').classList.contains('hidden')) return;try{const p=await rd(s.addr,MN_ABI).pendingOf(account);$('mnPend').textContent=fmt(p,s.dec,4)+' '+s.sym}catch(e){}},4000);
 
 /* ---------- dex ---------- */
 let dxRows=[],dxSelected=null;
@@ -3049,7 +2730,7 @@ renderTokList_dl();renderLog();renderHeader();renderPreview();renderPools();rend
 plPreview();renderLaunches();
 show(location.hash.slice(1)||'swap');
 setTimeout(()=>run(()=>connect(true)),300);
-setInterval(()=>{if(account&&!document.hidden) refreshBalances()},60000);
+setInterval(()=>{if(account&&!document.hidden) refreshBalances()},25000);
 
 </script>
 </body></html>
