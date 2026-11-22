@@ -253,6 +253,27 @@ input:focus{border-color:#ff6a1a;box-shadow:0 0 0 3px rgba(255,106,26,.18)}
   *,*::before,*::after{animation:none!important;transition:none!important}
   #intro{display:none}
 }
+/* header: wrap and scroll instead of running off screen */
+.nav{flex-wrap:wrap;row-gap:10px;min-width:0}
+.brand{flex-shrink:0}
+.navr{flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;max-width:100%}
+.navr .btn{white-space:nowrap}
+.tabs{max-width:100%;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex-shrink:0;white-space:nowrap}
+@media(max-width:1180px){
+  .tabs{order:3;width:100%}
+}
+@media(max-width:860px){
+  .tabs{position:fixed;width:auto;max-width:calc(100% - 24px)}
+  .tabs button{flex:0 0 auto;min-width:64px}
+}
+@media(max-width:560px){
+  .nav{padding:10px 12px}
+  .navr{gap:6px}
+  #browserWalletBtn,#hBal{display:none}
+  .btn{padding:8px 12px}
+}
 </style></head><body>
 <div id="intro" aria-hidden="true"><div class="sqgrid"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
 <div class="bg"></div>
@@ -576,6 +597,10 @@ input:focus{border-color:#ff6a1a;box-shadow:0 0 0 3px rgba(255,106,26,.18)}
   <label>LFJ LBRouter V2.2 (Fuji, fixed)</label>
   <input id="router" class="mono" readonly>
   <button class="btn" id="verifyRouter" style="width:100%;margin-top:10px">Check contracts on-chain</button>
+  <label style="margin-top:18px">Your Fuji RPC URL (optional)</label>
+  <input id="rpcUrl" class="mono" placeholder="https://…">
+  <div class="row" style="margin-top:8px"><button class="btn sm" id="rpcSave">Save</button><button class="btn ghost sm" id="rpcReset">Use default</button></div>
+  <p class="dim" style="font-size:12px">Stored only in this browser. Reload after saving. Anyone who sees a URL that contains a key can use it, so don't share it.</p>
   <p id="routerStatus" class="dim"></p>
   <label style="margin-top:16px">Slippage tolerance</label>
   <div class="row" id="slipPresets"><button class="chip" data-s="0.1">0.1%</button><button class="chip" data-s="0.5">0.5%</button><button class="chip" data-s="1">1%</button><button class="chip" data-s="3">3%</button><input id="slip" type="text" inputmode="decimal" style="width:80px" placeholder="custom"></div>
@@ -909,7 +934,8 @@ function needWallet(){if(!signer) throw new Error('Connect your wallet first')}
 
 /* ---------- chain access ---------- */
 let provider=null,signer=null,account=null,rawProv=null,bound=false;
-const readP=new ethers.JsonRpcProvider(FUJI.rpc[0],FUJI.chainId,{staticNetwork:true});
+// Uses your own RPC URL from Settings when one is saved; otherwise the default endpoint.
+const readP=new ethers.JsonRpcProvider(localStorage.getItem('fuji-forge:rpc-url')||FUJI.rpc[0],FUJI.chainId,{staticNetwork:true});
 const wallets=[];
 window.addEventListener('eip6963:announceProvider',e=>{if(!wallets.some(w=>w.info.uuid===e.detail.info.uuid)) wallets.push(e.detail)});
 const rd=(addr,abi)=>new ethers.Contract(addr,abi,readP);
@@ -1797,7 +1823,14 @@ function renderSettings(){
   document.querySelectorAll('#slipPresets .chip').forEach(b=>b.classList.toggle('on',+b.dataset.s===+state.slippage));
   $('routerStatus').innerHTML=state.verified?`<span class="ok">LFJ LBRouter V2.2</span> ${esc(state.router)}`:'';
 }
-function openSettings(){renderSettings();openM('setModal')}
+function openSettings(){renderSettings();$('rpcUrl').value=localStorage.getItem('fuji-forge:rpc-url')||'';openM('setModal')}
+$('rpcSave').onclick=()=>run(async()=>{
+  const v=($('rpcUrl').value||'').trim();
+  if(v&&!/^https:\/\/[^\s]+$/.test(v)) throw new Error('RPC URL must start with https:// and contain no spaces');
+  if(v) localStorage.setItem('fuji-forge:rpc-url',v); else localStorage.removeItem('fuji-forge:rpc-url');
+  toast(v?'RPC saved. Reload the page to use it.':'Default RPC will be used after reload.','ok');
+});
+$('rpcReset').onclick=()=>{localStorage.removeItem('fuji-forge:rpc-url');$('rpcUrl').value='';toast('Default RPC restored. Reload the page to apply.','ok')};
 $('setBtn').onclick=openSettings;$('bannerBtn').onclick=openSettings;
 $('verifyRouter').onclick=()=>run(async()=>{
   $('routerStatus').textContent='Checking contracts…';
