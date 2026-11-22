@@ -1886,9 +1886,19 @@ $('impBtn').onclick=()=>run(async()=>{
 });
 
 /* ---------- launch ---------- */
+// Turns the raw ethers/RPC error into a message that says what to do.
+function explainTxError(e){
+  const raw=[e?.shortMessage,e?.reason,e?.info?.error?.message,e?.error?.message,e?.message].filter(Boolean).join(' | ');
+  if(/429|rate.?limit|too many requests/i.test(raw)) return 'The RPC is rate-limiting requests (429). Wait a minute, then retry. If it keeps happening, set one working Fuji RPC in Settings and in your wallet.';
+  if(/insufficient funds/i.test(raw)) return 'Not enough Fuji AVAX in this wallet to pay deployment gas. Add AVAX and retry.';
+  if(/revert|CALL_EXCEPTION/i.test(raw)) return 'The contract constructor reverted'+(e?.reason?': '+e.reason:'.')+' Check the inputs (pool address, pool depth, exposure %).';
+  if(/could not coalesce/i.test(raw)) return 'The wallet or RPC returned an unreadable error. This is usually a rate limit or an RPC outage. Retry in a minute, or set the same working Fuji RPC in Settings and in your wallet.';
+  return 'Deployment failed: '+raw.slice(0,200);
+}
 async function deploy(c,args){
   const f=new ethers.ContractFactory(c.abi,'0x'+c.evm.bytecode.object,signer);
-  const k=await f.deploy(...args);
+  let k;
+  try{k=await f.deploy(...args)}catch(e){throw new Error(explainTxError(e))}
   log('Waiting for deployment…');
   await k.waitForDeployment();
   return k.getAddress();
