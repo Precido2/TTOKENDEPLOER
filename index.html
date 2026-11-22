@@ -424,6 +424,24 @@ input:focus{border-color:#ff6a1a;box-shadow:0 0 0 3px rgba(255,106,26,.18)}
       <label class="chk"><input type="checkbox" id="plStakeOn" checked> Create staking pool</label>
       <label class="chk"><input type="checkbox" id="plRenounce"> Renounce ownership at end</label>
     </div>
+    <h3 style="margin:18px 0 8px;font-size:14px">Add-ons (deployed in the same launch)</h3>
+    <div class="fields">
+      <div class="full"><label class="chk"><input type="checkbox" id="adCasino"> Casino (house games)</label></div>
+      <div><label>Casino max bet (% of house)</label><input id="adCasinoBps" type="text" value="2"></div>
+      <div><label>Fund casino house (tokens)</label><input id="adCasinoFund" type="text" value="0"></div>
+      <div class="full"><label class="chk"><input type="checkbox" id="adMiners"> Miner NFTs (earn from a reward pool)</label></div>
+      <div><label>Mint price (tokens)</label><input id="adMinPrice" type="text" value="100"></div>
+      <div><label>Max miners</label><input id="adMinMax" type="text" value="100"></div>
+      <div><label>Emission per day (tokens)</label><input id="adMinDaily" type="text" value="1000"></div>
+      <div><label>Fund miner reward pool (tokens)</label><input id="adMinFund" type="text" value="0"></div>
+      <div class="full"><label class="chk"><input type="checkbox" id="adLs"> Long/short market (needs the LFJ pool)</label></div>
+      <div><label>Min pool depth (AVAX)</label><input id="adLsDepth" type="text" value="1"></div>
+      <div><label>Max exposure (% of house)</label><input id="adLsExp" type="text" value="50"></div>
+      <div class="full"><label>Fund long/short house (tokens)</label><input id="adLsFund" type="text" value="0"></div>
+    </div>
+    <div class="full" style="margin-top:12px"><label class="chk"><input type="checkbox" id="adFactory"> Create token and add-ons with the launch factory (one transaction)</label></div>
+    <div class="row" style="margin-top:8px"><button class="btn ghost sm" id="facDeploy">Deploy launch factory (once)</button><span class="dim" id="facStatus" style="font-size:12px"></span></div>
+    <p class="dim" style="font-size:12px">Without the factory, each deployment and funding step is a separate wallet transaction.</p>
     <div class="actions"><button class="btn" id="plGo">Launch everything</button></div>
     <div id="plLog" style="margin-top:12px"></div>
     <h3 style="margin:18px 0 8px;font-size:14px">Recent launches</h3>
@@ -851,11 +869,11 @@ async function compile(){
   if(compiled) return compiled;
   log('Loading Solidity compiler (first run only)…');
   await getCompiler();
-  const input={language:'Solidity',sources:{'Token.sol':{content:TOKEN_SRC},'Staking.sol':{content:STAKING_SRC},'StakingV2.sol':{content:STAKING2_SRC},'Casino.sol':{content:CASINO_SRC},'Miners.sol':{content:MINERS_SRC},'LongShort.sol':{content:LONGSHORT_SRC}},settings:{outputSelection:{'*':{'*':['abi','evm.bytecode.object']}}}};
+  const input={language:'Solidity',sources:{'Token.sol':{content:TOKEN_SRC},'Staking.sol':{content:STAKING_SRC},'StakingV2.sol':{content:STAKING2_SRC},'Casino.sol':{content:CASINO_SRC},'Miners.sol':{content:MINERS_SRC},'LongShort.sol':{content:LONGSHORT_SRC},'Factory.sol':{content:FACTORY_SRC}},settings:{evmVersion:'shanghai',outputSelection:{'*':{'*':['abi','evm.bytecode.object']}}}};
   const out=JSON.parse(await new Promise((res,rej)=>{const id=++reqId;pending.set(id,{res,rej});worker.postMessage({id,input:JSON.stringify(input)})}));
   const errs=(out.errors||[]).filter(e=>e.severity==='error');
   if(errs.length) throw new Error(errs[0].formattedMessage);
-  return compiled={token:out.contracts['Token.sol'].Token,staking:out.contracts['Staking.sol'].Staking,staking2:out.contracts['StakingV2.sol'].StakingV2,casino:out.contracts['Casino.sol'].Casino,miners:out.contracts['Miners.sol'].Miners,longshort:out.contracts['LongShort.sol'].LongShort};
+  return compiled={token:out.contracts['Token.sol'].Token,staking:out.contracts['Staking.sol'].Staking,staking2:out.contracts['StakingV2.sol'].StakingV2,casino:out.contracts['Casino.sol'].Casino,miners:out.contracts['Miners.sol'].Miners,longshort:out.contracts['LongShort.sol'].LongShort,factory:out.contracts['Factory.sol'].LaunchFactory,tokenImpl:out.contracts['Factory.sol'].TokenImpl,casinoImpl:out.contracts['Factory.sol'].CasinoImpl,minersImpl:out.contracts['Factory.sol'].MinersImpl};
 }
 
 /* ---------- state (persisted in localStorage; migrates from v2) ---------- */
@@ -2038,7 +2056,403 @@ async function lockLP(t){
 function renderLaunches(){
   const L=state.launches||[];
   const link=(a,t)=>`<a href="${FUJI.explorer}/address/${a}" target="_blank">${t}</a>`;
-  $('plHistory').innerHTML=L.length?L.map(l=>`<div class="kv"><span>${av(tokenOf(l.token)||{addr:l.token,sym:l.sym},'sm')} ${esc(l.name)} (${esc(l.sym)}) · ${esc(l.time)}</span><span>${l.token?link(l.token,'token'):''}${l.pair?' · '+link(l.pair,'pool'):''}${l.pool?' · '+link(l.pool,'staking'):''}${l.locked?' · <span class="ok">LP locked</span>':''}${l.renounced?' · <span class="warn">ownership renounced</span>':''}</span></div>`).join(''):'<div class="dim">No launches yet.</div>';
+  $('plHistory').innerHTML=L.length?L.map(l=>`<div class="kv"><span>${av(tokenOf(l.token)||{addr:l.token,sym:l.sym},'sm')} ${esc(l.name)} (${esc(l.sym)}) · ${esc(l.time)}</span><span>${l.token?link(l.token,'token'):''}${l.pair?' · '+link(l.pair,'pool'):''}${l.pool?' · '+link(l.pool,'staking'):''}${l.casino?' · '+link(l.casino,'casino'):''}${l.miners?' · '+link(l.miners,'miners'):''}${l.ls?' · '+link(l.ls,'long/short'):''}${l.locked?' · <span class="ok">LP locked</span>':''}${l.renounced?' · <span class="warn">ownership renounced</span>':''}</span></div>`).join(''):'<div class="dim">No launches yet.</div>';
+}
+const FACTORY_SRC=String.raw`// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.26;
+
+// ---------- implementations (deployed once, then cloned per launch) ----------
+contract TokenImpl {
+  bool private _inited;
+  string public name; string public symbol; uint8 public constant decimals = 18;
+  uint256 public totalSupply; uint256 public totalBurned; uint256 public cap;
+  address public owner; bool public paused;
+  mapping(address => uint256) public balanceOf;
+  mapping(address => mapping(address => uint256)) public allowance;
+  event Transfer(address indexed from, address indexed to, uint256 value);
+  event Approval(address indexed owner_, address indexed spender, uint256 value);
+  event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+  event PausedSet(bool isPaused);
+  modifier onlyOwner() { require(msg.sender == owner, "not owner"); _; }
+  function init(string memory _n, string memory _s, uint256 _supply, uint256 _cap, address _owner) external {
+    require(!_inited, "inited"); _inited = true;
+    name = _n; symbol = _s; owner = _owner; cap = _cap * 1e18;
+    require(_cap == 0 || _supply * 1e18 <= cap, "supply above cap");
+    _mint(_owner, _supply * 1e18);
+    emit OwnershipTransferred(address(0), _owner);
+  }
+  function _mint(address to, uint256 a) internal { totalSupply += a; balanceOf[to] += a; emit Transfer(address(0), to, a); }
+  function mint(address to, uint256 a) external onlyOwner {
+    require(cap > 0, "minting disabled"); require(totalSupply + a <= cap, "cap reached"); _mint(to, a);
+  }
+  function burn(uint256 a) external { _burn(msg.sender, a); }
+  function burnFrom(address f, uint256 a) external {
+    uint256 al = allowance[f][msg.sender]; require(al >= a, "allowance");
+    if (al != type(uint256).max) allowance[f][msg.sender] = al - a;
+    _burn(f, a);
+  }
+  function _burn(address f, uint256 a) internal {
+    require(balanceOf[f] >= a, "balance"); balanceOf[f] -= a; totalSupply -= a; totalBurned += a;
+    emit Transfer(f, address(0), a);
+  }
+  function pause(bool p) external onlyOwner { paused = p; emit PausedSet(p); }
+  function transferOwnership(address n) external onlyOwner {
+    require(n != address(0), "zero address"); emit OwnershipTransferred(owner, n); owner = n;
+  }
+  function renounceOwnership() external onlyOwner { emit OwnershipTransferred(owner, address(0)); owner = address(0); }
+  function transfer(address to, uint256 a) external returns (bool) { _move(msg.sender, to, a); return true; }
+  function approve(address s, uint256 a) external returns (bool) { allowance[msg.sender][s] = a; emit Approval(msg.sender, s, a); return true; }
+  function transferFrom(address f, address t, uint256 a) external returns (bool) {
+    uint256 al = allowance[f][msg.sender]; require(al >= a, "allowance");
+    if (al != type(uint256).max) allowance[f][msg.sender] = al - a;
+    _move(f, t, a); return true;
+  }
+  function _move(address f, address t, uint256 a) internal {
+    require(!paused, "paused"); require(balanceOf[f] >= a, "balance");
+    balanceOf[f] -= a; balanceOf[t] += a; emit Transfer(f, t, a);
+  }
+}
+
+interface IERC20T {
+    function transfer(address to, uint256 amt) external returns (bool);
+    function transferFrom(address from, address to, uint256 amt) external returns (bool);
+    function balanceOf(address who) external view returns (uint256);
+}
+contract CasinoImpl {
+    bool private _inited;
+    IERC20T public token;
+    address public owner;
+    uint16 public maxBetBps;
+    uint256 public nonce;
+    event HouseFunded(address indexed from, uint256 amount);
+    event HouseWithdrawn(uint256 amount);
+    event Bet(address indexed player, uint8 game, uint256 amount, uint256 payout, bool won, uint256 roll);
+    function init(address _token, uint16 _maxBetBps, address _owner) external {
+        require(!_inited, "inited"); _inited = true;
+        require(_maxBetBps > 0 && _maxBetBps <= 1000, "bps");
+        token = IERC20T(_token);
+        owner = _owner;
+        maxBetBps = _maxBetBps;
+    }
+    function house() public view returns (uint256) { return token.balanceOf(address(this)); }
+    function maxBet() public view returns (uint256) { return house() * maxBetBps / 10000; }
+    function payoutOf(uint8 g) public pure returns (uint256) {
+        if (g == 0) return 198;
+        if (g == 1) return 570;
+        return 230;
+    }
+    function fund(uint256 amt) external {
+        require(token.transferFrom(msg.sender, address(this), amt), "transfer");
+        emit HouseFunded(msg.sender, amt);
+    }
+    function withdraw(uint256 amt) external {
+        require(msg.sender == owner, "owner");
+        require(token.transfer(owner, amt), "transfer");
+        emit HouseWithdrawn(amt);
+    }
+    function play(uint8 game, uint256 amt, uint8 pick) external returns (uint256 payout) {
+        require(game < 3, "game");
+        require(amt > 0 && amt <= maxBet(), "bet over cap");
+        require(pick < (game == 1 ? 6 : 2), "pick");
+        require(token.transferFrom(msg.sender, address(this), amt), "transfer");
+        uint256 n = nonce++;
+        uint256 rnd = uint256(keccak256(abi.encodePacked(blockhash(block.number - 1), block.timestamp, msg.sender, n)));
+        uint256 roll;
+        bool won;
+        if (game == 0) {
+            roll = rnd % 2;
+            won = uint256(pick) == roll;
+        } else if (game == 1) {
+            roll = (rnd % 6) + 1;
+            won = uint256(pick) + 1 == roll;
+        } else {
+            uint256 d1 = (rnd % 6) + 1;
+            uint256 d2 = ((rnd >> 32) % 6) + 1;
+            roll = d1 * 10 + d2;
+            uint256 sum = d1 + d2;
+            won = pick == 0 ? sum < 7 : sum > 7;
+        }
+        if (won) {
+            payout = amt * payoutOf(game) / 100;
+            require(house() >= payout, "house short");
+            require(token.transfer(msg.sender, payout), "transfer");
+        }
+        emit Bet(msg.sender, game, amt, payout, won, roll);
+    }
+}
+
+interface IERC20M {
+    function transfer(address to, uint256 amt) external returns (bool);
+    function transferFrom(address from, address to, uint256 amt) external returns (bool);
+}
+contract MinersImpl {
+    bool private _inited;
+    IERC20M public token;
+    address public owner;
+    uint256 public price;
+    uint256 public maxSupply;
+    string public name;
+    string public symbol;
+    uint8 public constant decimals = 18;
+    uint256 public rate;
+    uint256 public minted;
+    uint256 public totalSupply;
+    uint256 public totalCounted;
+    uint256 public accPerShare;
+    uint256 public lastUpdate;
+    mapping(address => uint256) public balanceOf;
+    mapping(address => mapping(address => uint256)) public allowance;
+    mapping(address => bool) public excluded;
+    mapping(address => uint256) public userDebt;
+    mapping(address => uint256) public owed;
+    mapping(uint256 => address) public ownerOf;
+    mapping(uint256 => uint256) public powerOf;
+    mapping(address => uint256) public nftsOf;
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed holder, address indexed spender, uint256 value);
+    event NFTTransfer(address indexed from, address indexed to, uint256 indexed id);
+    event Minted(address indexed to, uint256 indexed id, uint256 power);
+    event Claimed(address indexed user, uint256 amount);
+    event RewardsFunded(address indexed from, uint256 amount);
+    function init(address _token, string memory _name, string memory _symbol, uint256 _price, uint256 _maxSupply, uint256 _rate, address _owner) external {
+        require(!_inited, "inited"); _inited = true;
+        require(_maxSupply > 0, "supply");
+        token = IERC20M(_token);
+        owner = _owner;
+        name = _name;
+        symbol = _symbol;
+        price = _price;
+        maxSupply = _maxSupply;
+        rate = _rate;
+        lastUpdate = block.timestamp;
+    }
+    modifier onlyOwner() { require(msg.sender == owner, "owner"); _; }
+    function _update() internal {
+        if (totalCounted > 0 && block.timestamp > lastUpdate) {
+            accPerShare += (block.timestamp - lastUpdate) * rate * 1e18 / totalCounted;
+        }
+        lastUpdate = block.timestamp;
+    }
+    function _settle(address u) internal {
+        if (!excluded[u]) owed[u] += balanceOf[u] * (accPerShare - userDebt[u]) / 1e18;
+        userDebt[u] = accPerShare;
+    }
+    function pendingOf(address u) external view returns (uint256) {
+        uint256 acc = accPerShare;
+        if (totalCounted > 0 && block.timestamp > lastUpdate) {
+            acc += (block.timestamp - lastUpdate) * rate * 1e18 / totalCounted;
+        }
+        uint256 earned = excluded[u] ? 0 : balanceOf[u] * (acc - userDebt[u]) / 1e18;
+        return owed[u] + earned;
+    }
+    function mint() external returns (uint256) { return _mintMany(1); }
+    function mintMany(uint256 n) external returns (uint256) { return _mintMany(n); }
+    function _mintMany(uint256 n) internal returns (uint256 firstId) {
+        require(n > 0 && n <= 20, "1-20");
+        require(minted + n <= maxSupply, "sold out");
+        _update();
+        require(token.transferFrom(msg.sender, owner, price * n), "pay");
+        _settle(msg.sender);
+        firstId = minted + 1;
+        for (uint256 k = 0; k < n; k++) {
+            uint256 id = ++minted;
+            uint256 r = uint256(keccak256(abi.encodePacked(blockhash(block.number - 1), id, msg.sender))) % 100;
+            uint256 p = r < 60 ? 1 : (r < 90 ? 3 : (r < 98 ? 10 : 25));
+            uint256 sh = p * 1e18;
+            ownerOf[id] = msg.sender;
+            powerOf[id] = p;
+            nftsOf[msg.sender] += 1;
+            totalSupply += sh;
+            balanceOf[msg.sender] += sh;
+            if (!excluded[msg.sender]) totalCounted += sh;
+            emit Transfer(address(0), msg.sender, sh);
+            emit Minted(msg.sender, id, p);
+        }
+    }
+    function _move(address from, address to, uint256 amt) internal {
+        _update();
+        _settle(from);
+        _settle(to);
+        balanceOf[from] -= amt;
+        balanceOf[to] += amt;
+        if (!excluded[from]) totalCounted -= amt;
+        if (!excluded[to]) totalCounted += amt;
+        emit Transfer(from, to, amt);
+    }
+    function transfer(address to, uint256 amt) external returns (bool) {
+        require(to != address(0), "zero");
+        _move(msg.sender, to, amt);
+        return true;
+    }
+    function approve(address spender, uint256 amt) external returns (bool) {
+        allowance[msg.sender][spender] = amt;
+        emit Approval(msg.sender, spender, amt);
+        return true;
+    }
+    function transferFrom(address from, address to, uint256 amt) external returns (bool) {
+        require(to != address(0), "zero");
+        uint256 a = allowance[from][msg.sender];
+        if (a != type(uint256).max) {
+            require(a >= amt, "allowance");
+            allowance[from][msg.sender] = a - amt;
+        }
+        _move(from, to, amt);
+        return true;
+    }
+    function transferNFT(address to, uint256 id) external {
+        require(ownerOf[id] == msg.sender, "owner");
+        require(to != address(0), "zero");
+        ownerOf[id] = to;
+        nftsOf[msg.sender] -= 1;
+        nftsOf[to] += 1;
+        emit NFTTransfer(msg.sender, to, id);
+    }
+    function claim() external returns (uint256 amt) {
+        _update();
+        _settle(msg.sender);
+        amt = owed[msg.sender];
+        require(amt > 0, "nothing");
+        owed[msg.sender] = 0;
+        require(token.transfer(msg.sender, amt), "transfer");
+        emit Claimed(msg.sender, amt);
+    }
+    function fund(uint256 amt) external {
+        require(token.transferFrom(msg.sender, address(this), amt), "transfer");
+        emit RewardsFunded(msg.sender, amt);
+    }
+    function setRate(uint256 r) external onlyOwner {
+        _update();
+        rate = r;
+    }
+    function setExcluded(address a, bool ex) external onlyOwner {
+        _update();
+        _settle(a);
+        if (excluded[a] == ex) return;
+        excluded[a] = ex;
+        if (ex) totalCounted -= balanceOf[a];
+        else totalCounted += balanceOf[a];
+    }
+}
+
+// ---------- factory: one transaction creates the token and any add-ons ----------
+contract LaunchFactory {
+    struct Cfg {
+        string name; string sym; uint256 supply; uint256 cap;
+        bool casino; uint16 casinoBps;
+        bool miners; string minersSym; uint256 minPrice; uint256 minMax; uint256 minRate;
+    }
+    address public immutable tokenImpl;
+    address public immutable casinoImpl;
+    address public immutable minersImpl;
+    event Launched(address indexed creator, address token, address casino, address miners);
+    constructor(address _t, address _c, address _m) { tokenImpl = _t; casinoImpl = _c; minersImpl = _m; }
+    function createLaunch(Cfg calldata c) external returns (address token, address casino, address miners) {
+        token = _clone(tokenImpl);
+        TokenImpl(token).init(c.name, c.sym, c.supply, c.cap, msg.sender);
+        if (c.casino) {
+            casino = _clone(casinoImpl);
+            CasinoImpl(casino).init(token, c.casinoBps, msg.sender);
+        }
+        if (c.miners) {
+            miners = _clone(minersImpl);
+            MinersImpl(miners).init(token, string.concat(c.name, " Miner Shares"), c.minersSym, c.minPrice, c.minMax, c.minRate, msg.sender);
+        }
+        emit Launched(msg.sender, token, casino, miners);
+    }
+    // EIP-1167 minimal proxy. Init code = 10-byte constructor + 10-byte header + implementation address + 15-byte footer (55 bytes).
+    function _clone(address impl) internal returns (address instance) {
+        bytes memory code = abi.encodePacked(
+            hex"3d602d80600a3d3981f3",
+            hex"363d3d373d3d3d363d73",
+            impl,
+            hex"5af43d82803e903d91602b57fd5bf3"
+        );
+        assembly {
+            instance := create(0, add(code, 0x20), mload(code))
+        }
+        require(instance != address(0), "clone failed");
+    }
+}
+`;
+const FAC_ABI=['function createLaunch((string name,string sym,uint256 supply,uint256 cap,bool casino,uint16 casinoBps,bool miners,string minersSym,uint256 minPrice,uint256 minMax,uint256 minRate) c) returns (address token,address casino,address miners)','event Launched(address indexed creator,address token,address casino,address miners)'];
+function renderFacStatus(){$('facStatus').textContent=state.factory?'Factory: '+short(state.factory.addr):'No factory deployed yet'}
+async function deployFactory(){
+  needWallet();
+  const c=await compile();
+  log('Deploying launch factory (3 templates + factory)…');
+  const t=await deploy(c.tokenImpl,[]),k=await deploy(c.casinoImpl,[]),m=await deploy(c.minersImpl,[]);
+  const f=await deploy(c.factory,[t,k,m]);
+  state.factory={addr:f,tokenImpl:t,casinoImpl:k,minersImpl:m,owner:account,time:new Date().toLocaleDateString()};
+  save();renderFacStatus();
+  log('Launch factory deployed at '+f,'ok','/address/'+f);
+  toast('Launch factory deployed','ok');
+}
+async function deployViaFactoryRaw(name,sym,sup,cap,ad,img){
+  if(!state.factory) throw new Error('Deploy the launch factory first');
+  const cfg={name,sym,supply:sup,cap,casino:ad.casino,casinoBps:ad.casinoBps,miners:ad.miners,minersSym:`${sym}-MINER`,minPrice:ad.minPrice,minMax:ad.minMax,minRate:ad.minDaily/86400n};
+  const tx=await sendTx(`Create ${sym} with the factory`,wr(state.factory.addr,FAC_ABI).createLaunch(cfg));
+  const rc=await tx.wait();
+  const iface=new ethers.Interface(FAC_ABI);let ev=null;
+  for(const l of rc.logs){try{const p=iface.parseLog(l);if(p&&p.name==='Launched') ev=p.args}catch(e){}}
+  if(!ev) throw new Error('Launch confirmed but the new addresses could not be read');
+  const time=new Date().toLocaleDateString(),Z=ethers.ZeroAddress;
+  state.tokens.unshift({addr:ev.token,name,sym,dec:18,owner:account,time,img:img||null});
+  if(ev.casino!==Z){state.casinos=state.casinos||[];state.casinos.unshift({addr:ev.casino,token:ev.token,bps:ad.casinoBps,owner:account,time})}
+  if(ev.miners!==Z){
+    state.miners=state.miners||[];state.miners.unshift({addr:ev.miners,token:ev.token,owner:account,time,name:`${name} Miner Shares`,sym:`${sym}-MINER`,art:{}});
+    state.tokens.unshift({addr:ev.miners,name:`${name} Miner Shares`,sym:`${sym}-MINER`,dec:18,owner:account,time,miner:true});
+  }
+  save();renderTokList_dl();
+  return {token:ev.token,casino:ev.casino!==Z?ev.casino:null,miners:ev.miners!==Z?ev.miners:null};
+}
+$('facDeploy').onclick=()=>run(deployFactory);
+renderFacStatus();
+function addOnsNums(){
+  const d=18;
+  return {
+    factory:$('adFactory').checked,
+    casino:$('adCasino').checked,miners:$('adMiners').checked,ls:$('adLs').checked,
+    casinoBps:Math.round(parseFloat($('adCasinoBps').value||'0')*100),
+    casinoFund:parseAmt($('adCasinoFund').value||'0',d),
+    minPrice:parseAmt($('adMinPrice').value||'0',d),
+    minMax:BigInt(($('adMinMax').value||'0').replace(/\D/g,'')||'0'),
+    minDaily:parseAmt($('adMinDaily').value||'0',d),
+    minFund:parseAmt($('adMinFund').value||'0',d),
+    lsDepth:parseAmt($('adLsDepth').value||'0',d),
+    lsBps:Math.round(parseFloat($('adLsExp').value||'0')*100),
+    lsFund:parseAmt($('adLsFund').value||'0',d)
+  };
+}
+async function deployCasinoRaw(tokAddr,bps){
+  const c=await compile();log('Deploying casino…');
+  const addr=await deploy(c.casino,[tokAddr,bps]);
+  log('Casino deployed at '+addr,'ok','/address/'+addr);
+  state.casinos=state.casinos||[];
+  state.casinos.unshift({addr,token:tokAddr,bps,owner:account,time:new Date().toLocaleDateString()});
+  save();return addr;
+}
+async function deployMinersRaw(tok,price,max,daily){
+  const name=`${tok.name} Miner Shares`,sym=`${tok.sym}-MINER`;
+  const c=await compile();log(`Deploying ${tok.sym} miner collection…`);
+  const addr=await deploy(c.miners,[tok.addr,name,sym,price,max,daily/86400n]);
+  log('Miners deployed at '+addr,'ok','/address/'+addr);
+  const time=new Date().toLocaleDateString();
+  state.miners=state.miners||[];
+  state.miners.unshift({addr,token:tok.addr,owner:account,time,name,sym,art:{}});
+  if(!tokenOf(addr)) state.tokens.unshift({addr,name,sym,dec:18,owner:account,time,miner:true});
+  save();renderTokList_dl();return addr;
+}
+async function deployLsRaw(tokAddr,pair,minDepth,maxBps){
+  const c=await compile();log('Deploying long/short market…');
+  const addr=await deploy(c.longshort,[tokAddr,pair,minDepth,maxBps]);
+  log('Long/short market deployed at '+addr,'ok','/address/'+addr);
+  state.markets=state.markets||[];
+  state.markets.unshift({addr,token:tokAddr,pair,owner:account,time:new Date().toLocaleDateString()});
+  save();return addr;
+}
+async function fundRaw(tokAddr,addr,amt,label,abi){
+  await ensureAllowance(tokAddr,addr,ethers.MaxUint256);
+  await sendTx(label,wr(addr,abi).fund(amt));
 }
 async function runLaunch(){
   needWallet();
@@ -2052,15 +2466,32 @@ async function runLaunch(){
   if(n.on&&!(n.lpW>0n&&n.avaxW>0n)) throw new Error('Set a liquidity % and an AVAX amount, or untick Seed LFJ pool');
   if(n.st&&!(apr>=0)) throw new Error('APR must be 0 or higher');
   if(n.on) ensureRouter();
-  const need=n.avaxW+parseAmt('0.3',18);
+  const ad=addOnsNums();
+  if(ad.factory&&!state.factory) throw new Error('Deploy the launch factory first (Launch tab, Add-ons)');
+  if(ad.casino&&!(ad.casinoBps>0&&ad.casinoBps<=1000)) throw new Error('Casino max bet must be between 0.01% and 10% of the house');
+  if(ad.miners&&!(ad.minMax>0n&&ad.minMax<=500n)) throw new Error('Max miners must be between 1 and 500');
+  if(ad.ls&&!n.on) throw new Error('The long/short market needs the LFJ pool: tick Seed LFJ pool');
+  if(ad.ls&&!(ad.lsBps>0&&ad.lsBps<=8000)) throw new Error('Long/short max exposure must be between 0.01% and 80%');
+  const extra=ad.casinoFund+ad.minFund+ad.lsFund;
+  if(n.lpW+n.rwW+extra>sup*10n**18n) throw new Error('Pool, rewards and house funding together exceed the total supply');
+  const addonCount=[ad.casino,ad.miners,ad.ls].filter(Boolean).length;
+  const need=n.avaxW+parseAmt('0.3',18)+parseAmt(String(0.1*addonCount),18);
   if((bals.native||0n)<need) throw new Error('Not enough AVAX: needs about '+fmt(need,18,2)+' including gas');
 
-  const ctx={token:null,pair:null,pool:null,locked:false,renounced:false};
-  const plan=[{label:'Deploy token',run:async()=>{ctx.token=await deployTokenRaw(name,sym,sup,cap)}}];
+  const ctx={token:null,pair:null,pool:null,locked:false,renounced:false,casino:null,miners:null,ls:null};
+  const plan=[ad.factory
+    ?{label:'Create token + add-ons (factory)',run:async()=>{const r=await deployViaFactoryRaw(name,sym,sup,cap,ad,window.pendingImg);ctx.token=r.token;ctx.casino=r.casino;ctx.miners=r.miners}}
+    :{label:'Deploy token',run:async()=>{ctx.token=await deployTokenRaw(name,sym,sup,cap)}}];
   if(n.on) plan.push({label:'Seed LFJ pool with liquidity',run:async()=>{await lqAdd(tokenOf(ctx.token),n.lpW,n.avaxW);ctx.pair=(await pairData(ctx.token)).pair}});
   if(n.on&&burn) plan.push({label:'Lock LP (burn)',soft:true,run:async()=>{await lockLP(tokenOf(ctx.token));ctx.locked=true}});
   if(n.st) plan.push({label:'Deploy staking pool',run:async()=>{ctx.pool=await deployPoolRaw(ctx.token,apr,mech)}});
   if(n.st&&n.rwW>0n) plan.push({label:'Fund reward reserve',run:async()=>{await sendTx('Fund staking rewards',wr(ctx.token,ERC20_ABI).transfer(ctx.pool,n.rwW))}});
+  if(ad.casino&&!ad.factory) plan.push({label:'Deploy casino',run:async()=>{ctx.casino=await deployCasinoRaw(ctx.token,ad.casinoBps)}});
+  if(ad.casino&&ad.casinoFund>0n) plan.push({label:'Fund casino house',run:async()=>{await fundRaw(ctx.token,ctx.casino,ad.casinoFund,'Fund casino house',CG_ABI)}});
+  if(ad.miners&&!ad.factory) plan.push({label:'Deploy miner NFTs',run:async()=>{ctx.miners=await deployMinersRaw(tokenOf(ctx.token),ad.minPrice,ad.minMax,ad.minDaily)}});
+  if(ad.miners&&ad.minFund>0n) plan.push({label:'Fund miner reward pool',run:async()=>{await fundRaw(ctx.token,ctx.miners,ad.minFund,'Fund miner rewards',MN_ABI)}});
+  if(ad.ls) plan.push({label:'Deploy long/short market',run:async()=>{if(!ctx.pair) throw new Error('no LFJ pair was created');ctx.ls=await deployLsRaw(ctx.token,ctx.pair,ad.lsDepth,ad.lsBps)}});
+  if(ad.ls&&ad.lsFund>0n) plan.push({label:'Fund long/short house',run:async()=>{await fundRaw(ctx.token,ctx.ls,ad.lsFund,'Fund long/short house',LS_ABI)}});
   if(renounce) plan.push({label:'Renounce ownership',run:async()=>{await sendTx('Renounce ownership',wr(ctx.token,TOKEN2_ABI).renounceOwnership());ctx.renounced=true}});
 
   const status=plan.map(()=>'todo');
@@ -2078,7 +2509,7 @@ async function runLaunch(){
   }
   if(ctx.token){
     state.launches=state.launches||[];
-    state.launches.unshift({name,sym,time:new Date().toLocaleString(),token:ctx.token,pair:ctx.pair,pool:ctx.pool,locked:ctx.locked,renounced:ctx.renounced});
+    state.launches.unshift({name,sym,time:new Date().toLocaleString(),token:ctx.token,pair:ctx.pair,pool:ctx.pool,locked:ctx.locked,renounced:ctx.renounced,casino:ctx.casino,miners:ctx.miners,ls:ctx.ls});
     save();renderLaunches();renderPoolCards();renderPort();
     $('tradeTok').value=ctx.token;
   }
