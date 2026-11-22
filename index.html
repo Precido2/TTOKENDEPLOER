@@ -114,6 +114,15 @@ input[type=checkbox]{width:auto;accent-color:var(--acc)}
 .mn-art{aspect-ratio:1;border-radius:12px;overflow:hidden;margin-bottom:10px;display:grid;place-items:center;background:#0b0b0b}
 .mn-art img{width:100%;height:100%;object-fit:cover;display:block}
 .mn-ph{width:100%;height:100%;display:grid;place-items:center;font-weight:800;color:#fff}
+.dx-back{margin-bottom:12px}
+.dx-hero{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:14px;background:linear-gradient(120deg,#2a1418,#101010 55%,#131a26)}
+.dx-id{display:flex;align-items:center;gap:14px}.dx-id h2{font-size:24px}
+.dx-price{text-align:right}.dx-price b{display:block;font-size:26px}
+.dx-acts{display:flex;gap:8px;flex-wrap:wrap}
+.dx-tiles{margin-bottom:14px}
+.dx-main{display:grid;grid-template-columns:1.7fr 1fr;gap:16px;align-items:start}
+.dx-h{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--mute);margin:2px 0 6px}
+@media(max-width:900px){.dx-main{grid-template-columns:1fr}.dx-price{text-align:left}}
 /* table */
 .tablewrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:13px}
@@ -1223,51 +1232,53 @@ async function pairData(tok){
   return pd;
 }
 const priceOf=pd=>(pd&&pd.pair)?pd.price:null;
-async function fetchPairLogs(pair){
-  // public RPCs cap eth_getLogs ranges, so scan in 2,000-block chunks (newest first), a few at a time.
-  // Failed chunks are retried and counted, never silently treated as "no swaps".
-  const latest=await readP.getBlockNumber();
-  const CH=2000,MAXCH=50,starts=[];
+const withTimeout=(p,ms,msg)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error(msg)),ms))]);
+// Scans swap history newest-first within a time budget, so the page never waits on a slow RPC indefinitely.
+async function fetchPairLogs(pair,budgetMs=12000){
+  const started=Date.now();
+  const latest=await withTimeout(readP.getBlockNumber(),6000,'RPC timed out');
+  const CH=2000,MAXCH=40,starts=[];
   for(let i=0;i<MAXCH;i++){const to=latest-i*CH;if(to<0) break;starts.push([Math.max(0,to-CH+1),to])}
-  const out=[];let failed=0,lastErr='';
+  const out=[];let failed=0,done=0,lastErr='';
   const getChunk=async([a,b])=>{
-    for(let t=0;t<3;t++){
-      try{return await readP.getLogs({address:pair,fromBlock:a,toBlock:b})}
-      catch(e){lastErr=String(e.shortMessage||e.info?.error?.message||e.message||e);await new Promise(r=>setTimeout(r,700*(t+1)))}
+    for(let t=0;t<2;t++){
+      try{return await withTimeout(readP.getLogs({address:pair,fromBlock:a,toBlock:b}),6000,'timed out')}
+      catch(e){lastErr=String(e.shortMessage||e.message||e)}
     }
     failed++;return null;
   };
-  for(let i=0;i<starts.length;i+=4){
-    const batch=await Promise.all(starts.slice(i,i+4).map(getChunk));
+  for(let i=0;i<starts.length&&Date.now()-started<budgetMs;i+=4){
+    const batch=await Promise.all(starts.slice(i,i+4).map(async c=>{const r=await getChunk(c);done++;return r}));
     batch.forEach(x=>{if(x) out.push(...x)});
   }
   out.sort((x,y)=>x.blockNumber-y.blockNumber);
-  return {logs:out,latest,scanned:starts.length*CH,failed,chunks:starts.length,lastErr};
+  return {logs:out,latest,scanned:done*CH,failed,chunks:done,lastErr};
 }
-async function loadMarket(tok,host=host){
+async function loadMarket(tok,host=$('market')){
   const id=++mkId,t=tokenOf(tok);
   host.innerHTML='<div class="skel" style="width:40%"></div><div class="skel" style="height:200px"></div><div class="skel"></div>';
   try{
-    const pd=await pairData(tok);
+    const pd=await withTimeout(pairData(tok),12000,'Pool lookup timed out');
     if(id!==mkId) return;
     if(!pd.pair){
       chartPts=[];
       host.innerHTML=mkEmpty(`No ${esc(t.sym)}/AVAX pool yet.`)+`<div style="text-align:center"><button class="btn sm" id="mkCreate">Create pool</button></div>`;
-      $('mkCreate').onclick=()=>openLiq(tok,'add');return;
+      host.querySelector('#mkCreate').onclick=()=>openLiq(tok,'add');return;
     }
     pdCache[K(tok)]=pd;
-    const price=priceOf(pd,t.dec);
-    const {logs,latest,scanned,failed,chunks,lastErr}=await fetchPairLogs(pd.pair);fetchedRange=scanned;
-    if(failed) log('Swap history: '+failed+' of '+chunks+' RPC reads failed ('+lastErr.slice(0,160)+')','err');
+    const price=priceOf(pd);
+    paintMarket(host,tok,pd,price,{loading:true});
+    let hist;
+    try{hist=await fetchPairLogs(pd.pair)}catch(e){hist={logs:[],scanned:0,failed:1,chunks:1,lastErr:String(e.message||e)}}
     if(id!==mkId) return;
-    let pts=[],trades=[];
-    const MASK=(1n<<128n)-1n;
-    for(const l of logs){
+    fetchedRange=hist.scanned;
+    const MASK=(1n<<128n)-1n;let pts=[],trades=[];
+    for(const l of hist.logs){
       let ev;try{ev=PAIR_EVT.parseLog({topics:l.topics,data:l.data})}catch(e){continue}
       if(!ev||ev.name!=='Swap') continue;
-      const id=Number(ev.args[2]),inA=BigInt(ev.args[3]),outA=BigInt(ev.args[4]);
+      const bid=Number(ev.args[2]),inA=BigInt(ev.args[3]),outA=BigInt(ev.args[4]);
       const inX=inA&MASK,inY=inA>>128n,outX=outA&MASK,outY=outA>>128n;
-      const p=avaxPerTok(id,pd.binStep,pd.tokIsX,t.dec);
+      const p=avaxPerTok(bid,pd.binStep,pd.tokIsX,t.dec);
       const tokIn=pd.tokIsX?inX:inY,avIn=pd.tokIsX?inY:inX,tokOut=pd.tokIsX?outX:outY,avOut=pd.tokIsX?outY:outX;
       const buy=tokOut>0n;
       const tr={b:l.blockNumber,tx:l.transactionHash,buy,dec:t.dec,tok:buy?tokOut:tokIn,av:buy?avIn:avOut};
@@ -1276,25 +1287,33 @@ async function loadMarket(tok,host=host){
     }
     if(pts.length>400){const step=Math.ceil(pts.length/400);pts=pts.filter((_,i)=>i%step===0||i===pts.length-1)}
     trades=trades.slice(-10).reverse();
-    const chg=pts.length>1?(pts[pts.length-1].p/pts[0].p-1)*100:null;
-    const tvl=Number(ethers.formatEther(pd.avaxRes))+Number(ethers.formatUnits(pd.tokRes,t.dec))*(price||0);
-    host.innerHTML=`
-      <div class="mkhead"><div class="tcell">${pairAv(t)}<div><b>${esc(t.sym)} / AVAX</b><small>${esc(t.name)}</small></div></div>
-        <div class="mkprice"><b>${price==null?'—':price.toPrecision(5)} AVAX</b>${chg==null?'':`<span class="${chg>=0?'ok':'err'}">${chg>=0?'+':''}${chg.toFixed(2)}%</span>`}</div></div>
-      <div class="chartbox"><canvas id="chart"></canvas><div class="tip hidden" id="chTip"></div></div>
-      <div class="mkleg"><span class="ok">▲ buys</span><span class="err">▼ sells</span><span class="dim">bars = volume in AVAX</span><span class="dim">${trades.length} swaps · ${Math.round(fetchedRange/1800)}h scanned${failed?` · <span class="err">${failed}/${chunks} reads failed</span>`:''}</span></div>
-      <div class="mkstats"><div><span>TVL (AVAX)</span><b>${tvl.toLocaleString(undefined,{maximumFractionDigits:2})}</b></div>
-        <div><span>${esc(t.sym)} reserve</span><b>${fmt(pd.tokRes,t.dec,2)}</b></div>
-        <div><span>AVAX reserve</span><b>${fmt(pd.avaxRes,18,3)}</b></div>
-        <div><span>Pair</span><a class="mono" href="${FUJI.explorer}/address/${pd.pair}" target="_blank">${short(pd.pair)} ↗</a></div></div>
-      <h3 style="font-size:14px;margin:6px 0">Recent swaps</h3>
-      ${trades.length?`<table><tbody>${trades.map(x=>`<tr><td class="${x.buy?'ok':'err'}">${x.buy?'Buy':'Sell'}</td><td>${fmt(x.tok,t.dec,4)} ${esc(t.sym)}</td><td class="r">${fmt(x.av,18,4)} AVAX</td><td class="r dim"><a href="${FUJI.explorer}/tx/${x.tx}" target="_blank">~${ago((latest-x.b)*2)} ago</a></td></tr>`).join('')}</tbody></table>`:'<div class="dim">No swaps found in recent blocks.</div>'}
-      <div class="actions"><button class="btn sm ghost" id="mkAdd">Add liquidity</button></div>`;
-    $('mkAdd').onclick=()=>openLiq(tok,'add');
-    setupChart(pts,host);
+    if(hist.failed) log(`Swap history: ${hist.failed} of ${hist.chunks} RPC reads failed (${hist.lastErr.slice(0,160)})`,'err');
+    chartPts=pts;
+    paintMarket(host,tok,pd,price,{loading:false,pts,trades,hist});
   }catch(e){
-    if(id===mkId) host.innerHTML=mkEmpty('Could not load market data. Check the router in Settings.');
+    if(id===mkId) host.innerHTML=mkEmpty('Could not load market data: '+esc(String(e.shortMessage||e.message||e).slice(0,140)));
   }
+}
+function paintMarket(host,tok,pd,price,st){
+  const t=tokenOf(tok),{loading,pts=[],trades=[],hist}=st;
+  const chg=pts.length>1?(pts[pts.length-1].p/pts[0].p-1)*100:null;
+  const tvl=Number(ethers.formatEther(pd.avaxRes))+Number(ethers.formatUnits(pd.tokRes,t.dec))*(price||0);
+  const scanInfo=loading?'loading swap history…':`${trades.length} swaps · ${Math.round((hist?.scanned||0)/1800)}h scanned${hist?.failed?` · <span class="err">${hist.failed}/${hist.chunks} reads failed</span>`:''}`;
+  const table=trades.length?`<table><tbody>${trades.map(x=>`<tr><td class="${x.buy?'ok':'err'}">${x.buy?'Buy':'Sell'}</td><td>${fmt(x.tok,t.dec,4)} ${esc(t.sym)}</td><td class="r">${fmt(x.av,18,4)} AVAX</td><td class="r dim"><a href="${FUJI.explorer}/tx/${x.tx}" target="_blank">tx ↗</a></td></tr>`).join('')}</tbody></table>`:'<div class="dim">No swaps found in the scanned blocks yet.</div>';
+  host.innerHTML=`
+    <div class="mkhead"><div class="tcell">${pairAv(t)}<div><b>${esc(t.sym)} / AVAX</b><small>${esc(t.name)}</small></div></div>
+      <div class="mkprice"><b>${price==null?'—':price.toPrecision(5)} AVAX</b>${chg==null?'':`<span class="${chg>=0?'ok':'err'}">${chg>=0?'+':''}${chg.toFixed(2)}%</span>`}</div></div>
+    <div class="chartbox">${loading?'<div class="empty" style="padding:90px 20px">Loading swap history…</div>':'<canvas id="chart"></canvas><div class="tip hidden" id="chTip"></div>'}</div>
+    <div class="mkleg"><span class="ok">▲ buys</span><span class="err">▼ sells</span><span class="dim">bars = volume in AVAX</span><span class="dim">${scanInfo}</span></div>
+    <div class="mkstats"><div><span>TVL (AVAX)</span><b>${tvl.toLocaleString(undefined,{maximumFractionDigits:2})}</b></div>
+      <div><span>${esc(t.sym)} reserve</span><b>${fmt(pd.tokRes,t.dec,2)}</b></div>
+      <div><span>AVAX reserve</span><b>${fmt(pd.avaxRes,18,3)}</b></div>
+      <div><span>Pair</span><a class="mono" href="${FUJI.explorer}/address/${pd.pair}" target="_blank">${short(pd.pair)} ↗</a></div></div>
+    <h3 style="font-size:14px;margin:6px 0">Recent swaps</h3>
+    ${loading?'<div class="dim">Loading…</div>':table}
+    <div class="actions"><button class="btn sm ghost" id="mkAdd">Add liquidity</button></div>`;
+  host.querySelector('#mkAdd').onclick=()=>openLiq(tok,'add');
+  if(!loading) setupChart(pts,host);
 }
 function drawChart(cv,pts,hi){
   const dpr=window.devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;
@@ -2399,36 +2418,47 @@ async function openDexToken(addr){
   const t=tokenOf(addr);
   if(!t){dxSelected=null;return renderDex()}
   $('dxList').classList.add('hidden');$('dxDetail').classList.remove('hidden');
-  $('dxDetail').innerHTML=`<div class="row" style="margin-bottom:14px"><button class="btn ghost sm" id="dxBack">← All tokens</button></div>
-    <div class="grid2" style="grid-template-columns:1.6fr 1fr;align-items:start">
-      <div class="card" id="dxMarket"></div>
-      <div class="card" id="dxInfo"><div class="skel" style="height:200px"></div></div>
-    </div>`;
-  $('dxBack').onclick=()=>{dxSelected=null;renderDex()};
   const dec=t.dec||18;
   const mm=(state.miners||[]).find(m=>K(m.token)===K(addr));
-  loadMarket(addr,$('dxMarket'));
-  const c=rd(addr,TOKEN2_ABI);
-  const [sup,cap,burned,owner,paused]=await Promise.all([c.totalSupply(),c.cap().catch(()=>null),c.totalBurned().catch(()=>null),c.owner().catch(()=>null),c.paused().catch(()=>null)]);
-  const pd=state.verified?await pairData(addr).catch(()=>({pair:null})):{pair:null};
-  if(dxSelected!==addr) return;
-  const kv=(l,v)=>`<div class="kv"><span>${l}</span><span>${v}</span></div>`;
-  const link=(a,label)=>`<a href="${FUJI.explorer}/address/${a}" target="_blank">${label} ↗</a>`;
-  $('dxInfo').innerHTML=`<div class="tcell" style="margin-bottom:12px">${av(t,'lg')}<div><h2>${esc(t.name)}</h2><span class="dim">${esc(t.sym)}</span></div></div>
-    ${kv('Total supply',fmt(sup,dec,2)+' '+esc(t.sym))}
-    ${kv('Max cap',cap==null?'n/a':(cap>0n?fmt(cap,dec,2):'Fixed supply'))}
-    ${kv('Burned',burned==null?'n/a':fmt(burned,dec,2))}
-    ${kv('Transfers',paused==null?'n/a':(paused?'<span class="err">Paused</span>':'<span class="ok">Live</span>'))}
-    ${kv('Owner',owner==null?'n/a (older token)':short(owner))}
-    ${kv('Launched',esc(t.time||'—'))}
-    ${kv('Token contract',link(addr,short(addr)))}
-    ${kv('Pool',pd.pair?link(pd.pair,short(pd.pair)):'<span class="dim">none yet</span>')}
-    ${mm?kv('Miner collection',link(mm.addr,short(mm.addr))):''}
-    <div class="actions"><button class="btn sm" id="dxBuy">Buy / sell</button><button class="btn sm ghost" id="dxLiq">Add liquidity</button>${mm?'<button class="btn sm ghost" id="dxMine">Mining</button>':''}</div>`;
+  $('dxDetail').innerHTML=`
+    <button class="btn ghost sm dx-back" id="dxBack">← All tokens</button>
+    <div class="dx-hero card">
+      <div class="dx-id">${av(t,'lg')}<div><h2>${esc(t.name)}</h2><span class="dim">${esc(t.sym)} · Avalanche Fuji</span></div></div>
+      <div class="dx-price"><span class="dim">Price</span><b id="dxPrice">…</b></div>
+      <div class="dx-acts"><button class="btn sm" id="dxBuy">Buy / sell</button><button class="btn sm ghost" id="dxLiq">Add liquidity</button>${mm?'<button class="btn sm ghost" id="dxMine">Mining</button>':''}</div>
+    </div>
+    <div class="grid4 dx-tiles" id="dxTiles">${['Liquidity','Market cap (est.)','Total supply','Burned'].map(l=>`<div class="stat"><span>${l}</span><b>…</b></div>`).join('')}</div>
+    <div class="dx-main">
+      <div class="card" id="dxMarket"></div>
+      <div class="card" id="dxInfo"><div class="skel" style="height:260px"></div></div>
+    </div>`;
+  $('dxBack').onclick=()=>{dxSelected=null;renderDex()};
   $('dxBuy').onclick=()=>{sw.to=addr;show('swap')};
   $('dxLiq').onclick=()=>run(async()=>openLiq(addr,'add'));
   if(mm) $('dxMine').onclick=()=>{$('mnTok').value=addr;show('mine')};
-}
+  loadMarket(addr,$('dxMarket'));
+  const c=rd(addr,TOKEN2_ABI);
+  const [sup,cap,burned,owner,paused,pd]=await Promise.all([c.totalSupply(),c.cap().catch(()=>null),c.totalBurned().catch(()=>null),c.owner().catch(()=>null),c.paused().catch(()=>null),state.verified?pairData(addr).catch(()=>({pair:null})):Promise.resolve({pair:null})]);
+  if(dxSelected!==addr) return;
+  const price=pd.pair?priceOf(pd):null;
+  const liq=pd.pair?Number(ethers.formatEther(pd.avaxRes))+Number(ethers.formatUnits(pd.tokRes,dec))*(price||0):null;
+  const mcap=price!=null?Number(ethers.formatUnits(sup,dec))*price:null;
+  const tile=(l,v)=>`<div class="stat"><span>${l}</span><b>${esc(v)}</b></div>`;
+  $('dxPrice').textContent=price==null?'No pool yet':price.toPrecision(5)+' AVAX';
+  $('dxTiles').innerHTML=tile('Liquidity',liq==null?'—':liq.toLocaleString(undefined,{maximumFractionDigits:2})+' AVAX')+tile('Market cap (est.)',mcap==null?'—':mcap.toLocaleString(undefined,{maximumFractionDigits:2})+' AVAX')+tile('Total supply',fmt(sup,dec,0)+' '+t.sym)+tile('Burned',burned==null?'n/a':fmt(burned,dec,0)+' '+t.sym);
+  const kv=(l,v)=>`<div class="kv"><span>${l}</span><span>${v}</span></div>`;
+  const link=(a,label)=>`<a href="${FUJI.explorer}/address/${a}" target="_blank">${label} ↗</a>`;
+  $('dxInfo').innerHTML=`
+    <div class="dx-h">Token</div>
+    ${kv('Max cap',cap==null?'n/a':(cap>0n?fmt(cap,dec,2):'Fixed supply'))}
+    ${kv('Transfers',paused==null?'n/a':(paused?'<span class="err">Paused</span>':'<span class="ok">Live</span>'))}
+    ${kv('Owner',owner==null?'n/a (older token)':short(owner))}
+    ${kv('Launched',esc(t.time||'—'))}
+    <div class="dx-h" style="margin-top:16px">Contracts</div>
+    ${kv('Token',link(addr,short(addr)))}
+    ${kv('Pool',pd.pair?link(pd.pair,short(pd.pair)):'<span class="dim">none yet</span>')}
+    ${mm?kv('Miner collection',link(mm.addr,short(mm.addr))):''}`;
+};
 $('dxSearch').oninput=()=>drawDexList();
 $('dxRefresh').onclick=()=>{dxSelected=null;run(renderDex)};
 
