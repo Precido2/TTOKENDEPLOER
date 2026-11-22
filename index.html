@@ -606,6 +606,10 @@ input:focus{border-color:#ff6a1a;box-shadow:0 0 0 3px rgba(255,106,26,.18)}
   <label>LFJ LBRouter V2.2 (Fuji, fixed)</label>
   <input id="router" class="mono" readonly>
   <button class="btn" id="verifyRouter" style="width:100%;margin-top:10px">Check contracts on-chain</button>
+  <label style="margin-top:18px">Fuji RPC URL (optional, your own endpoint)</label>
+  <input id="rpcUrl" class="mono" placeholder="https://…">
+  <div class="row" style="margin-top:8px"><button class="btn sm" id="rpcSave">Save</button><button class="btn ghost sm" id="rpcReset">Use default</button></div>
+  <p class="dim" style="font-size:12px">Stored only in this browser. Reload after saving. Never paste a secret key into a public page or chat: anyone who sees a URL with a key can use it.</p>
   <p id="routerStatus" class="dim"></p>
   <label style="margin-top:16px">Slippage tolerance</label>
   <div class="row" id="slipPresets"><button class="chip" data-s="0.1">0.1%</button><button class="chip" data-s="0.5">0.5%</button><button class="chip" data-s="1">1%</button><button class="chip" data-s="3">3%</button><input id="slip" type="text" inputmode="decimal" style="width:80px" placeholder="custom"></div>
@@ -648,7 +652,7 @@ input:focus{border-color:#ff6a1a;box-shadow:0 0 0 3px rgba(255,106,26,.18)}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
 <script>
-const FUJI={chainId:43113,hex:'0xa869',name:'Avalanche Fuji Testnet',rpc:['https://api.avax-test.network/ext/bc/C/rpc'],currency:{name:'AVAX',symbol:'AVAX',decimals:18},explorer:'https://testnet.snowtrace.io'};
+const FUJI={chainId:43113,hex:'0xa869',name:'Avalanche Fuji Testnet',rpc:['https://api.avax-test.network/ext/bc/C/rpc','https://avalanche-fuji-c-chain-rpc.publicnode.com','https://ava-testnet.public.blastapi.io/ext/bc/C/rpc'],currency:{name:'AVAX',symbol:'AVAX',decimals:18},explorer:'https://testnet.snowtrace.io'};
 const ERC20_ABI=['function name() view returns (string)','function symbol() view returns (string)','function decimals() view returns (uint8)','function totalSupply() view returns (uint256)','function balanceOf(address) view returns (uint256)','function allowance(address,address) view returns (uint256)','function approve(address,uint256) returns (bool)','function transfer(address,uint256) returns (bool)'];
 const STAKE_ABI=['function token() view returns (address)','function aprBps() view returns (uint256)','function totalStaked() view returns (uint256)','function staked(address) view returns (uint256)','function pendingReward(address) view returns (uint256)','function stake(uint256)','function withdraw(uint256)','function claim()'];
 const STAKE2_ABI=['function token() view returns (address)','function aprBps() view returns (uint256)','function totalStaked() view returns (uint256)','function staked(address) view returns (uint256)','function pendingReward(address) view returns (uint256)','function positionOf(address) view returns (uint256 amount,uint256 pending,uint8 tier,uint256 unlockAt,uint256 weight)','function stake(uint256,uint8)','function withdraw(uint256)','function claim()','function compound()'];
@@ -975,14 +979,17 @@ class ThrottledProvider extends ethers.JsonRpcProvider{
         catch(e){
           const text=String(e?.message||e?.shortMessage||'')+' '+String(e?.info?.error?.message||'')+' '+String(e?.info?.responseStatus||'');
           const limited=/429|rate.?limit|too many requests/i.test(text);
-          if(!limited||attempt>=5) throw e;
-          await new Promise(r=>setTimeout(r,600*2**attempt));
+          if(!limited||attempt>=1) throw e;
+          await new Promise(r=>setTimeout(r,400));
         }
       }
     }finally{this._free()}
   }
 }
-const readP=new ThrottledProvider(FUJI.rpc[0],FUJI.chainId);
+// Reads go to the first endpoint that answers. A saved RPC URL (Settings) goes first.
+// If one endpoint rate-limits or fails, the next one is tried.
+const RPC_POOL=[...new Set([localStorage.getItem('fuji-forge:rpc-url'),...FUJI.rpc].filter(Boolean))];
+const readP=new ethers.FallbackProvider(RPC_POOL.map(u=>new ThrottledProvider(u,FUJI.chainId)),FUJI.chainId,{quorum:1,stallTimeout:2500});
 const wallets=[];
 window.addEventListener('eip6963:announceProvider',e=>{if(!wallets.some(w=>w.info.uuid===e.detail.info.uuid)) wallets.push(e.detail)});
 const rd=(addr,abi)=>new ethers.Contract(addr,abi,readP);
@@ -2033,7 +2040,14 @@ function renderSettings(){
   document.querySelectorAll('#slipPresets .chip').forEach(b=>b.classList.toggle('on',+b.dataset.s===+state.slippage));
   $('routerStatus').innerHTML=state.verified?`<span class="ok">LFJ LBRouter V2.2</span> ${esc(state.router)}`:'';
 }
-function openSettings(){renderSettings();openM('setModal')}
+function openSettings(){renderSettings();$('rpcUrl').value=localStorage.getItem('fuji-forge:rpc-url')||'';openM('setModal')}
+$('rpcSave').onclick=()=>run(async()=>{
+  const v=($('rpcUrl').value||'').trim();
+  if(v&&!/^https:\/\/[^\s]+$/.test(v)) throw new Error('RPC URL must start with https:// and contain no spaces');
+  if(v) localStorage.setItem('fuji-forge:rpc-url',v); else localStorage.removeItem('fuji-forge:rpc-url');
+  toast(v?'RPC saved. Reload the page to use it.':'Default RPC will be used after reload.','ok');
+});
+$('rpcReset').onclick=()=>{localStorage.removeItem('fuji-forge:rpc-url');$('rpcUrl').value='';toast('Default RPC restored. Reload the page to apply.','ok')};
 $('setBtn').onclick=openSettings;$('bannerBtn').onclick=openSettings;
 $('verifyRouter').onclick=()=>run(async()=>{
   $('routerStatus').textContent='Checking contracts…';
