@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fuji Token & Staking Dashboard</title>
+<style>
+:root{--bg:#0b0d12;--card:#151921;--line:#262d3a;--text:#e8ecf3;--mute:#8a94a6;--acc:#e84142;--ok:#3ddc97;--err:#ff6b6b}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.5 system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text)}
+header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;padding:16px 24px;border-bottom:1px solid var(--line)}
+h1{font-size:18px;margin:0}h1 span{color:var(--acc)}
+main{max-width:980px;margin:24px auto;padding:0 16px;display:grid;gap:20px;grid-template-columns:1fr 1fr}
+@media(max-width:760px){main{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px}
+.wide{grid-column:1/-1}
+h2{font-size:15px;margin:0 0 6px}
+label{display:block;font-size:12px;color:var(--mute);margin:10px 0 4px}
+input{width:100%;padding:9px 10px;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--text);font:inherit}
+button{background:var(--acc);color:#fff;border:0;border-radius:8px;padding:9px 14px;font:inherit;font-weight:600;cursor:pointer;margin-top:12px;margin-right:6px}
+button.ghost{background:transparent;border:1px solid var(--line);color:var(--text)}
+button:disabled{opacity:.5;cursor:default}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:12px}
+.stat{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px}
+.stat b{display:block;font-size:16px;margin-top:4px;word-break:break-all}
+.muted{color:var(--mute)}
+#log{font-family:ui-monospace,monospace;font-size:12px;max-height:220px;overflow:auto;background:var(--bg);border-radius:8px;padding:10px}
+.ok{color:var(--ok)}.err{color:var(--err)}
+a{color:#7aa7ff}
+</style></head><body>
+<header>
+  <h1>Fuji <span>Token & Staking</span> Dashboard</h1>
+  <div><span id="net" class="muted">Not connected</span> <button id="connect">Connect wallet</button></div>
+</header>
+
+<main>
+  <section class="card">
+    <h2>1 · Launch a token</h2>
+    <p class="muted">Deploys an ERC-20 with a fixed supply minted to your wallet.</p>
+    <label>Token name</label><input id="tName" placeholder="My Token">
+    <label>Symbol</label><input id="tSym" placeholder="MTK">
+    <label>Total supply (whole tokens, 18 decimals)</label><input id="tSup" type="number" placeholder="1000000">
+    <button id="launch">Deploy token</button>
+  </section>
+
+  <section class="card">
+    <h2>2 · Create a staking pool</h2>
+    <p class="muted">Deploys a staking contract paying rewards in the same token.</p>
+    <label>Token address</label><input id="poolToken" placeholder="0x...">
+    <label>APR (%)</label><input id="apr" type="number" value="12" min="0" step="0.01">
+    <button id="mkPool">Deploy staking pool</button>
+  </section>
+
+  <section class="card wide">
+    <h2>3 · Manage a pool</h2>
+    <p class="muted">Stake, withdraw, claim, or fund the reward reserve. Rewards are paid from tokens sent to the pool address beyond the staked principal.</p>
+    <label>Pool address</label>
+    <div style="display:flex;gap:8px"><input id="mPool" placeholder="0x..."><button id="loadPool" class="ghost" style="margin-top:0">Load</button></div>
+    <div id="pStats" class="stats"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:8px">
+      <div>
+        <label>Amount to stake / withdraw</label><input id="amt" type="number" placeholder="100">
+        <button id="stake">Stake</button>
+        <button id="unstake" class="ghost">Withdraw</button>
+        <button id="claim" class="ghost">Claim rewards</button>
+      </div>
+      <div>
+        <label>Amount to fund rewards</label><input id="fund" type="number" placeholder="5000">
+        <button id="fundBtn" class="ghost">Fund reserve</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card wide">
+    <h2>Activity</h2>
+    <div id="log"><div class="muted">Connect a wallet to begin. The first deploy downloads the Solidity compiler (about 10 MB).</div></div>
+  </section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
+<script>
+const FUJI={chainId:43113,hex:'0xa869',name:'Avalanche Fuji Testnet',rpc:['https://api.avax-test.network/ext/bc/C/rpc'],currency:{name:'AVAX',symbol:'AVAX',decimals:18},explorer:'https://testnet.snowtrace.io'};
+const ERC20_ABI=['function symbol() view returns (string)','function balanceOf(address) view returns (uint256)','function allowance(address,address) view returns (uint256)','function approve(address,uint256) returns (bool)','function transfer(address,uint256) returns (bool)'];
+const STAKE_ABI=['function token() view returns (address)','function aprBps() view returns (uint256)','function totalStaked() view returns (uint256)','function staked(address) view returns (uint256)','function pendingReward(address) view returns (uint256)','function stake(uint256)','function withdraw(uint256)','function claim()'];
+
+const TOKEN_SRC=String.raw`pragma solidity ^0.8.26;
+contract Token {
+  string public name; string public symbol; uint8 public constant decimals = 18; uint256 public totalSupply;
+  mapping(address => uint256) public balanceOf;
+  mapping(address => mapping(address => uint256)) public allowance;
+  event Transfer(address indexed from, address indexed to, uint256 value);
+  event Approval(address indexed owner, address indexed spender, uint256 value);
+  constructor(string memory _n, string memory _s, uint256 _supply) { name = _n; symbol = _s; _mint(msg.sender, _supply * 1e18); }
+  function _mint(address to, uint256 a) internal { totalSupply += a; balanceOf[to] += a; emit Transfer(address(0), to, a); }
+  function transfer(address to, uint256 a) external returns (bool) { _move(msg.sender, to, a); return true; }
+  function approve(address s, uint256 a) external returns (bool) { allowance[msg.sender][s] = a; emit Approval(msg.sender, s, a); return true; }
+  function transferFrom(address f, address t, uint256 a) external returns (bool) {
+    uint256 al = allowance[f][msg.sender]; require(al >= a, "allowance");
+    if (al != type(uint256).max) allowance[f][msg.sender] = al - a;
+    _move(f, t, a); return true;
+  }
+  function _move(address f, address t, uint256 a) internal {
+    require(balanceOf[f] >= a, "balance"); balanceOf[f] -= a; balanceOf[t] += a; emit Transfer(f, t, a);
+  }
+}`;
+
+const STAKING_SRC=String.raw`pragma solidity ^0.8.26;
+interface IERC20 {
+  function transfer(address, uint256) external returns (bool);
+  function transferFrom(address, address, uint256) external returns (bool);
+  function balanceOf(address) external view returns (uint256);
+}
+contract Staking {
+  IERC20 public immutable token;
+  uint256 public immutable aprBps;
+  uint256 public totalStaked;
+  mapping(address => uint256) public staked;
+  mapping(address => uint256) public rewards;
+  mapping(address => uint256) public lastUpdate;
+  uint256 constant YEAR = 365 days;
+  event Staked(address indexed user, uint256 amount);
+  event Withdrawn(address indexed user, uint256 amount);
+  event Claimed(address indexed user, uint256 amount);
+  constructor(address _token, uint256 _aprBps) { token = IERC20(_token); aprBps = _aprBps; }
+  function pendingReward(address u) public view returns (uint256) {
+    return rewards[u] + staked[u] * aprBps * (block.timestamp - lastUpdate[u]) / (10000 * YEAR);
+  }
+  function _accrue(address u) internal { rewards[u] = pendingReward(u); lastUpdate[u] = block.timestamp; }
+  function stake(uint256 amt) external {
+    require(amt > 0, "zero"); _accrue(msg.sender);
+    require(token.transferFrom(msg.sender, address(this), amt), "transfer failed");
+    staked[msg.sender] += amt; totalStaked += amt; emit Staked(msg.sender, amt);
+  }
+  function withdraw(uint256 amt) external {
+    _accrue(msg.sender); require(staked[msg.sender] >= amt, "insufficient stake");
+    staked[msg.sender] -= amt; totalStaked -= amt;
+    require(token.transfer(msg.sender, amt), "transfer failed"); emit Withdrawn(msg.sender, amt);
+  }
+  function claim() external {
+    _accrue(msg.sender); uint256 r = rewards[msg.sender]; require(r > 0, "no rewards");
+    require(token.balanceOf(address(this)) >= totalStaked + r, "reserve low");
+    rewards[msg.sender] = 0;
+    require(token.transfer(msg.sender, r), "transfer failed"); emit Claimed(msg.sender, r);
+  }
+}`;
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function log(text,cls='',link){
+  const d=document.createElement('div');d.className=cls;
+  d.textContent=new Date().toLocaleTimeString()+'  '+text;
+  if(link){const a=document.createElement('a');a.href=FUJI.explorer+link;a.target='_blank';a.textContent='  view ↗';d.append(a)}
+  $('log').prepend(d);
+}
+async function run(fn){try{await fn()}catch(e){log(e.shortMessage||e.reason||e.message,'err')}}
+
+let provider,signer,account,pool=null,compiled=null,solcFn=null;
+const wallets=[];
+window.addEventListener('eip6963:announceProvider',e=>wallets.push(e.detail));
+
+async function ensureFuji(raw){
+  const cid=await raw.request({method:'eth_chainId'});
+  if(cid===FUJI.hex) return;
+  try{ await raw.request({method:'wallet_switchEthereumChain',params:[{chainId:FUJI.hex}]}); }
+  catch(e){
+    if(e.code===4902||e.code===-32603) await raw.request({method:'wallet_addEthereumChain',params:[{chainId:FUJI.hex,chainName:FUJI.name,rpcUrls:FUJI.rpc,nativeCurrency:FUJI.currency,blockExplorerUrls:[FUJI.explorer]}]});
+    else throw e;
+  }
+}
+
+async function connect(){
+  window.dispatchEvent(new Event('eip6963:requestProvider'));
+  await new Promise(r=>setTimeout(r,200));
+  const raw=wallets[0]?.provider||window.ethereum;
+  if(!raw) return log('No wallet found. Install MetaMask or Core.','err');
+  await raw.request({method:'eth_requestAccounts'});
+  await ensureFuji(raw);
+  provider=new ethers.BrowserProvider(raw);
+  signer=await provider.getSigner();
+  account=await signer.getAddress();
+  $('connect').textContent=account.slice(0,6)+'…'+account.slice(-4);
+  $('net').textContent='Fuji (43113)';
+  raw.on?.('accountsChanged',()=>location.reload());
+  raw.on?.('chainChanged',()=>location.reload());
+  log('Connected '+account,'ok');
+  if(ethers.isAddress($('mPool').value.trim())) await loadPool();
+}
+
+async function compile(){
+  if(compiled) return compiled;
+  if(!solcFn) await new Promise((res,rej)=>{
+    window.Module={onRuntimeInitialized(){solcFn=Module.cwrap('solidity_compile','string',['string','number','number']);res()}};
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/solc@0.8.26/soljson.js';
+    s.onerror=()=>rej(new Error('Could not load the Solidity compiler'));
+    document.head.append(s);
+  });
+  const input={language:'Solidity',sources:{'Token.sol':{content:TOKEN_SRC},'Staking.sol':{content:STAKING_SRC}},settings:{outputSelection:{'*':{'*':['abi','evm.bytecode.object']}}}};
+  const out=JSON.parse(solcFn(JSON.stringify(input),0,0));
+  const errs=(out.errors||[]).filter(e=>e.severity==='error');
+  if(errs.length) throw new Error(errs[0].formattedMessage);
+  compiled={token:out.contracts['Token.sol'].Token,staking:out.contracts['Staking.sol'].Staking};
+  return compiled;
+}
+
+async function deploy(c,args){
+  const f=new ethers.ContractFactory(c.abi,'0x'+c.evm.bytecode.object,signer);
+  const k=await f.deploy(...args);
+  log('Waiting for deployment…');
+  await k.waitForDeployment();
+  return k.getAddress();
+}
+
+function needWallet(){ if(!signer) throw new Error('Connect your wallet first'); }
+
+$('connect').onclick=()=>run(connect);
+
+$('launch').onclick=()=>run(async()=>{
+  needWallet();
+  const name=$('tName').value.trim(), sym=$('tSym').value.trim(), sup=Math.floor(+$('tSup').value);
+  if(!name||!sym||!(sup>0)) throw new Error('Enter a name, symbol and supply');
+  log('Compiling contracts…');
+  const c=await compile();
+  log(`Deploying ${sym}…`);
+  const addr=await deploy(c.token,[name,sym,BigInt(sup)]);
+  log(`${sym} deployed at ${addr}`,'ok','/address/'+addr);
+  $('poolToken').value=addr;
+});
+
+$('mkPool').onclick=()=>run(async()=>{
+  needWallet();
+  const tok=$('poolToken').value.trim(), apr=+$('apr').value;
+  if(!ethers.isAddress(tok)) throw new Error('Invalid token address');
+  if(!(apr>=0)) throw new Error('APR must be 0 or higher');
+  log('Compiling contracts…');
+  const c=await compile();
+  log('Deploying staking pool…');
+  const addr=await deploy(c.staking,[tok,BigInt(Math.round(apr*100))]);
+  log(`Staking pool deployed at ${addr} (${apr}% APR)`,'ok','/address/'+addr);
+  $('mPool').value=addr;
+  await loadPool();
+});
+
+async function loadPool(){
+  needWallet();
+  const addr=$('mPool').value.trim();
+  if(!ethers.isAddress(addr)) throw new Error('Invalid pool address');
+  const st=new ethers.Contract(addr,STAKE_ABI,signer);
+  const tokAddr=await st.token();
+  const tk=new ethers.Contract(tokAddr,ERC20_ABI,signer);
+  const [sym,apr,tot,mine,pend,bal,tokBal]=await Promise.all([
+    tk.symbol(),st.aprBps(),st.totalStaked(),st.staked(account),st.pendingReward(account),tk.balanceOf(account),tk.balanceOf(addr)
+  ]);
+  pool={st,tk,addr,sym};
+  const f=v=>Number(ethers.formatUnits(v,18)).toLocaleString(undefined,{maximumFractionDigits:4});
+  const reserve=tokBal>tot?tokBal-tot:0n;
+  const stat=(l,v)=>`<div class="stat"><span class="muted">${esc(l)}</span><b>${esc(v)}</b></div>`;
+  $('pStats').innerHTML=
+    stat('APR',(Number(apr)/100)+'%')+
+    stat('Total staked',f(tot)+' '+sym)+
+    stat('Reward reserve',f(reserve)+' '+sym)+
+    stat('Your stake',f(mine)+' '+sym)+
+    stat('Pending rewards',f(pend)+' '+sym)+
+    stat('Your wallet',f(bal)+' '+sym);
+  return pool;
+}
+
+async function act(label,fn){
+  await run(async()=>{
+    needWallet();
+    if(!pool) await loadPool();
+    await fn();
+    await loadPool();
+  });
+}
+
+async function send(label,txPromise){
+  const tx=await txPromise;
+  log(label+' submitted…','',"/tx/"+tx.hash);
+  await tx.wait();
+  log(label+' confirmed','ok');
+}
+
+$('loadPool').onclick=()=>run(loadPool);
+
+$('stake').onclick=()=>act('Stake',async()=>{
+  const wei=ethers.parseUnits($('amt').value||'0',18);
+  if(wei<=0n) throw new Error('Enter an amount');
+  const allowance=await pool.tk.allowance(account,pool.addr);
+  if(allowance<wei) await send('Approve '+pool.sym,pool.tk.approve(pool.addr,wei));
+  await send('Stake',pool.st.stake(wei));
+});
+
+$('unstake').onclick=()=>act('Withdraw',async()=>{
+  const wei=ethers.parseUnits($('amt').value||'0',18);
+  if(wei<=0n) throw new Error('Enter an amount');
+  await send('Withdraw',pool.st.withdraw(wei));
+});
+
+$('claim').onclick=()=>act('Claim',async()=>{
+  await send('Claim',pool.st.claim());
+});
+
+$('fundBtn').onclick=()=>act('Fund',async()=>{
+  const wei=ethers.parseUnits($('fund').value||'0',18);
+  if(wei<=0n) throw new Error('Enter an amount');
+  await send('Fund reserve',pool.tk.transfer(pool.addr,wei));
+});
+</script>
+</body></html>
