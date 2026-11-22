@@ -308,9 +308,9 @@ input:focus{border-color:#ff6a1a;box-shadow:0 0 0 3px rgba(255,106,26,.18)}
       <div class="card" id="market"></div>
     </div>
     <div class="card" id="botCard" style="margin-top:18px">
-      <div class="cardhead"><h2>Launch-token trading bot</h2><span class="tag">Manual activation</span></div>
-      <p class="sub">A dedicated bot wallet, separate from your connected Rabby/MetaMask wallet. Only funds sent to the bot-wallet address can be traded. The bot never starts automatically after reload.</p>
-      <div class="card" style="padding:14px;margin-bottom:16px;background:var(--bg)">
+      <div class="cardhead"><h2>Launch-token paper bot</h2><span class="tag">Paper mode</span></div>
+      <p class="sub">Paper mode: the bot watches live quotes and logs the buys and sells it would make. It sends no transactions and needs no funded wallet.</p>
+      <div class="card hidden" style="padding:14px;margin-bottom:16px;background:var(--bg)">
         <div class="cardhead"><b>Dedicated bot wallet · Fuji</b><span class="tag" id="botWalletState">Not created</span></div>
         <div class="fields">
           <div class="full"><label>Bot wallet address</label><div class="row"><input id="botWalletAddress" readonly placeholder="Create or unlock the bot wallet" style="flex:1"><button class="btn ghost sm" id="botCopyAddress" type="button">Copy</button></div></div>
@@ -330,8 +330,8 @@ input:focus{border-color:#ff6a1a;box-shadow:0 0 0 3px rgba(255,106,26,.18)}
         <div><label>Maximum buys per run</label><input id="botMaxBuys" inputmode="numeric" value="3"></div>
         <div><label>Check interval (seconds, 10–300)</label><input id="botInterval" inputmode="numeric" value="20"></div>
       </div>
-      <label class="chk" style="margin-top:14px"><input type="checkbox" id="botRiskAck"> I understand this bot submits real on-chain swaps, can lose funds, and may execute at a worse price than expected.</label>
-      <div class="row" style="margin-top:14px"><button class="btn" id="botStart">Start bot</button><button class="btn danger" id="botStop" disabled>Stop bot</button><span class="dim" id="botStatus">Stopped · no automated trades running</span></div>
+      <label class="chk" style="margin-top:14px"><input type="checkbox" id="botRiskAck"> I understand this is a paper-trading simulation: it sends no transactions, and its fills are estimates from live quotes.</label>
+      <div class="row" style="margin-top:14px"><button class="btn" id="botStart">Start paper bot</button><button class="btn danger" id="botStop" disabled>Stop bot</button><span class="dim" id="botStatus">Stopped · no automated trades running</span></div>
       <div class="kv"><span>Current position</span><b id="botPosition">None</b></div>
       <div class="kv"><span>Buys completed</span><b id="botCount">0</b></div>
       <div class="kv"><span>Last observed price</span><b id="botPrice">—</b></div>
@@ -1108,7 +1108,7 @@ function setWalletConnected(w){
 }
 $('vaultCreateBtn').onclick=()=>run(async()=>{
   const pw=$('vaultNewPassword').value;
-  if(pw.length<10) throw new Error('Use a password with at least 10 characters.');
+  if(pw.length<12) throw new Error('Use a password with at least 12 characters.');
   if(localStorage.getItem(VAULT_KEY)) throw new Error('A browser wallet already exists. Unlock or delete it first.');
   $('vaultCreateBtn').disabled=true;$('vaultStatus').textContent='Generating and encrypting wallet…';
   try{
@@ -1530,7 +1530,7 @@ function renderBotWallet(){
   $('botWalletLock').disabled=!botWallet;
   $('botWalletInfo').textContent=botWallet?'Dedicated wallet unlocked. Bot transactions use this wallet only. Main app wallet is unchanged.':saved?'Encrypted bot wallet found. Enter its password and unlock it.':'Create a dedicated wallet. Its encrypted keystore is stored separately from the app wallet.';
 }
-function lockBotWallet(){if(botTimer)stopBot('Bot wallet locked; bot stopped.');botWallet=null;botSigner=null;botAccount=null;renderBotWallet();}
+function lockBotWallet(){if(botTimer)stopBot('Bot wallet locked; bot stopped.');botWallet=null;botSigner=null;botAccount=null;$('botWalletPhrase').value='';renderBotWallet();}
 $('botWalletCreate').onclick=()=>run(async()=>{
   if(localStorage.getItem(BOT_VAULT_KEY))throw new Error('A bot wallet already exists. Unlock it instead.');
   const pw=$('botWalletPassword').value;if(pw.length<12)throw new Error('Use a password of at least 12 characters.');
@@ -1558,22 +1558,18 @@ $('botCopyAddress').onclick=()=>{if(!botAccount)return toast('Unlock the bot wal
 async function botSendTx(label,txPromise){const tx=await txPromise;botNote(label+' submitted · '+tx.hash);await tx.wait();botNote(label+' confirmed');return tx}
 function botRouterW(){if(!botSigner)throw new Error('Unlock the dedicated bot wallet first');return new ethers.Contract(LFJ.router,ROUTER_ABI,botSigner)}
 async function botSwapBuy(tok,avaxAmount){
+  // Paper mode: quote only, no transaction is sent.
   const q=await getQuote('native',tok.addr,avaxAmount);if(!q)throw new Error('No buy route available');
-  const min=q.out*(10000n-slipBps())/10000n;
-  const before=await rd(tok.addr,ERC20_ABI).balanceOf(botAccount);
-  await botSendTx('Bot buy '+tok.sym,botRouterW().swapExactNATIVEForTokens(min,q.path,botAccount,deadline(),{value:avaxAmount}));
-  const after=await rd(tok.addr,ERC20_ABI).balanceOf(botAccount),got=after-before;
-  if(got<=0n)throw new Error('Buy confirmed but token balance increase was not detected');return got;
+  botNote(`PAPER buy ${tok.sym}: about ${fmt(q.out,tok.dec,5)} for ${fmt(avaxAmount,18,4)} AVAX (no transaction sent)`);
+  return q.out;
 }
 async function botSwapSell(tok,amount){
+  // Paper mode: quote only, no transaction is sent.
   const q=await getQuote(tok.addr,'native',amount);if(!q)throw new Error('No sell route available');
-  const tk=new ethers.Contract(tok.addr,ERC20_ABI,botSigner);
-  if((await tk.allowance(botAccount,LFJ.router))<amount)await botSendTx('Approve bot '+tok.sym,tk.approve(LFJ.router,amount));
-  const min=q.out*(10000n-slipBps())/10000n;
-  await botSendTx('Bot sell '+tok.sym,botRouterW().swapExactTokensForNATIVE(amount,min,q.path,botAccount,deadline()));
+  botNote(`PAPER sell ${tok.sym}: about ${fmt(q.out,18,5)} AVAX (no transaction sent)`);
 }
 async function botTick(){
-  if(!botTimer||botBusy||!botSigner||!botRun.token)return;
+  if(!botTimer||botBusy||!botRun.token)return;
   botBusy=true;
   try{
     const tok=tokenOf(botRun.token);if(!tok)throw new Error('Selected token is no longer saved');
@@ -1599,8 +1595,6 @@ async function botTick(){
       const executablePrice=Number(ethers.formatEther(spend))/Number(ethers.formatUnits(buyQ.out,tok.dec));
       if(!Number.isFinite(executablePrice)||executablePrice<=0)throw new Error('Invalid executable buy price');
       if(executablePrice<=botRun.config.trigger){
-        const nativeBal=await readP.getBalance(botAccount);
-        if(nativeBal<spend+ethers.parseEther('0.015'))throw new Error('Bot wallet needs more Fuji AVAX for this buy and gas reserve');
         botNote(`Buy trigger reached using live trade-size quote: ${executablePrice.toPrecision(7)} AVAX/token. Submitting buy…`);
         const got=await botSwapBuy(tok,spend);botRun.position=got;botRun.spent=spend;botRun.entryPrice=Number(ethers.formatEther(spend))/Number(ethers.formatUnits(got,tok.dec));botRun.peakPnl=0;botRun.buys++;
         $('botPosition').textContent=fmt(got,tok.dec,5)+' '+tok.sym+' · entry '+botRun.entryPrice.toPrecision(6)+' AVAX';
@@ -1616,22 +1610,21 @@ function stopBot(message='Stopped by user.'){
   $('botStart').disabled=false;$('botStop').disabled=true;$('botStatus').textContent=message;botNote(message);
 }
 $('botStart').onclick=()=>run(async()=>{
-  ensureRouter();if(!botSigner||!botAccount)throw new Error('Create or unlock the dedicated bot wallet first. Your main connected wallet is not used by the bot.');
+  ensureRouter();
   if(botTimer)throw new Error('Bot is already running');
   if(!$('botRiskAck').checked)throw new Error('Confirm the automated-trading risk notice first');
   const addr=$('botToken').value,tok=tokenOf(addr);if(!tok)throw new Error('Choose a saved launched token');
   const cfg={trigger:Number($('botTrigger').value),spend:parseAmt($('botSpend').value,18),tp:Number($('botTP').value),sl:Number($('botSL').value),trail:Number($('botTrail').value),maxBuys:Math.floor(Number($('botMaxBuys').value)),interval:Math.floor(Number($('botInterval').value))};
   if(!(Number.isFinite(cfg.trigger)&&cfg.trigger>0&&cfg.spend>0n&&cfg.tp>0&&cfg.tp<=1000&&cfg.sl>0&&cfg.sl<=90&&Number.isFinite(cfg.trail)&&cfg.trail>=0&&cfg.trail<=90&&cfg.maxBuys>=1&&cfg.maxBuys<=50&&cfg.interval>=10&&cfg.interval<=300))throw new Error('Check trigger, spend, take-profit (0–1000%), stop-loss (0–90%), trailing stop (0–90%), max buys (1–50) and interval (10–300s).');
-  if((await readP.getBalance(botAccount))<cfg.spend+ethers.parseEther('0.015'))throw new Error('Fund the bot wallet with enough Fuji AVAX for at least one buy plus gas.');
   const pd=await pairData(tok.addr);if(!pd.pair)throw new Error('This token has no LFJ AVAX pool yet.');
   const savedPos=JSON.parse(localStorage.getItem(BOT_POSITION_KEY)||'null');
   if(savedPos?.position&&BigInt(savedPos.position)>0n&&K(savedPos.token)!==K(tok.addr))throw new Error('A different token position is saved. Select that token and manage/close it before switching.');
   if(savedPos?.position&&BigInt(savedPos.position)>0n){
-    const actual=await rd(tok.addr,ERC20_ABI).balanceOf(botAccount);if(actual<BigInt(savedPos.position))throw new Error('Saved bot position is larger than the bot wallet token balance. Check the wallet before restarting.');
+    
     botRun={token:tok.addr,buys:Number(savedPos.buys)||0,position:BigInt(savedPos.position),entryPrice:Number(savedPos.entryPrice)||0,spent:BigInt(savedPos.spent||'0'),peakPnl:Number(savedPos.peakPnl)||0,config:cfg};
   }else botRun={token:tok.addr,buys:0,position:0n,entryPrice:0,spent:0n,peakPnl:0,config:cfg};
-  $('botCount').textContent=String(botRun.buys);$('botPosition').textContent=botRun.position>0n?fmt(botRun.position,tok.dec,5)+' '+tok.sym+' · restored position':'None';$('botStart').disabled=true;$('botStop').disabled=false;$('botStatus').textContent='Running · '+tok.sym+' · bot wallet '+short(botAccount);
-  botNote('Started with dedicated bot wallet '+botAccount+'. Main wallet is not involved.');
+  $('botCount').textContent=String(botRun.buys);$('botPosition').textContent=botRun.position>0n?fmt(botRun.position,tok.dec,5)+' '+tok.sym+' · restored position':'None';$('botStart').disabled=true;$('botStop').disabled=false;$('botStatus').textContent='Paper mode · '+tok.sym;
+  botNote('Started in PAPER mode. No transactions will be sent.');
   botTimer=setInterval(botTick,cfg.interval*1000);await botTick();
 });
 $('botStop').onclick=()=>stopBot();
