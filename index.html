@@ -1267,27 +1267,45 @@ async function pairData(tok){
 const priceOf=pd=>(pd&&pd.pair)?pd.price:null;
 const withTimeout=(p,ms,msg)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error(msg)),ms))]);
 // Scans swap history newest-first within a time budget, so the page never waits on a slow RPC indefinitely.
+// Swap history is cached per pool. Later loads fetch only blocks added since the last scan,
+// and only Swap events are requested, so repeat visits cost one or two RPC calls.
+const histCache=new Map();
+const HIST_WINDOW=12000,HIST_CH=800;
 async function fetchPairLogs(pair,budgetMs=25000){
   const started=Date.now();
   const latest=await withTimeout(readP.getBlockNumber(),10000,'RPC timed out');
-  const CH=1000,MAXCH=60,starts=[];
-  for(let i=0;i<MAXCH;i++){const to=latest-i*CH;if(to<0) break;starts.push([Math.max(0,to-CH+1),to])}
+  const topic=PAIR_EVT.getEvent('Swap').topicHash;
+  const floor=Math.max(0,latest-HIST_WINDOW+1);
+  const key=K(pair),c=histCache.get(key);
+  let from=floor,base=[];
+  if(c&&c.to>=latest){from=null;base=c.logs}
+  else if(c&&c.to>=floor){from=c.to+1;base=c.logs}
+  const ranges=[];
+  if(from!==null) for(let x=from;x<=latest;x+=HIST_CH) ranges.push([x,Math.min(latest,x+HIST_CH-1)]);
   let failed=0,done=0,lastErr='';
   async function scan(x,y,depth){
-    try{return await withTimeout(readP.getLogs({address:pair,fromBlock:x,toBlock:y}),15000,'request timed out')}
+    if(Date.now()-started>budgetMs){failed++;return null}
+    try{return await withTimeout(readP.getLogs({address:pair,topics:[topic],fromBlock:x,toBlock:y}),15000,'getLogs request timed out')}
     catch(e){
       lastErr=String(e.shortMessage||e.info?.error?.message||e.message||e);
-      if(y-x>99&&depth<2&&Date.now()-started<budgetMs){const m=Math.floor((x+y)/2);return [...(await scan(x,m,depth+1)||[]),...(await scan(m+1,y,depth+1)||[])]}
+      if(y-x>199&&depth<1){
+        const m=Math.floor((x+y)/2);
+        const left=await scan(x,m,depth+1),right=await scan(m+1,y,depth+1);
+        if(left===null||right===null){failed++;return null}
+        return left.concat(right);
+      }
       failed++;return null;
     }
   }
-  const out=[];
-  for(let i=0;i<starts.length&&Date.now()-started<budgetMs;i+=3){
-    const batch=await Promise.all(starts.slice(i,i+3).map(async c=>{const r=await scan(c[0],c[1],0);done++;return r}));
-    batch.forEach(x=>{if(x) out.push(...x)});
+  const fresh=[];let complete=true;
+  for(let i=0;i<ranges.length;i+=2){
+    const batch=await Promise.all(ranges.slice(i,i+2).map(async r=>{const x=await scan(r[0],r[1],0);done++;return x}));
+    batch.forEach(x=>{if(x) fresh.push(...x);else complete=false});
   }
-  out.sort((x,y)=>x.blockNumber-y.blockNumber);
-  return {logs:out,latest,scanned:done*CH,failed,chunks:done,lastErr};
+  const logs=base.concat(fresh).filter(l=>l.blockNumber>=floor);
+  if(complete) histCache.set(key,{to:latest,logs});
+  logs.sort((x,y)=>x.blockNumber-y.blockNumber||x.index-y.index);
+  return {logs,latest,scanned:Math.min(HIST_WINDOW,latest+1),failed,chunks:ranges.length,lastErr};
 }
 async function loadMarket(tok,host=$('market')){
   const id=++mkId,t=tokenOf(tok);
