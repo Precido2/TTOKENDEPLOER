@@ -67,6 +67,8 @@ label{display:block;font-size:12px;color:var(--mute);margin-bottom:6px}
 input,select{width:100%;padding:12px 14px;background:var(--bg);border:1px solid var(--line);border-radius:12px;color:var(--text);outline:none;transition:.15s}
 input:focus{border-color:var(--acc);box-shadow:0 0 0 3px #e8414222}
 input[type=range]{padding:0;accent-color:var(--acc);box-shadow:none;border:0}
+input[type=checkbox]{width:auto;accent-color:var(--acc)}
+.chk{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--text)}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
 .seg{display:inline-flex;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:4px;margin-bottom:16px}
@@ -120,6 +122,7 @@ th.r,td.r{text-align:right}
 .mkprice{text-align:right}.mkprice b{font-size:22px;display:block}
 .chartbox{position:relative;height:240px;border:1px solid var(--line);border-radius:14px;background:#0a0e15;overflow:hidden}
 .chartbox canvas{width:100%;height:100%;display:block}
+.mkleg{display:flex;gap:14px;font-size:12px;margin:8px 0 14px;flex-wrap:wrap}
 .tip{position:absolute;top:8px;left:10px;font-size:12px;color:var(--text);background:#000a;padding:3px 8px;border-radius:8px}
 .mkstats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}
 .mkstats div{background:#0a0e15;border:1px solid var(--line);border-radius:12px;padding:10px 12px}
@@ -230,6 +233,7 @@ details summary{cursor:pointer;color:var(--mute);margin-top:16px}
         <div class="fields">
           <div class="full"><label>Token address</label><input id="poolToken" list="tokList" class="mono" placeholder="0x..."></div>
           <div class="full"><label>APR (%)</label><input id="apr" type="text" inputmode="decimal" value="12"></div>
+          <div class="full"><label>Mechanic</label><select id="mech"><option value="2">Lock tiers + compounding (recommended)</option><option value="1">Classic (flat, no lock)</option></select></div>
         </div>
         <div class="actions"><button class="btn" id="mkPool">Deploy pool</button></div>
       </div>
@@ -246,13 +250,15 @@ details summary{cursor:pointer;color:var(--mute);margin-top:16px}
         <div class="card">
           <h2>Stake or withdraw</h2><p class="sub">Staking asks for approval first if needed.</p>
           <label>Amount</label><input id="amt" type="text" inputmode="decimal" placeholder="100">
+          <div class="kv"><span>Lock</span><b id="unlockAt">—</b></div>
+          <div class="row hidden" id="tierRow" style="margin-top:8px"><button class="chip on" data-tier="0">Flexible · 1×</button><button class="chip" data-tier="1">30 days · 1.5×</button><button class="chip" data-tier="2">90 days · 2×</button></div>
           <div class="row" style="margin-top:8px"><button class="chip" id="stakeMax">Max wallet</button><button class="chip" id="wdMax">Max staked</button></div>
           <div class="actions"><button class="btn" id="stake">Stake</button><button class="btn ghost" id="unstake">Withdraw</button></div>
         </div>
         <div class="card">
           <h2>Rewards</h2><p class="sub">Claim earnings, or top up the reserve that pays them.</p>
           <div class="kv"><span>Pending (live)</span><b id="pendLive">0</b></div>
-          <button class="btn" id="claim">Claim rewards</button>
+          <div class="row"><button class="btn" id="claim">Claim rewards</button><button class="btn ghost" id="compound">Compound</button></div>
           <label style="margin-top:18px">Fund reserve amount</label>
           <div class="row"><input id="fund" type="text" inputmode="decimal" placeholder="5000" style="flex:1"><button class="btn ghost" id="fundBtn">Fund</button></div>
         </div>
@@ -269,6 +275,7 @@ details summary{cursor:pointer;color:var(--mute);margin-top:16px}
           <div><label>Token name</label><input id="tName" placeholder="Grotto Coin"></div>
           <div><label>Symbol</label><input id="tSym" placeholder="GRC"></div>
           <div class="full"><label>Total supply (whole tokens, 18 decimals)</label><input id="tSup" type="text" inputmode="numeric" placeholder="1000000"></div>
+          <div class="full"><label>Max supply cap (whole tokens; 0 = fixed supply, no minting)</label><input id="tCap" type="text" inputmode="numeric" placeholder="0"></div>
         </div>
         <div class="actions"><button class="btn" id="launch">Deploy token</button></div>
         <details><summary>View contract source</summary><pre class="src" id="srcPre"></pre><button class="btn ghost sm" id="copySrc">Copy source</button></details>
@@ -283,6 +290,42 @@ details summary{cursor:pointer;color:var(--mute);margin-top:16px}
         </div>
       </div>
     </div>
+  <div class="card" style="margin-top:16px">
+    <div class="row" style="justify-content:space-between;margin-bottom:6px"><h2>Standard launch</h2><span class="tag g">one flow</span></div>
+    <p class="sub">Deploys the token, seeds an LFJ pool, locks the liquidity, creates a staking pool and funds its rewards. Each step is saved as it completes.</p>
+    <div class="row" id="plPresets"><button class="chip on" data-pre="custom">Custom</button><button class="chip" data-pre="standard">Standard</button><button class="chip" data-pre="community">Community-first</button></div>
+    <div class="fields" style="margin-top:14px">
+      <div><label>Liquidity (% of supply)</label><input id="plPct" type="text" inputmode="decimal" value="40"></div>
+      <div><label>AVAX to seed the pool</label><input id="plAvax" type="text" inputmode="decimal" value="2"></div>
+      <div><label>Staking rewards (% of supply)</label><input id="plRew" type="text" inputmode="decimal" value="15"></div>
+      <div><label>Staking APR (%)</label><input id="plApr" type="text" inputmode="decimal" value="12"></div>
+      <div class="full"><label>Staking mechanic</label><select id="plMech"><option value="2">Lock tiers + compounding</option><option value="1">Classic</option></select></div>
+    </div>
+    <div class="grid4" id="plSum" style="margin:14px 0"></div>
+    <div class="row" style="gap:18px;flex-wrap:wrap">
+      <label class="chk"><input type="checkbox" id="plLpOn" checked> Seed LFJ pool</label>
+      <label class="chk"><input type="checkbox" id="plBurn" checked> Lock liquidity (burn LP)</label>
+      <label class="chk"><input type="checkbox" id="plStakeOn" checked> Create staking pool</label>
+      <label class="chk"><input type="checkbox" id="plRenounce"> Renounce ownership at end</label>
+    </div>
+    <div class="actions"><button class="btn" id="plGo">Launch everything</button></div>
+    <div id="plLog" style="margin-top:12px"></div>
+    <h3 style="margin:18px 0 8px;font-size:14px">Recent launches</h3>
+    <div id="plHistory"></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <div class="row" style="justify-content:space-between;margin-bottom:6px"><h2>Token tools</h2><span class="dim" id="ttStatus"></span></div>
+    <p class="sub">On-chain utilities for your tokens: burn, capped minting, pausing and ownership.</p>
+    <label>Token</label><select id="ttTok"></select>
+    <div class="grid4" id="ttStats" style="margin:14px 0"></div>
+    <div class="grid2">
+      <div><label>Burn your tokens</label><div class="row"><input id="ttBurn" type="text" inputmode="decimal" placeholder="100" style="flex:1"><button class="btn ghost" id="ttBurnBtn">Burn</button></div></div>
+      <div><label>Mint (owner): recipient and amount</label><div class="row"><input id="ttMintTo" class="mono" placeholder="0x..." style="flex:1"><input id="ttMintAmt" type="text" inputmode="decimal" placeholder="1000" style="width:110px"><button class="btn ghost" id="ttMintBtn">Mint</button></div></div>
+      <div><label>Transfers (owner)</label><div class="row"><button class="btn ghost" id="ttPause">Pause</button></div></div>
+      <div><label>Transfer ownership (owner)</label><div class="row"><input id="ttNewOwner" class="mono" placeholder="0x..." style="flex:1"><button class="btn ghost" id="ttXfer">Transfer</button></div></div>
+    </div>
+    <div class="actions"><button class="btn danger sm" id="ttRenounce">Renounce ownership</button></div>
+  </div>
   </section>
 
   <!-- PORTFOLIO -->
@@ -363,6 +406,8 @@ details summary{cursor:pointer;color:var(--mute);margin-top:16px}
 const FUJI={chainId:43113,hex:'0xa869',name:'Avalanche Fuji Testnet',rpc:['https://api.avax-test.network/ext/bc/C/rpc'],currency:{name:'AVAX',symbol:'AVAX',decimals:18},explorer:'https://testnet.snowtrace.io'};
 const ERC20_ABI=['function name() view returns (string)','function symbol() view returns (string)','function decimals() view returns (uint8)','function totalSupply() view returns (uint256)','function balanceOf(address) view returns (uint256)','function allowance(address,address) view returns (uint256)','function approve(address,uint256) returns (bool)','function transfer(address,uint256) returns (bool)'];
 const STAKE_ABI=['function token() view returns (address)','function aprBps() view returns (uint256)','function totalStaked() view returns (uint256)','function staked(address) view returns (uint256)','function pendingReward(address) view returns (uint256)','function stake(uint256)','function withdraw(uint256)','function claim()'];
+const STAKE2_ABI=['function token() view returns (address)','function aprBps() view returns (uint256)','function totalStaked() view returns (uint256)','function staked(address) view returns (uint256)','function pendingReward(address) view returns (uint256)','function positionOf(address) view returns (uint256 amount,uint256 pending,uint8 tier,uint256 unlockAt,uint256 weight)','function stake(uint256,uint8)','function withdraw(uint256)','function claim()','function compound()'];
+const TOKEN2_ABI=['function owner() view returns (address)','function paused() view returns (bool)','function cap() view returns (uint256)','function totalBurned() view returns (uint256)','function totalSupply() view returns (uint256)','function burn(uint256)','function mint(address,uint256)','function pause(bool)','function transferOwnership(address)','function renounceOwnership()'];
 /* LFJ Liquidity Book V2.2 on Fuji (official deployment) */
 const LFJ=Object.fromEntries(Object.entries({router:'0x18556DA13313f3532c54711497A8FedAC273220E',factory:'0xb43120c4745967fa9b93E79C149E66B0f2D6Fe0c',quoter:'0x9A550a522BBaDFB69019b0432800Ed17855A51C3'}).map(([k,v])=>[k,ethers.getAddress(v.toLowerCase())]));
 const ID0=8388608; // LB active id 2^23 = price 1.0
@@ -385,13 +430,41 @@ const PAIR_EVT=new ethers.Interface(['event Swap(address indexed sender,address 
 
 const TOKEN_SRC=String.raw`pragma solidity ^0.8.26;
 contract Token {
-  string public name; string public symbol; uint8 public constant decimals = 18; uint256 public totalSupply;
+  string public name; string public symbol; uint8 public constant decimals = 18;
+  uint256 public totalSupply; uint256 public totalBurned; uint256 public immutable cap;
+  address public owner; bool public paused;
   mapping(address => uint256) public balanceOf;
   mapping(address => mapping(address => uint256)) public allowance;
   event Transfer(address indexed from, address indexed to, uint256 value);
-  event Approval(address indexed owner, address indexed spender, uint256 value);
-  constructor(string memory _n, string memory _s, uint256 _supply) { name = _n; symbol = _s; _mint(msg.sender, _supply * 1e18); }
+  event Approval(address indexed owner_, address indexed spender, uint256 value);
+  event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+  event PausedSet(bool isPaused);
+  modifier onlyOwner() { require(msg.sender == owner, "not owner"); _; }
+  constructor(string memory _n, string memory _s, uint256 _supply, uint256 _cap) {
+    name = _n; symbol = _s; owner = msg.sender; cap = _cap * 1e18;
+    require(_cap == 0 || _supply * 1e18 <= cap, "supply above cap");
+    _mint(msg.sender, _supply * 1e18);
+    emit OwnershipTransferred(address(0), msg.sender);
+  }
   function _mint(address to, uint256 a) internal { totalSupply += a; balanceOf[to] += a; emit Transfer(address(0), to, a); }
+  function mint(address to, uint256 a) external onlyOwner {
+    require(cap > 0, "minting disabled"); require(totalSupply + a <= cap, "cap reached"); _mint(to, a);
+  }
+  function burn(uint256 a) external { _burn(msg.sender, a); }
+  function burnFrom(address f, uint256 a) external {
+    uint256 al = allowance[f][msg.sender]; require(al >= a, "allowance");
+    if (al != type(uint256).max) allowance[f][msg.sender] = al - a;
+    _burn(f, a);
+  }
+  function _burn(address f, uint256 a) internal {
+    require(balanceOf[f] >= a, "balance"); balanceOf[f] -= a; totalSupply -= a; totalBurned += a;
+    emit Transfer(f, address(0), a);
+  }
+  function pause(bool p) external onlyOwner { paused = p; emit PausedSet(p); }
+  function transferOwnership(address n) external onlyOwner {
+    require(n != address(0), "zero address"); emit OwnershipTransferred(owner, n); owner = n;
+  }
+  function renounceOwnership() external onlyOwner { emit OwnershipTransferred(owner, address(0)); owner = address(0); }
   function transfer(address to, uint256 a) external returns (bool) { _move(msg.sender, to, a); return true; }
   function approve(address s, uint256 a) external returns (bool) { allowance[msg.sender][s] = a; emit Approval(msg.sender, s, a); return true; }
   function transferFrom(address f, address t, uint256 a) external returns (bool) {
@@ -400,9 +473,11 @@ contract Token {
     _move(f, t, a); return true;
   }
   function _move(address f, address t, uint256 a) internal {
-    require(balanceOf[f] >= a, "balance"); balanceOf[f] -= a; balanceOf[t] += a; emit Transfer(f, t, a);
+    require(!paused, "paused"); require(balanceOf[f] >= a, "balance");
+    balanceOf[f] -= a; balanceOf[t] += a; emit Transfer(f, t, a);
   }
-}`;
+}
+`;
 
 const STAKING_SRC=String.raw`pragma solidity ^0.8.26;
 interface IERC20 {
@@ -443,6 +518,92 @@ contract Staking {
     require(token.transfer(msg.sender, r), "transfer failed"); emit Claimed(msg.sender, r);
   }
 }`;
+const STAKING2_SRC=String.raw`pragma solidity ^0.8.26;
+interface IERC20 {
+  function transfer(address, uint256) external returns (bool);
+  function transferFrom(address, address, uint256) external returns (bool);
+  function balanceOf(address) external view returns (uint256);
+}
+contract StakingV2 {
+  IERC20 public immutable token;
+  uint256 public immutable aprBps;
+  uint256 public totalStaked;
+  uint256 public totalWeight;
+  uint256 public totalRewardsPaid;
+  uint256[3] public lockSecs;
+  uint256[3] public multBps;
+  uint256 constant YEAR = 365 days;
+  struct Pos { uint256 amount; uint256 weight; uint256 rewards; uint256 last; uint256 unlockAt; uint8 tier; }
+  mapping(address => Pos) public pos;
+  event Staked(address indexed user, uint256 amount, uint8 tier, uint256 unlockAt);
+  event Withdrawn(address indexed user, uint256 amount);
+  event Claimed(address indexed user, uint256 amount);
+  event Compounded(address indexed user, uint256 amount);
+  constructor(address _token, uint256 _aprBps) {
+    token = IERC20(_token); aprBps = _aprBps;
+    lockSecs[0] = 0; lockSecs[1] = 30 days; lockSecs[2] = 90 days;
+    multBps[0] = 100; multBps[1] = 150; multBps[2] = 200;
+  }
+  function staked(address u) external view returns (uint256) { return pos[u].amount; }
+  function _pending(Pos storage p) internal view returns (uint256) {
+    return p.rewards + p.weight * aprBps * (block.timestamp - p.last) / (10000 * YEAR);
+  }
+  function pendingReward(address u) public view returns (uint256) { return _pending(pos[u]); }
+  function positionOf(address u) external view returns (uint256 amount, uint256 pending, uint8 tier, uint256 unlockAt, uint256 weight) {
+    Pos storage p = pos[u];
+    return (p.amount, _pending(p), p.tier, p.unlockAt, p.weight);
+  }
+  function reserve() external view returns (uint256) {
+    uint256 b = token.balanceOf(address(this)); return b > totalStaked ? b - totalStaked : 0;
+  }
+  function _accrue(Pos storage p) internal { p.rewards = _pending(p); p.last = block.timestamp; }
+  function _reweigh(Pos storage p) internal {
+    totalWeight -= p.weight; p.weight = p.amount * multBps[p.tier] / 100; totalWeight += p.weight;
+  }
+  function stake(uint256 amt, uint8 tier) external {
+    require(amt > 0 && tier < 3, "bad input");
+    Pos storage p = pos[msg.sender];
+    _accrue(p);
+    require(token.transferFrom(msg.sender, address(this), amt), "transfer failed");
+    uint256 unlock = block.timestamp + lockSecs[tier];
+    if (unlock > p.unlockAt) p.unlockAt = unlock;
+    if (tier > p.tier) p.tier = tier;
+    p.amount += amt; totalStaked += amt;
+    _reweigh(p);
+    emit Staked(msg.sender, amt, p.tier, p.unlockAt);
+  }
+  function withdraw(uint256 amt) external {
+    Pos storage p = pos[msg.sender];
+    require(amt > 0 && p.amount >= amt, "insufficient");
+    require(block.timestamp >= p.unlockAt, "locked");
+    _accrue(p);
+    p.amount -= amt; totalStaked -= amt;
+    if (p.amount == 0) p.tier = 0;
+    _reweigh(p);
+    require(token.transfer(msg.sender, amt), "transfer failed");
+    emit Withdrawn(msg.sender, amt);
+  }
+  function claim() external {
+    Pos storage p = pos[msg.sender];
+    _accrue(p);
+    uint256 r = p.rewards; require(r > 0, "no rewards");
+    require(token.balanceOf(address(this)) >= totalStaked + r, "reserve low");
+    p.rewards = 0; totalRewardsPaid += r;
+    require(token.transfer(msg.sender, r), "transfer failed");
+    emit Claimed(msg.sender, r);
+  }
+  function compound() external {
+    Pos storage p = pos[msg.sender];
+    _accrue(p);
+    uint256 r = p.rewards; require(r > 0, "no rewards");
+    require(token.balanceOf(address(this)) >= totalStaked + r, "reserve low");
+    p.rewards = 0; totalRewardsPaid += r;
+    p.amount += r; totalStaked += r;
+    _reweigh(p);
+    emit Compounded(msg.sender, r);
+  }
+}
+`;
 
 /* ---------- compiler runs in a Web Worker (sync wasm compile is only allowed off the main thread) ---------- */
 const WORKER_SRC=`
@@ -470,11 +631,11 @@ async function compile(){
   if(compiled) return compiled;
   log('Loading Solidity compiler (first run only)…');
   await getCompiler();
-  const input={language:'Solidity',sources:{'Token.sol':{content:TOKEN_SRC},'Staking.sol':{content:STAKING_SRC}},settings:{outputSelection:{'*':{'*':['abi','evm.bytecode.object']}}}};
+  const input={language:'Solidity',sources:{'Token.sol':{content:TOKEN_SRC},'Staking.sol':{content:STAKING_SRC},'StakingV2.sol':{content:STAKING2_SRC}},settings:{outputSelection:{'*':{'*':['abi','evm.bytecode.object']}}}};
   const out=JSON.parse(await new Promise((res,rej)=>{const id=++reqId;pending.set(id,{res,rej});worker.postMessage({id,input:JSON.stringify(input)})}));
   const errs=(out.errors||[]).filter(e=>e.severity==='error');
   if(errs.length) throw new Error(errs[0].formattedMessage);
-  return compiled={token:out.contracts['Token.sol'].Token,staking:out.contracts['Staking.sol'].Staking};
+  return compiled={token:out.contracts['Token.sol'].Token,staking:out.contracts['Staking.sol'].Staking,staking2:out.contracts['StakingV2.sol'].StakingV2};
 }
 
 /* ---------- state (persisted in localStorage; migrates from v2) ---------- */
@@ -857,7 +1018,7 @@ $('tmList').onclick=e=>{
 };
 
 /* ---------- market panel (price chart + recent swaps from pair events) ---------- */
-let mkId=0,mkTok=null,chartPts=[];
+let mkId=0,mkTok=null,chartPts=[],fetchedRange=0;
 function mkEmpty(msg){return `<div class="empty" style="padding:70px 20px"><div style="font-size:34px">📈</div><p>${msg}</p></div>`}
 function loadMarketFor(force){
   const focus=(sw.to&&sw.to!=='native')?sw.to:(sw.from&&sw.from!=='native'?sw.from:null);
@@ -909,11 +1070,17 @@ async function pairData(tok){
 }
 const priceOf=pd=>(pd&&pd.pair)?pd.price:null;
 async function fetchPairLogs(pair){
+  // public RPCs cap eth_getLogs ranges, so scan in 2,000-block chunks, several at a time
   const latest=await readP.getBlockNumber();
-  for(const sp of [200000,50000,10000,2000]){
-    try{return {logs:await readP.getLogs({address:pair,fromBlock:Math.max(0,latest-sp),toBlock:latest}),latest}}catch(e){}
+  const CH=2000,MAXCH=50,starts=[];
+  for(let i=0;i<MAXCH;i++){const to=latest-i*CH;if(to<0) break;starts.push([Math.max(0,to-CH+1),to])}
+  const out=[];
+  for(let i=0;i<starts.length;i+=5){
+    const batch=await Promise.all(starts.slice(i,i+5).map(([a,b])=>readP.getLogs({address:pair,fromBlock:a,toBlock:b}).catch(()=>[])));
+    batch.forEach(x=>out.push(...x));
   }
-  return {logs:[],latest};
+  out.sort((x,y)=>x.blockNumber-y.blockNumber);
+  return {logs:out,latest,scanned:starts.length*CH};
 }
 async function loadMarket(tok){
   const id=++mkId,t=tokenOf(tok);
@@ -928,7 +1095,7 @@ async function loadMarket(tok){
     }
     pdCache[K(tok)]=pd;
     const price=priceOf(pd,t.dec);
-    const {logs,latest}=await fetchPairLogs(pd.pair);
+    const {logs,latest,scanned}=await fetchPairLogs(pd.pair);fetchedRange=scanned;
     if(id!==mkId) return;
     let pts=[],trades=[];
     const MASK=(1n<<128n)-1n;
@@ -938,10 +1105,11 @@ async function loadMarket(tok){
       const id=Number(ev.args[2]),inA=BigInt(ev.args[3]),outA=BigInt(ev.args[4]);
       const inX=inA&MASK,inY=inA>>128n,outX=outA&MASK,outY=outA>>128n;
       const p=avaxPerTok(id,pd.binStep,pd.tokIsX,t.dec);
-      if(p) pts.push({b:l.blockNumber,p});
       const tokIn=pd.tokIsX?inX:inY,avIn=pd.tokIsX?inY:inX,tokOut=pd.tokIsX?outX:outY,avOut=pd.tokIsX?outY:outX;
       const buy=tokOut>0n;
-      trades.push({b:l.blockNumber,tx:l.transactionHash,buy,tok:buy?tokOut:tokIn,av:buy?avIn:avOut});
+      const tr={b:l.blockNumber,tx:l.transactionHash,buy,dec:t.dec,tok:buy?tokOut:tokIn,av:buy?avIn:avOut};
+      trades.push(tr);
+      if(p) pts.push({...tr,p,vol:Number(ethers.formatEther(tr.av))});
     }
     if(pts.length>400){const step=Math.ceil(pts.length/400);pts=pts.filter((_,i)=>i%step===0||i===pts.length-1)}
     trades=trades.slice(-10).reverse();
@@ -951,6 +1119,7 @@ async function loadMarket(tok){
       <div class="mkhead"><div class="tcell">${pairAv(t)}<div><b>${esc(t.sym)} / AVAX</b><small>${esc(t.name)}</small></div></div>
         <div class="mkprice"><b>${price==null?'—':price.toPrecision(5)} AVAX</b>${chg==null?'':`<span class="${chg>=0?'ok':'err'}">${chg>=0?'+':''}${chg.toFixed(2)}%</span>`}</div></div>
       <div class="chartbox"><canvas id="chart"></canvas><div class="tip hidden" id="chTip"></div></div>
+      <div class="mkleg"><span class="ok">▲ buys</span><span class="err">▼ sells</span><span class="dim">bars = volume in AVAX</span><span class="dim">${trades.length} swaps in last ~${Math.round(fetchedRange/1800)}h</span></div>
       <div class="mkstats"><div><span>TVL (AVAX)</span><b>${tvl.toLocaleString(undefined,{maximumFractionDigits:2})}</b></div>
         <div><span>${esc(t.sym)} reserve</span><b>${fmt(pd.tokRes,t.dec,2)}</b></div>
         <div><span>AVAX reserve</span><b>${fmt(pd.avaxRes,18,3)}</b></div>
@@ -970,18 +1139,30 @@ function drawChart(cv,pts,hi){
   cv.width=w*dpr;cv.height=h*dpr;
   const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
   if(pts.length<2){g.fillStyle='#8590a6';g.font='13px system-ui';g.textAlign='center';g.fillText('Not enough swap history yet',w/2,h/2);return}
-  let lo=Infinity,hv=-Infinity;
-  for(const p of pts){lo=Math.min(lo,p.p);hv=Math.max(hv,p.p)}
+  const VH=Math.round(h*.24),PH=h-VH-6;
+  let lo=Infinity,hv=-Infinity,vmax=0;
+  for(const p of pts){lo=Math.min(lo,p.p);hv=Math.max(hv,p.p);vmax=Math.max(vmax,p.vol||0)}
   if(hv===lo){hv*=1.01;lo*=0.99}
   const pad=(hv-lo)*.15;lo-=pad;hv+=pad;
-  const X=i=>i/(pts.length-1)*w,Y=v=>h-12-(v-lo)/(hv-lo)*(h-24);
+  const X=i=>i/(pts.length-1)*w,Y=v=>PH-12-(v-lo)/(hv-lo)*(PH-24);
   const col=pts[pts.length-1].p>=pts[0].p?'#34d399':'#f87171';
   g.strokeStyle='#1f2736';g.lineWidth=1;
-  for(let k=1;k<4;k++){const y=h*k/4;g.beginPath();g.moveTo(0,y);g.lineTo(w,y);g.stroke()}
-  const grad=g.createLinearGradient(0,0,0,h);grad.addColorStop(0,col+'55');grad.addColorStop(1,col+'00');
+  for(let k=1;k<4;k++){const y=PH*k/4;g.beginPath();g.moveTo(0,y);g.lineTo(w,y);g.stroke()}
+  g.beginPath();g.moveTo(0,PH+3);g.lineTo(w,PH+3);g.stroke();
+  const grad=g.createLinearGradient(0,0,0,PH);grad.addColorStop(0,col+'55');grad.addColorStop(1,col+'00');
   g.beginPath();pts.forEach((p,i)=>i?g.lineTo(X(i),Y(p.p)):g.moveTo(X(i),Y(p.p)));
   g.strokeStyle=col;g.lineWidth=2;g.lineJoin='round';g.stroke();
-  g.lineTo(w,h);g.lineTo(0,h);g.closePath();g.fillStyle=grad;g.fill();
+  g.lineTo(w,PH);g.lineTo(0,PH);g.closePath();g.fillStyle=grad;g.fill();
+  const bw=Math.max(2,Math.min(12,w/pts.length*.6));
+  pts.forEach((p,i)=>{
+    const c=p.buy?'#34d399':'#f87171',x=X(i);
+    const vh=vmax?Math.max(1,(p.vol/vmax)*(VH-8)):0;
+    g.fillStyle=c+'88';g.fillRect(x-bw/2,h-vh,bw,vh);
+    g.fillStyle=c;g.beginPath();
+    if(p.buy){const y=Y(p.p);g.moveTo(x,y-6);g.lineTo(x-4,y-1);g.lineTo(x+4,y-1)}
+    else{const y=Y(p.p);g.moveTo(x,y+6);g.lineTo(x-4,y+1);g.lineTo(x+4,y+1)}
+    g.closePath();g.fill();
+  });
   if(hi>=0){
     g.strokeStyle='#8590a6';g.setLineDash([4,4]);g.beginPath();g.moveTo(X(hi),0);g.lineTo(X(hi),h);g.stroke();g.setLineDash([]);
     g.fillStyle=col;g.beginPath();g.arc(X(hi),Y(pts[hi].p),4,0,7);g.fill();
@@ -995,7 +1176,7 @@ function setupChart(pts){
     const r=cv.getBoundingClientRect();
     const k=Math.max(0,Math.min(pts.length-1,Math.round((e.clientX-r.left)/r.width*(pts.length-1))));
     drawChart(cv,pts,k);
-    const tip=$('chTip');tip.classList.remove('hidden');tip.textContent=pts[k].p.toPrecision(5)+' AVAX · block '+pts[k].b;
+    const tip=$('chTip');tip.classList.remove('hidden');const q=pts[k];tip.textContent=(q.buy?'▲ Buy ':'▼ Sell ')+fmt(q.tok,q.dec||18,4)+' for '+fmt(q.av,18,4)+' AVAX · '+q.p.toPrecision(5)+' AVAX/token · block '+q.b;
   };
   cv.onmouseleave=()=>{drawChart(cv,pts,-1);$('chTip')?.classList.add('hidden')};
 }
@@ -1108,8 +1289,8 @@ $('lqRange').oninput=renderLq;
 document.querySelectorAll('#lqRem [data-p]').forEach(b=>b.onclick=()=>{$('lqRange').value=b.dataset.p;renderLq()});
 document.querySelectorAll('#lqTabs button').forEach(b=>b.onclick=()=>{lq.mode=b.dataset.m;renderLq()});
 $('lqTokBtn').onclick=()=>openTokenModal(a=>{lq.tok=a;lq.pd=pdCache[K(a)]||null;$('lqTokAmt').value='';$('lqAvaxAmt').value='';renderLq();refreshLqPd()},{noNative:true});
-async function lqAdd(t){
-  const tw=parseAmt($('lqTokAmt').value,t.dec),aw=parseAmt($('lqAvaxAmt').value,18);
+async function lqAdd(t,twIn,awIn){
+  const tw=twIn??parseAmt($('lqTokAmt').value,t.dec),aw=awIn??parseAmt($('lqAvaxAmt').value,18);
   if(!(tw>0n&&aw>0n)) throw new Error('Enter both token and AVAX amounts');
   const W=await wavax(),F=rd(LFJ.factory,FACTORY_ABI),keep=10000n-slipBps();
   let pd=await pairData(t.addr);
@@ -1248,7 +1429,8 @@ $('launch').onclick=()=>run(async()=>{
   if(!name||!sym||!sup||BigInt(sup)<=0n) throw new Error('Enter a name, symbol and supply');
   const c=await compile();
   log(`Deploying ${sym}…`);
-  const addr=await deploy(c.token,[name,sym,BigInt(sup)]);
+  const cap=BigInt(($('tCap').value||'0').replace(/\D/g,'')||'0');if(cap>0n&&cap<BigInt(sup)) throw new Error('Cap must be at least the supply');
+  const addr=await deploy(c.token,[name,sym,BigInt(sup),cap]);
   log(`${sym} deployed at ${addr}`,'ok','/address/'+addr);
   toast(`${sym} launched`,'ok');
   state.tokens.unshift({addr,name,sym,dec:18,owner:account,time:new Date().toLocaleDateString()});
@@ -1273,12 +1455,13 @@ $('mkPool').onclick=()=>run(async()=>{
   if(!isAddr(tokRaw)) throw new Error('Invalid token address');
   if(!(apr>=0)) throw new Error('APR must be 0 or higher');
   const tok=ethers.getAddress(tokRaw);
+  const mech=+$('mech').value;
   const c=await compile();
-  log('Deploying staking pool…');
-  const addr=await deploy(c.staking,[tok,BigInt(Math.round(apr*100))]);
+  log('Deploying '+(mech===2?'lock-tier':'classic')+' staking pool…');
+  const addr=await deploy(mech===2?c.staking2:c.staking,[tok,BigInt(Math.round(apr*100))]);
   log(`Staking pool deployed at ${addr}`,'ok','/address/'+addr);
   toast('Staking pool deployed','ok');
-  state.pools.unshift({addr,token:tok,apr,owner:account,time:new Date().toLocaleDateString()});
+  state.pools.unshift({addr,token:tok,apr,v:mech,owner:account,time:new Date().toLocaleDateString()});
   save();
   await loadPool(addr);renderPoolCards();
 });
@@ -1296,8 +1479,12 @@ async function loadPool(addrIn){
   if(!state.pools.find(p=>K(p.addr)===K(addr))){
     state.pools.unshift({addr,token:tokAddr,apr:Number(apr)/100,owner:null,time:new Date().toLocaleDateString()});save();renderPoolCards();
   }
+  const v=await rd(addr,STAKE2_ABI).positionOf(ethers.ZeroAddress).then(()=>2).catch(()=>1);
+  const pos=v===2?await rd(addr,STAKE2_ABI).positionOf(who):null;
   try{await importToken(tokAddr)}catch(e){}
-  cur={addr,tok:tokAddr,dec:d,sym,wbal,my:myStake};
+  cur={addr,tok:tokAddr,dec:d,sym,wbal,my:myStake,v,tier:pos?Number(pos[2]):0,unlockAt:pos?Number(pos[3]):0};
+  $('tierRow').classList.toggle('hidden',v!==2);$('compound').disabled=v!==2;
+  $('unlockAt').textContent=!pos?'None (classic)':(pos[0]===0n?'No position':(Number(pos[3])*1000>Date.now()?'Unlocks '+new Date(Number(pos[3])*1000).toLocaleString():'Unlocked'));
   live={pend,staked:myStake,apr,t:Date.now()};
   $('poolAddr').value=addr;$('manage').classList.remove('hidden');
   const reserve=tokBal>tot?tokBal-tot:0n;
@@ -1345,16 +1532,24 @@ async function stakeAct(fn){
 numField($('amt'));numField($('fund'));numField($('apr'));
 $('stakeMax').onclick=()=>{if(cur) $('amt').value=fmtPlain(cur.wbal,cur.dec)};
 $('wdMax').onclick=()=>{if(cur) $('amt').value=fmtPlain(cur.my,cur.dec)};
+let stakeTier=0;
+document.querySelectorAll('#tierRow .chip').forEach(b=>b.onclick=()=>{stakeTier=+b.dataset.tier;document.querySelectorAll('#tierRow .chip').forEach(x=>x.classList.toggle('on',x===b))});
+const posC=addr=>wr(addr,cur.v===2?STAKE2_ABI:STAKE_ABI);
 $('stake').onclick=()=>stakeAct(async addr=>{
   const wei=parseAmt($('amt').value,cur.dec);if(wei<=0n) throw new Error('Enter an amount');
   await ensureAllowance(cur.tok,addr,wei);
-  await sendTx('Stake',wr(addr,STAKE_ABI).stake(wei));
+  await sendTx('Stake',cur.v===2?posC(addr).stake(wei,stakeTier):posC(addr).stake(wei));
 });
 $('unstake').onclick=()=>stakeAct(async addr=>{
   const wei=parseAmt($('amt').value,cur.dec);if(wei<=0n) throw new Error('Enter an amount');
-  await sendTx('Withdraw',wr(addr,STAKE_ABI).withdraw(wei));
+  if(cur.v===2&&cur.unlockAt*1000>Date.now()) throw new Error('Locked until '+new Date(cur.unlockAt*1000).toLocaleString());
+  await sendTx('Withdraw',posC(addr).withdraw(wei));
 });
-$('claim').onclick=()=>stakeAct(async addr=>{await sendTx('Claim rewards',wr(addr,STAKE_ABI).claim())});
+$('claim').onclick=()=>stakeAct(async addr=>{await sendTx('Claim rewards',posC(addr).claim())});
+$('compound').onclick=()=>stakeAct(async addr=>{
+  if(cur.v!==2) throw new Error('Compounding needs a lock-tier pool');
+  await sendTx('Compound',wr(addr,STAKE2_ABI).compound());
+});
 $('fundBtn').onclick=()=>stakeAct(async addr=>{
   const wei=parseAmt($('fund').value,cur.dec);if(wei<=0n) throw new Error('Enter an amount');
   await sendTx('Fund reserve',wr(cur.tok,ERC20_ABI).transfer(addr,wei));
@@ -1428,13 +1623,156 @@ function show(view){
   if(view==='pools'){renderPools();loadPools()}
   if(view==='earn') renderPoolCards();
   if(view==='port'){renderPort();loadPools()}
+  if(view==='launch') run(renderTT);
   window.scrollTo(0,0);
 }
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>show(b.dataset.view));
 window.addEventListener('hashchange',()=>show(location.hash.slice(1)));
 
+/* ---------- standard launch pipeline ---------- */
+const DEAD='0x000000000000000000000000000000000000dEaD';
+LBPAIR_ABI.push('function safeBatchTransferFrom(address from,address to,uint256[] ids,uint256[] amounts,bytes data)');
+const PRESETS={
+  standard:{pct:40,avax:2,rew:15,apr:12,burn:true,stake:true,ren:false},
+  community:{pct:60,avax:1,rew:25,apr:10,burn:true,stake:true,ren:true}
+};
+function plNums(){
+  const sup=BigInt((($('tSup').value||'').replace(/\D/g,''))||'0');
+  const lpPct=Math.max(0,+$('plPct').value||0),rwPct=Math.max(0,+$('plRew').value||0);
+  const on=$('plLpOn').checked,st=$('plStakeOn').checked;
+  const lpW=on?sup*10n**18n*BigInt(Math.round(lpPct*100))/10000n:0n;
+  const rwW=st?sup*10n**18n*BigInt(Math.round(rwPct*100))/10000n:0n;
+  return {sup,lpW,rwW,avaxW:parseAmt($('plAvax').value,18),lpPct,rwPct,on,st};
+}
+function plPreview(){
+  const n=plNums();
+  const price=n.lpW>0n&&n.avaxW>0n?Number(ethers.formatEther(n.avaxW))/Number(ethers.formatEther(n.lpW)):null;
+  const kept=n.sup*10n**18n-n.lpW-n.rwW;
+  const stat=(l,v)=>`<div class="stat"><span>${l}</span><b>${v}</b></div>`;
+  $('plSum').innerHTML=stat('Pool tokens',n.on?fmt(n.lpW,18,0):'—')+stat('Reward reserve',n.st?fmt(n.rwW,18,0):'—')+stat('You keep',kept<0n?'Over 100%':fmt(kept,18,0))+stat('Start price',price==null?'—':price.toPrecision(4)+' AVAX'+(n.sup>0n?' · FDV '+(price*Number(n.sup)).toLocaleString(undefined,{maximumFractionDigits:2}):''));
+}
+function applyPreset(k){
+  const p=PRESETS[k];
+  document.querySelectorAll('#plPresets .chip').forEach(c=>c.classList.toggle('on',c.dataset.pre===k));
+  if(!p) return;
+  $('plPct').value=p.pct;$('plAvax').value=p.avax;$('plRew').value=p.rew;$('plApr').value=p.apr;
+  $('plBurn').checked=p.burn;$('plStakeOn').checked=p.stake;$('plRenounce').checked=p.ren;$('plLpOn').checked=true;
+  plPreview();
+}
+document.querySelectorAll('#plPresets .chip').forEach(c=>c.onclick=()=>applyPreset(c.dataset.pre));
+['plPct','plAvax','plRew','plApr'].forEach(id=>numField($(id),plPreview));
+['plLpOn','plBurn','plStakeOn','plRenounce','plMech'].forEach(id=>$(id).addEventListener('change',plPreview));
+$('tSup').addEventListener('input',plPreview);
+async function deployTokenRaw(name,sym,sup,cap){
+  const c=await compile();
+  log(`Deploying ${sym}…`);
+  const addr=await deploy(c.token,[name,sym,sup,cap]);
+  log(`${sym} deployed at ${addr}`,'ok','/address/'+addr);
+  state.tokens.unshift({addr,name,sym,dec:18,owner:account,time:new Date().toLocaleDateString()});
+  save();renderTokList_dl();
+  return addr;
+}
+async function deployPoolRaw(tok,apr,mech){
+  const c=await compile();
+  log('Deploying '+(mech===2?'lock-tier':'classic')+' staking pool…');
+  const addr=await deploy(mech===2?c.staking2:c.staking,[tok,BigInt(Math.round(apr*100))]);
+  log(`Staking pool deployed at ${addr}`,'ok','/address/'+addr);
+  state.pools.unshift({addr,token:tok,apr,v:mech,owner:account,time:new Date().toLocaleDateString()});
+  save();
+  return addr;
+}
+async function lockLP(t){
+  const pd=await pairData(t.addr);
+  if(!pd.pair||!hasPos(pd)) throw new Error('No LP position found to lock');
+  const p=wr(pd.pair,LBPAIR_ABI);
+  await sendTx('Lock LP (sent to burn address)',p.safeBatchTransferFrom(account,DEAD,pd.pos.map(m=>m.id),pd.pos.map(m=>m.bal),'0x'));
+}
+function renderLaunches(){
+  const L=state.launches||[];
+  const link=(a,t)=>`<a href="${FUJI.explorer}/address/${a}" target="_blank">${t}</a>`;
+  $('plHistory').innerHTML=L.length?L.map(l=>`<div class="kv"><span>${esc(l.name)} (${esc(l.sym)}) · ${esc(l.time)}</span><span>${l.token?link(l.token,'token'):''}${l.pair?' · '+link(l.pair,'pool'):''}${l.pool?' · '+link(l.pool,'staking'):''}${l.locked?' · <span class="ok">LP locked</span>':''}${l.renounced?' · <span class="warn">ownership renounced</span>':''}</span></div>`).join(''):'<div class="dim">No launches yet.</div>';
+}
+async function runLaunch(){
+  needWallet();
+  const name=$('tName').value.trim(),sym=$('tSym').value.trim();
+  const sup=BigInt(($('tSup').value||'').replace(/\D/g,'')||'0');
+  const cap=BigInt(($('tCap').value||'').replace(/\D/g,'')||'0');
+  if(!name||!sym||sup<=0n) throw new Error('Fill in the token name, symbol and supply in the form above');
+  if(cap>0n&&cap<sup) throw new Error('Cap must be at least the supply');
+  const n=plNums(),apr=+$('plApr').value,mech=+$('plMech').value,burn=$('plBurn').checked,renounce=$('plRenounce').checked;
+  if(n.lpPct+n.rwPct>100) throw new Error('Liquidity and rewards cannot exceed 100% of supply');
+  if(n.on&&!(n.lpW>0n&&n.avaxW>0n)) throw new Error('Set a liquidity % and an AVAX amount, or untick Seed LFJ pool');
+  if(n.st&&!(apr>=0)) throw new Error('APR must be 0 or higher');
+  if(n.on) ensureRouter();
+  const need=n.avaxW+parseAmt('0.3',18);
+  if((bals.native||0n)<need) throw new Error('Not enough AVAX: needs about '+fmt(need,18,2)+' including gas');
+
+  const ctx={token:null,pair:null,pool:null,locked:false,renounced:false};
+  const plan=[{label:'Deploy token',run:async()=>{ctx.token=await deployTokenRaw(name,sym,sup,cap)}}];
+  if(n.on) plan.push({label:'Seed LFJ pool with liquidity',run:async()=>{await lqAdd(tokenOf(ctx.token),n.lpW,n.avaxW);ctx.pair=(await pairData(ctx.token)).pair}});
+  if(n.on&&burn) plan.push({label:'Lock LP (burn)',run:async()=>{await lockLP(tokenOf(ctx.token));ctx.locked=true}});
+  if(n.st) plan.push({label:'Deploy staking pool',run:async()=>{ctx.pool=await deployPoolRaw(ctx.token,apr,mech)}});
+  if(n.st&&n.rwW>0n) plan.push({label:'Fund reward reserve',run:async()=>{await sendTx('Fund staking rewards',wr(ctx.token,ERC20_ABI).transfer(ctx.pool,n.rwW))}});
+  if(renounce) plan.push({label:'Renounce ownership',run:async()=>{await sendTx('Renounce ownership',wr(ctx.token,TOKEN2_ABI).renounceOwnership());ctx.renounced=true}});
+
+  const status=plan.map(()=>'todo');
+  const draw=()=>{$('plLog').innerHTML=plan.map((s,i)=>`<div class="kv"><span>${i+1}. ${esc(s.label)}</span><b class="${status[i]==='ok'?'ok':status[i]==='err'?'err':status[i]==='run'?'warn':'dim'}">${{ok:'done',err:'failed',run:'running…',todo:'pending'}[status[i]]}</b></div>`).join('')};
+  draw();
+  let failure=null;
+  for(let k=0;k<plan.length;k++){
+    status[k]='run';draw();
+    try{await plan[k].run();status[k]='ok';draw()}
+    catch(e){status[k]='err';draw();failure=e;break}
+  }
+  if(ctx.token){
+    state.launches=state.launches||[];
+    state.launches.unshift({name,sym,time:new Date().toLocaleString(),token:ctx.token,pair:ctx.pair,pool:ctx.pool,locked:ctx.locked,renounced:ctx.renounced});
+    save();renderLaunches();renderPoolCards();renderPort();
+    $('tradeTok').value=ctx.token;
+  }
+  refreshBalances();
+  if(failure){
+    const m=String(failure.shortMessage||failure.reason||failure.message||failure);
+    throw new Error('Stopped at "'+plan[status.indexOf('err')].label+'": '+m+'. Completed steps are kept; finish the rest from Earn or Liquidity.');
+  }
+  toast(`${sym} launched with ${plan.length} steps`,'ok');
+  log(`Launch complete: ${sym}`,'ok','/address/'+ctx.token);
+}
+$('plGo').onclick=()=>{
+  if(plBusy) return;plBusy=true;$('plGo').disabled=true;
+  run(runLaunch).finally(()=>{plBusy=false;$('plGo').disabled=false});
+};
+let plBusy=false;
+
+/* ---------- token tools (on-chain features) ---------- */
+async function renderTT(){
+  const sel=$('ttTok'),keep=sel.value;
+  sel.innerHTML=state.tokens.map(t=>`<option value="${t.addr}">${esc(t.sym)} · ${esc(t.name)}</option>`).join('');
+  if(!state.tokens.length){sel.innerHTML='<option value="">No tokens yet. Launch one first.</option>';$('ttStats').innerHTML='';window.ttState=null;return}
+  if(keep&&state.tokens.some(t=>t.addr===keep)) sel.value=keep;
+  const t=tokenOf(sel.value),c=rd(sel.value,TOKEN2_ABI);
+  const [sup,cap,burned,owner,paused]=await Promise.all([c.totalSupply(),c.cap().catch(()=>null),c.totalBurned().catch(()=>null),c.owner().catch(()=>null),c.paused().catch(()=>null)]);
+  const legacy=owner===null,dec=t?.dec||18,sym=t?.sym||'';
+  const isOwner=!legacy&&!!account&&owner!==ethers.ZeroAddress&&K(owner)===K(account);
+  window.ttState={addr:sel.value,dec,sym,legacy,isOwner};
+  const stat=(l,v)=>`<div class="stat"><span>${esc(l)}</span><b>${esc(v)}</b></div>`;
+  $('ttStats').innerHTML=stat('Total supply',fmt(sup,dec)+' '+sym)+stat('Max cap',legacy?'n/a':(cap>0n?fmt(cap,dec):'Fixed supply'))+stat('Burned',legacy?'n/a':fmt(burned,dec))+stat('Transfers',legacy?'n/a':(paused?'Paused':'Live'));
+  $('ttStatus').textContent=legacy?'Older token: owner tools not available':(isOwner?'You own this token':'Owner: '+short(owner));
+  $('ttPause').textContent=paused?'Unpause transfers':'Pause transfers';
+  ['ttMintBtn','ttPause','ttXfer','ttRenounce'].forEach(id=>$(id).disabled=!isOwner);
+  $('ttBurnBtn').disabled=legacy;
+}
+function ttAct(fn){return run(async()=>{needWallet();const s=window.ttState;if(!s||!s.addr) throw new Error('Pick a token');await fn(s);await renderTT();await refreshBalances()})}
+$('ttTok').onchange=()=>run(renderTT);
+$('ttBurnBtn').onclick=()=>ttAct(async s=>{const w=parseAmt($('ttBurn').value,s.dec);if(w<=0n) throw new Error('Enter an amount');await sendTx('Burn '+s.sym,wr(s.addr,TOKEN2_ABI).burn(w))});
+$('ttMintBtn').onclick=()=>ttAct(async s=>{const to=$('ttMintTo').value.trim();if(!isAddr(to)) throw new Error('Invalid recipient');const w=parseAmt($('ttMintAmt').value,s.dec);if(w<=0n) throw new Error('Enter an amount');await sendTx('Mint '+s.sym,wr(s.addr,TOKEN2_ABI).mint(ethers.getAddress(to),w))});
+$('ttPause').onclick=()=>ttAct(async s=>{const p=!(await rd(s.addr,TOKEN2_ABI).paused());await sendTx(p?'Pause transfers':'Unpause transfers',wr(s.addr,TOKEN2_ABI).pause(p))});
+$('ttXfer').onclick=()=>ttAct(async s=>{const to=$('ttNewOwner').value.trim();if(!isAddr(to)) throw new Error('Invalid address');if(!confirm('Transfer ownership? You lose owner powers.')) return;await sendTx('Transfer ownership',wr(s.addr,TOKEN2_ABI).transferOwnership(ethers.getAddress(to)))});
+$('ttRenounce').onclick=()=>ttAct(async s=>{if(!confirm('Renounce ownership permanently? Minting and pausing become impossible.')) return;await sendTx('Renounce ownership',wr(s.addr,TOKEN2_ABI).renounceOwnership())});
+
 /* ---------- boot ---------- */
 renderTokList_dl();renderLog();renderHeader();renderPreview();renderPools();renderPort();
+plPreview();renderLaunches();
 show(location.hash.slice(1)||'swap');
 setTimeout(()=>run(()=>connect(true)),300);
 setInterval(()=>{if(account&&!document.hidden) refreshBalances()},25000);
