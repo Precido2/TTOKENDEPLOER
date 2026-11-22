@@ -652,7 +652,7 @@ input:focus{border-color:#ff6a1a;box-shadow:0 0 0 3px rgba(255,106,26,.18)}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
 <script>
-const FUJI={chainId:43113,hex:'0xa869',name:'Avalanche Fuji Testnet',rpc:['https://api.avax-test.network/ext/bc/C/rpc'],currency:{name:'AVAX',symbol:'AVAX',decimals:18},explorer:'https://testnet.snowtrace.io'};
+const FUJI={chainId:43113,hex:'0xa869',name:'Avalanche Fuji Testnet',rpc:['https://avalanche-fuji-c-chain-rpc.publicnode.com','https://api.avax-test.network/ext/bc/C/rpc'],currency:{name:'AVAX',symbol:'AVAX',decimals:18},explorer:'https://testnet.snowtrace.io'};
 const ERC20_ABI=['function name() view returns (string)','function symbol() view returns (string)','function decimals() view returns (uint8)','function totalSupply() view returns (uint256)','function balanceOf(address) view returns (uint256)','function allowance(address,address) view returns (uint256)','function approve(address,uint256) returns (bool)','function transfer(address,uint256) returns (bool)'];
 const STAKE_ABI=['function token() view returns (address)','function aprBps() view returns (uint256)','function totalStaked() view returns (uint256)','function staked(address) view returns (uint256)','function pendingReward(address) view returns (uint256)','function stake(uint256)','function withdraw(uint256)','function claim()'];
 const STAKE2_ABI=['function token() view returns (address)','function aprBps() view returns (uint256)','function totalStaked() view returns (uint256)','function staked(address) view returns (uint256)','function pendingReward(address) view returns (uint256)','function positionOf(address) view returns (uint256 amount,uint256 pending,uint8 tier,uint256 unlockAt,uint256 weight)','function stake(uint256,uint8)','function withdraw(uint256)','function claim()','function compound()'];
@@ -965,11 +965,27 @@ function needWallet(){if(!signer) throw new Error('Connect your wallet first')}
 let provider=null,signer=null,account=null,rawProv=null,bound=false;
 // Public Fuji RPCs rate-limit bursts (HTTP 429). Every read goes through this gate:
 // at most 2 requests in flight, a gap between them, and exponential backoff on 429.
+const RPC_CACHE=new Map();           // shared by all endpoints: key -> {t,p}
+const RPC_TTL={eth_call:2500,eth_getBalance:2500,eth_blockNumber:2500,eth_gasPrice:5000,eth_getCode:600000,eth_getLogs:60000};
+function clearRpcCache(){RPC_CACHE.clear()}
 class ThrottledProvider extends ethers.JsonRpcProvider{
-  constructor(url,chainId){super(url,chainId,{staticNetwork:true});this._active=0;this._waiters=[];this._max=2;this._gap=150;this._last=0}
+  constructor(url,chainId,retries=3){super(url,chainId,{staticNetwork:true,batchMaxCount:10});this._active=0;this._waiters=[];this._max=2;this._gap=150;this._last=0;this._retries=retries}
   _slot(){return new Promise(res=>{const go=()=>{if(this._active<this._max){this._active++;res()}else this._waiters.push(go)};go()})}
   _free(){this._active--;const w=this._waiters.shift();if(w) w()}
-  async send(method,params){
+  // Identical reads inside a short window share one network request (and one result).
+  send(method,params){
+    const ttl=RPC_TTL[method];
+    if(!ttl) return this._send(method,params);
+    const key=this._getConnection().url+'|'+method+'|'+JSON.stringify(params);
+    const hit=RPC_CACHE.get(key);
+    if(hit&&Date.now()-hit.t<ttl) return hit.p;
+    const p=this._send(method,params);
+    RPC_CACHE.set(key,{t:Date.now(),p});
+    p.catch(()=>{if(RPC_CACHE.get(key)?.p===p) RPC_CACHE.delete(key)});
+    if(RPC_CACHE.size>500){const now=Date.now();for(const [k,v] of RPC_CACHE) if(now-v.t>60000) RPC_CACHE.delete(k)}
+    return p;
+  }
+  async _send(method,params){
     await this._slot();
     try{
       for(let attempt=0;;attempt++){
@@ -979,7 +995,7 @@ class ThrottledProvider extends ethers.JsonRpcProvider{
         catch(e){
           const text=String(e?.message||e?.shortMessage||'')+' '+String(e?.info?.error?.message||'')+' '+String(e?.info?.responseStatus||'');
           const limited=/429|rate.?limit|too many requests/i.test(text);
-          if(!limited||attempt>=3) throw e;
+          if(!limited||attempt>=this._retries) throw e;
           await new Promise(r=>setTimeout(r,800*2**attempt));
         }
       }
@@ -988,8 +1004,13 @@ class ThrottledProvider extends ethers.JsonRpcProvider{
 }
 // Reads go to the first endpoint that answers. A saved RPC URL (Settings) goes first.
 // If one endpoint rate-limits or fails, the next one is tried.
-const RPC_POOL=[...new Set([localStorage.getItem('fuji-forge:rpc-url'),...FUJI.rpc].filter(Boolean))];
-const readP=new ethers.FallbackProvider(RPC_POOL.map(u=>new ThrottledProvider(u,FUJI.chainId)),FUJI.chainId,{quorum:1,stallTimeout:2500});
+const CUSTOM_RPC=localStorage.getItem('fuji-forge:rpc-url');
+const RPC_POOL=[...new Set([CUSTOM_RPC,...FUJI.rpc].filter(Boolean))];
+const readP=new ethers.FallbackProvider(RPC_POOL.map(u=>({
+  provider:new ThrottledProvider(u,FUJI.chainId,RPC_POOL.length>1?1:3),
+  priority:(CUSTOM_RPC&&u===CUSTOM_RPC)?1:2,
+  stallTimeout:1500,weight:1
+})),FUJI.chainId,{quorum:1});
 const wallets=[];
 window.addEventListener('eip6963:announceProvider',e=>{if(!wallets.some(w=>w.info.uuid===e.detail.info.uuid)) wallets.push(e.detail)});
 const rd=(addr,abi)=>new ethers.Contract(addr,abi,readP);
@@ -1012,7 +1033,7 @@ async function sendTx(label,txPromise){
   const tx=await txPromise;
   log(label+' submitted…','','/tx/'+tx.hash);
   await tx.wait();
-  pdTTL.clear();
+  pdTTL.clear();clearRpcCache();
   log(label+' confirmed','ok');
   toast(label+' confirmed','ok');
   return tx;
@@ -1908,7 +1929,17 @@ function explainTxError(e){
 async function deploy(c,args){
   const f=new ethers.ContractFactory(c.abi,'0x'+c.evm.bytecode.object,signer);
   let k;
-  try{k=await f.deploy(...args)}catch(e){throw new Error(explainTxError(e))}
+  for(let attempt=0;;attempt++){
+    try{k=await f.deploy(...args);break}
+    catch(e){
+      const raw=[e?.shortMessage,e?.reason,e?.info?.error?.message,e?.error?.message,e?.message].filter(Boolean).join(' | ');
+      if(/429|rate.?limit|too many requests/i.test(raw)&&!e?.transaction?.hash&&attempt<2&&!/user rejected|ACTION_REJECTED/i.test(raw)){
+        log('RPC rate-limited, retrying in '+(3*(attempt+1))+'s…');
+        await new Promise(r=>setTimeout(r,3000*(attempt+1)));continue;
+      }
+      throw new Error(explainTxError(e));
+    }
+  }
   log('Waiting for deployment…');
   await k.waitForDeployment();
   return k.getAddress();
