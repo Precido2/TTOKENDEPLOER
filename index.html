@@ -274,14 +274,14 @@ input:focus{border-color:#ff6a1a;box-shadow:0 0 0 3px rgba(255,106,26,.18)}
     <button class="pillbtn" id="actBtn" title="Activity">🕘</button>
     <span class="pill" id="netPill">Not connected</span>
     <span class="pill" id="hBal"></span>
-    <button class="btn" id="connect">Connect wallet</button>
+    <button class="btn ghost sm" id="browserWalletBtn">Browser wallet</button><button class="btn" id="connect">Connect wallet</button>
     <button class="pillbtn" id="setBtn" title="Settings">⚙</button>
   </div>
 </header>
 <div class="menu hidden" id="acct">
   <button id="acCopy">Copy address</button>
   <a id="acExp" target="_blank">View on Snowtrace ↗</a>
-  <button id="acRef">Refresh balances</button>
+  <button id="acRef">Refresh balances</button><button id="acLock" class="hidden">Lock browser wallet</button>
 </div>
 <div class="banner hidden" id="banner">Swaps and pools use the LFJ Liquidity Book router. <button class="btn sm" id="bannerBtn">Set router</button></div>
 
@@ -306,6 +306,36 @@ input:focus{border-color:#ff6a1a;box-shadow:0 0 0 3px rgba(255,106,26,.18)}
         <button class="btn big" id="swBtn">Connect wallet</button>
       </div>
       <div class="card" id="market"></div>
+    </div>
+    <div class="card" id="botCard" style="margin-top:18px">
+      <div class="cardhead"><h2>Launch-token trading bot</h2><span class="tag">Manual activation</span></div>
+      <p class="sub">A dedicated bot wallet, separate from your connected Rabby/MetaMask wallet. Only funds sent to the bot-wallet address can be traded. The bot never starts automatically after reload.</p>
+      <div class="card" style="padding:14px;margin-bottom:16px;background:var(--bg)">
+        <div class="cardhead"><b>Dedicated bot wallet · Fuji</b><span class="tag" id="botWalletState">Not created</span></div>
+        <div class="fields">
+          <div class="full"><label>Bot wallet address</label><div class="row"><input id="botWalletAddress" readonly placeholder="Create or unlock the bot wallet" style="flex:1"><button class="btn ghost sm" id="botCopyAddress" type="button">Copy</button></div></div>
+          <div class="full"><label>Bot wallet password</label><input id="botWalletPassword" type="password" autocomplete="new-password" placeholder="Create a password or enter existing password"></div>
+          <div class="full row"><button class="btn sm" id="botWalletCreate" type="button">Create bot wallet</button><button class="btn ghost sm" id="botWalletUnlock" type="button">Unlock bot wallet</button><button class="btn ghost sm" id="botWalletLock" type="button" disabled>Lock</button></div>
+          <div class="full"><label>Recovery phrase (shown only when first created — write it down)</label><textarea id="botWalletPhrase" rows="2" readonly placeholder="Your recovery phrase appears here once"></textarea></div>
+          <div class="full dim" id="botWalletInfo" style="font-size:12px">Wallet is encrypted in this browser. Fund it with Fuji AVAX and the token stays separate from your main wallet.</div>
+        </div>
+      </div>
+      <div class="fields">
+        <div class="full"><label>Token to trade</label><select id="botToken"></select></div>
+        <div><label>Buy when price is at or below (AVAX per token)</label><input id="botTrigger" inputmode="decimal" placeholder="0.0001"></div>
+        <div><label>AVAX per buy</label><input id="botSpend" inputmode="decimal" value="0.05"></div>
+        <div><label>Take profit (%)</label><input id="botTP" inputmode="decimal" value="20"></div>
+        <div><label>Stop loss (%)</label><input id="botSL" inputmode="decimal" value="10"></div>
+        <div><label>Trailing stop (%) · 0 disables</label><input id="botTrail" inputmode="decimal" value="8"></div>
+        <div><label>Maximum buys per run</label><input id="botMaxBuys" inputmode="numeric" value="3"></div>
+        <div><label>Check interval (seconds, 10–300)</label><input id="botInterval" inputmode="numeric" value="20"></div>
+      </div>
+      <label class="chk" style="margin-top:14px"><input type="checkbox" id="botRiskAck"> I understand this bot submits real on-chain swaps, can lose funds, and may execute at a worse price than expected.</label>
+      <div class="row" style="margin-top:14px"><button class="btn" id="botStart">Start bot</button><button class="btn danger" id="botStop" disabled>Stop bot</button><span class="dim" id="botStatus">Stopped · no automated trades running</span></div>
+      <div class="kv"><span>Current position</span><b id="botPosition">None</b></div>
+      <div class="kv"><span>Buys completed</span><b id="botCount">0</b></div>
+      <div class="kv"><span>Last observed price</span><b id="botPrice">—</b></div>
+      <div class="dim" id="botLog" style="font-size:12px;max-height:110px;overflow:auto"></div>
     </div>
   </section>
 
@@ -585,6 +615,26 @@ input:focus{border-color:#ff6a1a;box-shadow:0 0 0 3px rgba(255,106,26,.18)}
   <div class="row"><button class="btn ghost sm" id="exportData">Export JSON</button><button class="btn ghost sm" id="importData">Import JSON</button><button class="btn ghost sm" id="clearData">Clear</button></div>
   <input type="file" id="importFile" accept="application/json" class="hidden">
   <p class="dim" style="font-size:12px;margin-top:14px">Testnet only. Contracts are unaudited. Tokens, pools and activity are stored in this browser.</p>
+</div></div>
+
+<!-- encrypted in-browser wallet vault -->
+<div class="modal" id="walletModal"><div class="sheet">
+  <div class="sheethead"><h3>Browser wallet · Fuji</h3><button class="x" data-close>✕</button></div>
+  <p class="dim">Create a wallet stored as an encrypted keystore in this browser, or unlock the wallet already saved here. Your password is never saved.</p>
+  <div id="vaultExisting" class="hidden">
+    <label>Wallet password</label><input id="vaultPassword" type="password" autocomplete="current-password" placeholder="Enter your wallet password">
+    <div class="actions"><button class="btn" id="vaultUnlock">Unlock wallet</button><button class="btn ghost" id="vaultDelete">Delete encrypted wallet</button></div>
+  </div>
+  <div id="vaultCreate">
+    <label>Create password (12+ characters recommended)</label><input id="vaultNewPassword" type="password" autocomplete="new-password" placeholder="Create a strong password">
+    <button class="btn big" id="vaultCreateBtn">Create browser wallet</button>
+  </div>
+  <div id="vaultBackup" class="hidden" style="margin-top:14px">
+    <p class="warn"><b>Back up this recovery phrase now.</b> It is shown once and is not stored by the app. Anyone with it can control this wallet.</p>
+    <textarea id="vaultPhrase" rows="3" readonly></textarea>
+    <div class="actions"><button class="btn ghost" id="vaultCopyPhrase">Copy recovery phrase</button><button class="btn" id="vaultBackupDone">I have backed it up</button></div>
+  </div>
+  <p class="dim" id="vaultStatus" style="font-size:12px;margin-top:12px">Fuji testnet only. Keep your password and recovery phrase private.</p>
 </div></div>
 
 <!-- activity drawer -->
@@ -942,7 +992,7 @@ const bals={};
 const pdCache={};
 const tokenOf=a=>{if(!a) return null;if(a==='native') return NATIVE;return state.tokens.find(t=>K(t.addr)===K(a))||null};
 const allTokens=()=>[NATIVE,...state.tokens];
-function renderTokList_dl(){$('tokList').innerHTML=state.tokens.map(t=>`<option value="${t.addr}">${esc(t.sym)} · ${esc(t.name)}</option>`).join('')}
+function renderTokList_dl(){$('tokList').innerHTML=state.tokens.map(t=>`<option value="${t.addr}">${esc(t.sym)} · ${esc(t.name)}</option>`).join('');if($('botToken'))renderBotTokens()}
 async function importToken(addr){
   const raw=String(addr||'').trim();
   if(!isAddr(raw)) throw new Error('Invalid token address');
@@ -956,7 +1006,7 @@ async function importToken(addr){
   const t={addr,name:name||sym,sym,dec:Number(dec),owner:null,time:new Date().toLocaleDateString(),imported:true};
   state.tokens.push(t);save();
   if(account) try{bals[K(addr)]=await c.balanceOf(account)}catch(e){}
-  renderTokList_dl();renderPort();
+  renderTokList_dl();renderBotTokens();renderPort();
   log(`Imported ${sym}`,'ok','/address/'+addr);
   return t;
 }
@@ -1033,7 +1083,7 @@ async function connectInner(silent){
   rawProv=raw;
   provider=new ethers.BrowserProvider(raw);
   signer=await provider.getSigner();
-  account=await signer.getAddress();
+  account=await signer.getAddress();$('acLock').classList.add('hidden');
   $('connect').textContent=short(account);
   $('netPill').textContent='Fuji · 43113';$('netPill').classList.add('live');
   $('acExp').href=FUJI.explorer+'/address/'+account;
@@ -1043,9 +1093,59 @@ async function connectInner(silent){
   loadPools();
   if(cur) loadPool(cur.addr).catch(()=>{});
 }
+const VAULT_KEY='fuji-forge:encrypted-wallet:v1';
+let vaultWallet=null,vaultBackupPhrase='';
+function renderWalletVault(){
+  const exists=!!localStorage.getItem(VAULT_KEY);
+  $('vaultExisting').classList.toggle('hidden',!exists);
+  $('vaultCreate').classList.toggle('hidden',exists);
+  $('vaultBackup').classList.add('hidden');$('vaultStatus').textContent=exists?'Encrypted wallet found on this browser. Enter its password to unlock it.':'No browser wallet saved on this browser yet.';
+}
+function setWalletConnected(w){
+  vaultWallet=w;provider=readP;signer=w.connect(readP);account=w.address;rawProv=null;$('acLock').classList.remove('hidden');
+  $('connect').textContent=short(account);$('netPill').textContent='Fuji · 43113';$('netPill').classList.add('live');$('acExp').href=FUJI.explorer+'/address/'+account;
+  log('Browser wallet unlocked '+account,'ok');closeM('walletModal');refreshBalances();loadPools();if(cur)loadPool(cur.addr).catch(()=>{});
+}
+$('vaultCreateBtn').onclick=()=>run(async()=>{
+  const pw=$('vaultNewPassword').value;
+  if(pw.length<10) throw new Error('Use a password with at least 10 characters.');
+  if(localStorage.getItem(VAULT_KEY)) throw new Error('A browser wallet already exists. Unlock or delete it first.');
+  $('vaultCreateBtn').disabled=true;$('vaultStatus').textContent='Generating and encrypting wallet…';
+  try{
+    const w=ethers.Wallet.createRandom();
+    const encrypted=await w.encrypt(pw);
+    localStorage.setItem(VAULT_KEY,encrypted);
+    vaultBackupPhrase=w.mnemonic?.phrase||'';
+    $('vaultPhrase').value=vaultBackupPhrase;
+    $('vaultBackup').classList.remove('hidden');$('vaultCreate').classList.add('hidden');
+    $('vaultStatus').textContent='Wallet encrypted and saved. Back up the recovery phrase before continuing.';
+    vaultWallet=w;
+  }finally{$('vaultCreateBtn').disabled=false}
+});
+$('vaultCopyPhrase').onclick=()=>{if(vaultBackupPhrase)navigator.clipboard?.writeText(vaultBackupPhrase).then(()=>toast('Recovery phrase copied','ok'))};
+$('vaultBackupDone').onclick=()=>run(async()=>{
+  if(!vaultWallet) throw new Error('Wallet creation did not complete.');
+  setWalletConnected(vaultWallet);vaultBackupPhrase='';$('vaultPhrase').value='';$('vaultNewPassword').value='';
+});
+$('vaultUnlock').onclick=()=>run(async()=>{
+  const encrypted=localStorage.getItem(VAULT_KEY),pw=$('vaultPassword').value;
+  if(!encrypted) throw new Error('No encrypted browser wallet found.');
+  if(!pw) throw new Error('Enter your wallet password.');
+  $('vaultUnlock').disabled=true;$('vaultStatus').textContent='Decrypting wallet…';
+  try{const w=await ethers.Wallet.fromEncryptedJson(encrypted,pw);setWalletConnected(w);$('vaultPassword').value=''}
+  finally{$('vaultUnlock').disabled=false}
+});
+$('vaultDelete').onclick=()=>run(async()=>{
+  if(!confirm('Delete the encrypted wallet stored in this browser? This cannot recover a lost recovery phrase.'))return;
+  localStorage.removeItem(VAULT_KEY);vaultWallet=null;renderWalletVault();toast('Encrypted wallet deleted from this browser');
+});
+$('acRef').onclick=()=>{run(refreshBalances);$('acct').classList.add('hidden')};
+$('acLock').onclick=()=>{vaultWallet=null;signer=null;provider=null;account=null;Object.keys(bals).forEach(k=>delete bals[k]);$('connect').textContent='Connect wallet';$('netPill').textContent='Not connected';$('netPill').classList.remove('live');$('hBal').textContent='';$('acLock').classList.add('hidden');$('acct').classList.add('hidden');updateSwapUI();toast('Browser wallet locked','ok')};
+
+$('browserWalletBtn').onclick=()=>{renderWalletVault();openM('walletModal')};
 $('connect').onclick=()=>{
   if(account){$('acct').classList.toggle('hidden');return}
-  run(()=>connect(false));
+  run(async()=>{const raw=await findProvider(700);if(raw)return connect(false);renderWalletVault();openM('walletModal')});
 };
 $('acCopy').onclick=()=>{navigator.clipboard?.writeText(account);toast('Address copied','ok');$('acct').classList.add('hidden')};
 $('acRef').onclick=()=>{run(refreshBalances);$('acct').classList.add('hidden')};
@@ -1267,28 +1367,39 @@ async function pairData(tok){
 const priceOf=pd=>(pd&&pd.pair)?pd.price:null;
 const withTimeout=(p,ms,msg)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error(msg)),ms))]);
 // Scans swap history newest-first within a time budget, so the page never waits on a slow RPC indefinitely.
-async function fetchPairLogs(pair,budgetMs=25000){
+async function fetchPairLogs(pair,budgetMs=30000){
   const started=Date.now();
-  const latest=await withTimeout(readP.getBlockNumber(),10000,'RPC timed out');
-  const CH=1000,MAXCH=60,starts=[];
-  for(let i=0;i<MAXCH;i++){const to=latest-i*CH;if(to<0) break;starts.push([Math.max(0,to-CH+1),to])}
-  let failed=0,done=0,lastErr='';
-  async function scan(x,y,depth){
-    try{return await withTimeout(readP.getLogs({address:pair,fromBlock:x,toBlock:y}),15000,'request timed out')}
-    catch(e){
+  const latest=await withTimeout(readP.getBlockNumber(),12000,'RPC timed out while reading latest block');
+  // Fuji public RPCs can reject broad eth_getLogs requests. Filter by the exact LB Swap topic,
+  // scan smaller ranges, and split rejected ranges until the endpoint accepts them.
+  const CH=400,MAX_BLOCKS=40000,topic=PAIR_EVT.getEvent('Swap').topicHash;
+  const floor=Math.max(0,latest-MAX_BLOCKS+1),ranges=[];
+  for(let to=latest;to>=floor;to-=CH) ranges.push([Math.max(floor,to-CH+1),to]);
+  let failed=0,done=0,scanned=0,lastErr='';const out=[];
+  async function scan(from,to,depth){
+    if(Date.now()-started>budgetMs)return null;
+    try{
+      const logs=await withTimeout(readP.getLogs({address:pair,topics:[topic],fromBlock:from,toBlock:to}),10000,'getLogs request timed out');
+      scanned+=to-from+1;return logs;
+    }catch(e){
       lastErr=String(e.shortMessage||e.info?.error?.message||e.message||e);
-      if(y-x>99&&depth<2&&Date.now()-started<budgetMs){const m=Math.floor((x+y)/2);return [...(await scan(x,m,depth+1)||[]),...(await scan(m+1,y,depth+1)||[])]}
+      if(to-from>19&&depth<6&&Date.now()-started<budgetMs){
+        const mid=Math.floor((from+to)/2);
+        const left=await scan(from,mid,depth+1),right=await scan(mid+1,to,depth+1);
+        if(left===null||right===null)return null;
+        return left.concat(right);
+      }
       failed++;return null;
     }
   }
-  const out=[];
-  for(let i=0;i<starts.length&&Date.now()-started<budgetMs;i+=3){
-    const batch=await Promise.all(starts.slice(i,i+3).map(async c=>{const r=await scan(c[0],c[1],0);done++;return r}));
-    batch.forEach(x=>{if(x) out.push(...x)});
+  for(let i=0;i<ranges.length&&Date.now()-started<budgetMs;i+=3){
+    const batch=await Promise.all(ranges.slice(i,i+3).map(async r=>{const x=await scan(r[0],r[1],0);done++;return x}));
+    batch.forEach(x=>{if(x)out.push(...x)});
   }
-  out.sort((x,y)=>x.blockNumber-y.blockNumber);
-  return {logs:out,latest,scanned:done*CH,failed,chunks:done,lastErr};
+  out.sort((a,b)=>a.blockNumber-b.blockNumber||a.index-b.index);
+  return {logs:out,latest,scanned,failed,chunks:done,lastErr,limited:latest-floor+1};
 }
+
 async function loadMarket(tok,host=$('market')){
   const id=++mkId,t=tokenOf(tok);
   host.innerHTML='<div class="skel" style="width:40%"></div><div class="skel" style="height:200px"></div><div class="skel"></div>';
@@ -1333,7 +1444,7 @@ function paintMarket(host,tok,pd,price,st){
   const t=tokenOf(tok),{loading,pts=[],trades=[],hist}=st;
   const chg=pts.length>1?(pts[pts.length-1].p/pts[0].p-1)*100:null;
   const tvl=Number(ethers.formatEther(pd.avaxRes))+Number(ethers.formatUnits(pd.tokRes,t.dec))*(price||0);
-  const scanInfo=loading?'loading swap history…':`${trades.length} swaps · ${Math.round((hist?.scanned||0)/1800)}h scanned${hist?.failed?` · <span class="err" title="${esc(hist.lastErr||'')}">${hist.failed}/${hist.chunks} reads failed</span>`:''}`;
+  const scanInfo=loading?'loading swap history…':`${trades.length} swaps · ${(hist?.scanned||0).toLocaleString()} blocks scanned${hist?.failed?` · <span class="err" title="${esc(hist.lastErr||'')}">${hist.failed}/${hist.chunks} reads failed</span>`:''}`;
   const table=trades.length?`<table><tbody>${trades.map(x=>`<tr><td class="${x.buy?'ok':'err'}">${x.buy?'Buy':'Sell'}</td><td>${fmt(x.tok,t.dec,4)} ${esc(t.sym)}</td><td class="r">${fmt(x.av,18,4)} AVAX</td><td class="r dim"><a href="${FUJI.explorer}/tx/${x.tx}" target="_blank">tx ↗</a></td></tr>`).join('')}</tbody></table>`:'<div class="dim">No swaps found in the scanned blocks yet.</div>';
   host.innerHTML=`
     <div class="mkhead"><div class="tcell">${pairAv(t)}<div><b>${esc(t.sym)} / AVAX</b><small>${esc(t.name)}</small></div></div>
@@ -1398,6 +1509,133 @@ function setupChart(pts,host=$('market')){
   cv.onmouseleave=()=>{drawChart(cv,pts,-1);host.querySelector('#chTip')?.classList.add('hidden')};
 }
 window.addEventListener('resize',()=>{const cv=host.querySelector('#chart');if(cv&&chartPts.length) drawChart(cv,chartPts,-1)});
+
+/* ---------- isolated opt-in launched-token trading bot ---------- */
+const BOT_VAULT_KEY='fuji-forge:bot-wallet:encrypted:v1',BOT_POSITION_KEY='fuji-forge:bot-position:v1';
+let botWallet=null,botSigner=null,botAccount=null,botTimer=null,botBusy=false,botRun={token:null,buys:0,position:0n,entryPrice:0,spent:0n,peakPnl:0,config:null};
+function botNote(msg){$('botLog').textContent=new Date().toLocaleTimeString()+' · '+msg+'\n'+$('botLog').textContent}
+function saveBotPosition(){try{if(botRun.position>0n)localStorage.setItem(BOT_POSITION_KEY,JSON.stringify({token:botRun.token,buys:botRun.buys,position:botRun.position.toString(),entryPrice:botRun.entryPrice,spent:botRun.spent.toString(),peakPnl:botRun.peakPnl}));else localStorage.removeItem(BOT_POSITION_KEY)}catch(e){botNote('Could not save bot position locally: '+e.message)}}
+function loadBotPosition(){try{const x=JSON.parse(localStorage.getItem(BOT_POSITION_KEY)||'null');if(x?.token&&x.position&&BigInt(x.position)>0n)botRun={...botRun,token:x.token,buys:Number(x.buys)||0,position:BigInt(x.position),entryPrice:Number(x.entryPrice)||0,spent:BigInt(x.spent||'0'),peakPnl:Number(x.peakPnl)||0}}catch(e){botNote('Saved bot position could not be restored: '+e.message)}}
+function renderBotTokens(){
+  const sel=$('botToken'),old=sel.value;
+  sel.innerHTML=state.tokens.map(t=>`<option value="${t.addr}">${esc(t.sym)} · ${esc(t.name)}</option>`).join('')||'<option value="">No saved tokens yet</option>';
+  if(state.tokens.some(t=>K(t.addr)===K(old)))sel.value=old;
+}
+function renderBotWallet(){
+  const saved=!!localStorage.getItem(BOT_VAULT_KEY);
+  $('botWalletState').textContent=botWallet?'Unlocked':saved?'Locked · encrypted':'Not created';
+  $('botWalletAddress').value=botAccount||'';
+  $('botWalletCreate').disabled=saved;
+  $('botWalletUnlock').disabled=!saved||!!botWallet;
+  $('botWalletLock').disabled=!botWallet;
+  $('botWalletInfo').textContent=botWallet?'Dedicated wallet unlocked. Bot transactions use this wallet only. Main app wallet is unchanged.':saved?'Encrypted bot wallet found. Enter its password and unlock it.':'Create a dedicated wallet. Its encrypted keystore is stored separately from the app wallet.';
+}
+function lockBotWallet(){if(botTimer)stopBot('Bot wallet locked; bot stopped.');botWallet=null;botSigner=null;botAccount=null;renderBotWallet();}
+$('botWalletCreate').onclick=()=>run(async()=>{
+  if(localStorage.getItem(BOT_VAULT_KEY))throw new Error('A bot wallet already exists. Unlock it instead.');
+  const pw=$('botWalletPassword').value;if(pw.length<12)throw new Error('Use a password of at least 12 characters.');
+  $('botWalletCreate').disabled=true;
+  try{
+    const w=ethers.Wallet.createRandom();
+    const encrypted=await w.encrypt(pw);
+    localStorage.setItem(BOT_VAULT_KEY,encrypted);
+    botWallet=w;botSigner=w.connect(readP);botAccount=w.address;
+    $('botWalletPhrase').value=w.mnemonic?.phrase||'';
+    $('botWalletPassword').value='';renderBotWallet();
+    botNote('Dedicated bot wallet created. Back up the recovery phrase displayed above before funding it.');
+    toast('Dedicated bot wallet created','ok');
+  }finally{$('botWalletCreate').disabled=false}
+});
+$('botWalletUnlock').onclick=()=>run(async()=>{
+  const enc=localStorage.getItem(BOT_VAULT_KEY),pw=$('botWalletPassword').value;
+  if(!enc)throw new Error('No saved bot wallet found.');if(!pw)throw new Error('Enter the bot wallet password.');
+  const w=await ethers.Wallet.fromEncryptedJson(enc,pw);
+  botWallet=w;botSigner=w.connect(readP);botAccount=w.address;$('botWalletPassword').value='';renderBotWallet();
+  botNote('Dedicated bot wallet unlocked: '+botAccount);toast('Bot wallet unlocked','ok');
+});
+$('botWalletLock').onclick=lockBotWallet;
+$('botCopyAddress').onclick=()=>{if(!botAccount)return toast('Unlock the bot wallet first','err');navigator.clipboard?.writeText(botAccount).then(()=>toast('Bot wallet address copied','ok'))};
+async function botSendTx(label,txPromise){const tx=await txPromise;botNote(label+' submitted · '+tx.hash);await tx.wait();botNote(label+' confirmed');return tx}
+function botRouterW(){if(!botSigner)throw new Error('Unlock the dedicated bot wallet first');return new ethers.Contract(LFJ.router,ROUTER_ABI,botSigner)}
+async function botSwapBuy(tok,avaxAmount){
+  const q=await getQuote('native',tok.addr,avaxAmount);if(!q)throw new Error('No buy route available');
+  const min=q.out*(10000n-slipBps())/10000n;
+  const before=await rd(tok.addr,ERC20_ABI).balanceOf(botAccount);
+  await botSendTx('Bot buy '+tok.sym,botRouterW().swapExactNATIVEForTokens(min,q.path,botAccount,deadline(),{value:avaxAmount}));
+  const after=await rd(tok.addr,ERC20_ABI).balanceOf(botAccount),got=after-before;
+  if(got<=0n)throw new Error('Buy confirmed but token balance increase was not detected');return got;
+}
+async function botSwapSell(tok,amount){
+  const q=await getQuote(tok.addr,'native',amount);if(!q)throw new Error('No sell route available');
+  const tk=new ethers.Contract(tok.addr,ERC20_ABI,botSigner);
+  if((await tk.allowance(botAccount,LFJ.router))<amount)await botSendTx('Approve bot '+tok.sym,tk.approve(LFJ.router,amount));
+  const min=q.out*(10000n-slipBps())/10000n;
+  await botSendTx('Bot sell '+tok.sym,botRouterW().swapExactTokensForNATIVE(amount,min,q.path,botAccount,deadline()));
+}
+async function botTick(){
+  if(!botTimer||botBusy||!botSigner||!botRun.token)return;
+  botBusy=true;
+  try{
+    const tok=tokenOf(botRun.token);if(!tok)throw new Error('Selected token is no longer saved');
+    const pd=await pairData(tok.addr);if(!pd.pair)throw new Error('No LFJ AVAX pool exists for '+tok.sym);
+    const spot=priceOf(pd);if(!(spot>0))throw new Error('Pool price unavailable');
+    $('botPrice').textContent=spot.toPrecision(7)+' AVAX (pool spot)';
+    if(botRun.position>0n){
+      // Estimate exit PnL from a fresh executable sell quote, not the pool spot price.
+      const exitQ=await getQuote(tok.addr,'native',botRun.position);if(!exitQ)throw new Error('No executable sell quote for open bot position');
+      const pnl=(Number(ethers.formatEther(exitQ.out))/Number(ethers.formatEther(botRun.spent))-1)*100;
+      botRun.peakPnl=Math.max(botRun.peakPnl,pnl);
+      $('botPosition').textContent=fmt(botRun.position,tok.dec,5)+' '+tok.sym+' · est. '+pnl.toFixed(2)+'% · peak '+botRun.peakPnl.toFixed(2)+'%';
+      const trailingHit=botRun.config.trail>0&&botRun.peakPnl>=botRun.config.trail&&pnl<=botRun.peakPnl-botRun.config.trail;
+      if(pnl>=botRun.config.tp||pnl<=-botRun.config.sl||trailingHit){
+        const reason=pnl>=botRun.config.tp?'Take-profit':pnl<=-botRun.config.sl?'Stop-loss':'Trailing stop';
+        botNote(`${reason} reached using live sell quote (${pnl.toFixed(2)}%). Selling bot position…`);
+        await botSwapSell(tok,botRun.position);botRun.position=0n;botRun.entryPrice=0;botRun.spent=0n;botRun.peakPnl=0;
+        $('botPosition').textContent='None';saveBotPosition();botNote('Bot position sold and confirmed.');
+      }
+    }else if(botRun.buys<botRun.config.maxBuys){
+      const spend=botRun.config.spend;
+      const buyQ=await getQuote('native',tok.addr,spend);if(!buyQ)throw new Error('No executable buy quote');
+      const executablePrice=Number(ethers.formatEther(spend))/Number(ethers.formatUnits(buyQ.out,tok.dec));
+      if(!Number.isFinite(executablePrice)||executablePrice<=0)throw new Error('Invalid executable buy price');
+      if(executablePrice<=botRun.config.trigger){
+        const nativeBal=await readP.getBalance(botAccount);
+        if(nativeBal<spend+ethers.parseEther('0.015'))throw new Error('Bot wallet needs more Fuji AVAX for this buy and gas reserve');
+        botNote(`Buy trigger reached using live trade-size quote: ${executablePrice.toPrecision(7)} AVAX/token. Submitting buy…`);
+        const got=await botSwapBuy(tok,spend);botRun.position=got;botRun.spent=spend;botRun.entryPrice=Number(ethers.formatEther(spend))/Number(ethers.formatUnits(got,tok.dec));botRun.peakPnl=0;botRun.buys++;
+        $('botPosition').textContent=fmt(got,tok.dec,5)+' '+tok.sym+' · entry '+botRun.entryPrice.toPrecision(6)+' AVAX';
+        $('botCount').textContent=botRun.buys;saveBotPosition();botNote('Buy confirmed. Position saved locally; monitoring live sell quotes.');
+      }
+    }
+    if(botRun.buys>=botRun.config.maxBuys&&botRun.position===0n)stopBot('Maximum buys completed.');
+  }catch(e){botNote('Error: '+String(e.shortMessage||e.message||e));toast('Trading bot: '+String(e.shortMessage||e.message||e).slice(0,120),'err');stopBot('Stopped after an error.');}
+  finally{botBusy=false}
+}
+function stopBot(message='Stopped by user.'){
+  if(botTimer){clearInterval(botTimer);botTimer=null}
+  $('botStart').disabled=false;$('botStop').disabled=true;$('botStatus').textContent=message;botNote(message);
+}
+$('botStart').onclick=()=>run(async()=>{
+  ensureRouter();if(!botSigner||!botAccount)throw new Error('Create or unlock the dedicated bot wallet first. Your main connected wallet is not used by the bot.');
+  if(botTimer)throw new Error('Bot is already running');
+  if(!$('botRiskAck').checked)throw new Error('Confirm the automated-trading risk notice first');
+  const addr=$('botToken').value,tok=tokenOf(addr);if(!tok)throw new Error('Choose a saved launched token');
+  const cfg={trigger:Number($('botTrigger').value),spend:parseAmt($('botSpend').value,18),tp:Number($('botTP').value),sl:Number($('botSL').value),trail:Number($('botTrail').value),maxBuys:Math.floor(Number($('botMaxBuys').value)),interval:Math.floor(Number($('botInterval').value))};
+  if(!(Number.isFinite(cfg.trigger)&&cfg.trigger>0&&cfg.spend>0n&&cfg.tp>0&&cfg.tp<=1000&&cfg.sl>0&&cfg.sl<=90&&Number.isFinite(cfg.trail)&&cfg.trail>=0&&cfg.trail<=90&&cfg.maxBuys>=1&&cfg.maxBuys<=50&&cfg.interval>=10&&cfg.interval<=300))throw new Error('Check trigger, spend, take-profit (0–1000%), stop-loss (0–90%), trailing stop (0–90%), max buys (1–50) and interval (10–300s).');
+  if((await readP.getBalance(botAccount))<cfg.spend+ethers.parseEther('0.015'))throw new Error('Fund the bot wallet with enough Fuji AVAX for at least one buy plus gas.');
+  const pd=await pairData(tok.addr);if(!pd.pair)throw new Error('This token has no LFJ AVAX pool yet.');
+  const savedPos=JSON.parse(localStorage.getItem(BOT_POSITION_KEY)||'null');
+  if(savedPos?.position&&BigInt(savedPos.position)>0n&&K(savedPos.token)!==K(tok.addr))throw new Error('A different token position is saved. Select that token and manage/close it before switching.');
+  if(savedPos?.position&&BigInt(savedPos.position)>0n){
+    const actual=await rd(tok.addr,ERC20_ABI).balanceOf(botAccount);if(actual<BigInt(savedPos.position))throw new Error('Saved bot position is larger than the bot wallet token balance. Check the wallet before restarting.');
+    botRun={token:tok.addr,buys:Number(savedPos.buys)||0,position:BigInt(savedPos.position),entryPrice:Number(savedPos.entryPrice)||0,spent:BigInt(savedPos.spent||'0'),peakPnl:Number(savedPos.peakPnl)||0,config:cfg};
+  }else botRun={token:tok.addr,buys:0,position:0n,entryPrice:0,spent:0n,peakPnl:0,config:cfg};
+  $('botCount').textContent=String(botRun.buys);$('botPosition').textContent=botRun.position>0n?fmt(botRun.position,tok.dec,5)+' '+tok.sym+' · restored position':'None';$('botStart').disabled=true;$('botStop').disabled=false;$('botStatus').textContent='Running · '+tok.sym+' · bot wallet '+short(botAccount);
+  botNote('Started with dedicated bot wallet '+botAccount+'. Main wallet is not involved.');
+  botTimer=setInterval(botTick,cfg.interval*1000);await botTick();
+});
+$('botStop').onclick=()=>stopBot();
+loadBotPosition();renderBotTokens();renderBotWallet();if(botRun.position>0n){$('botCount').textContent=String(botRun.buys);$('botPosition').textContent='Saved position awaiting bot wallet unlock';}
 
 /* ---------- pools ---------- */
 async function loadPools(){
