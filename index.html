@@ -252,6 +252,7 @@ input:focus{border-color:#ff6a1a;box-shadow:0 0 0 3px rgba(255,106,26,.18)}
   <a class="brand" href="#swap"><div class="logo">F</div><b>Fuji Forge</b><span class="testnet">Fuji</span></a>
   <nav class="tabs" id="tabs">
     <button data-view="swap"><i>⇄</i>Swap</button>
+    <button data-view="dex"><i>🔎</i>DEX</button>
     <button data-view="pools"><i>≋</i>Pools</button>
     <button data-view="earn"><i>⧉</i>Earn</button>
     <button data-view="launch"><i>🚀</i>Launch</button>
@@ -454,7 +455,7 @@ input:focus{border-color:#ff6a1a;box-shadow:0 0 0 3px rgba(255,106,26,.18)}
         <div class="grid4" id="mnStats" style="margin:14px 0"></div>
         <div class="grid2">
           <div class="stat"><span>Your pending rewards</span><b id="mnPend">0</b><small id="mnPrice"></small>
-            <div class="actions" style="margin-top:10px"><button class="btn sm" id="mnClaim">Claim rewards</button><button class="btn ghost sm" id="mnMint">Mint a miner</button></div></div>
+            <div class="actions" style="margin-top:10px"><button class="btn sm" id="mnClaim">Claim rewards</button><input id="mnQty" type="text" inputmode="numeric" value="1" style="width:60px"><button class="btn ghost sm" id="mnMint">Mint</button></div></div>
           <div class="stat"><span>Fund the reward pool</span><small>Anyone can add tokens. They pay out at the emission rate.</small>
             <div class="row" style="margin-top:10px"><input id="mnFund" type="text" inputmode="decimal" placeholder="Amount" style="flex:1"><button class="btn ghost sm" id="mnFundBtn">Fund</button></div></div>
         </div>
@@ -471,6 +472,13 @@ input:focus{border-color:#ff6a1a;box-shadow:0 0 0 3px rgba(255,106,26,.18)}
         </details>
       </div>
     </div>
+  </section>
+
+  <section id="v-dex" class="view hidden">
+    <div class="pagehead"><div><h1>DEX</h1><p>Every token launched here, with price, liquidity, chart and contract info. Tap a token for details.</p></div>
+      <div class="row"><input id="dxSearch" placeholder="Search name or symbol" style="width:240px"><button class="btn ghost sm" id="dxRefresh">Refresh</button></div></div>
+    <div class="card" id="dxList"></div>
+    <div id="dxDetail" class="hidden"></div>
   </section>
 
   <!-- PORTFOLIO -->
@@ -1236,15 +1244,15 @@ async function fetchPairLogs(pair){
   out.sort((x,y)=>x.blockNumber-y.blockNumber);
   return {logs:out,latest,scanned:starts.length*CH,failed,chunks:starts.length,lastErr};
 }
-async function loadMarket(tok){
+async function loadMarket(tok,host=host){
   const id=++mkId,t=tokenOf(tok);
-  $('market').innerHTML='<div class="skel" style="width:40%"></div><div class="skel" style="height:200px"></div><div class="skel"></div>';
+  host.innerHTML='<div class="skel" style="width:40%"></div><div class="skel" style="height:200px"></div><div class="skel"></div>';
   try{
     const pd=await pairData(tok);
     if(id!==mkId) return;
     if(!pd.pair){
       chartPts=[];
-      $('market').innerHTML=mkEmpty(`No ${esc(t.sym)}/AVAX pool yet.`)+`<div style="text-align:center"><button class="btn sm" id="mkCreate">Create pool</button></div>`;
+      host.innerHTML=mkEmpty(`No ${esc(t.sym)}/AVAX pool yet.`)+`<div style="text-align:center"><button class="btn sm" id="mkCreate">Create pool</button></div>`;
       $('mkCreate').onclick=()=>openLiq(tok,'add');return;
     }
     pdCache[K(tok)]=pd;
@@ -1270,7 +1278,7 @@ async function loadMarket(tok){
     trades=trades.slice(-10).reverse();
     const chg=pts.length>1?(pts[pts.length-1].p/pts[0].p-1)*100:null;
     const tvl=Number(ethers.formatEther(pd.avaxRes))+Number(ethers.formatUnits(pd.tokRes,t.dec))*(price||0);
-    $('market').innerHTML=`
+    host.innerHTML=`
       <div class="mkhead"><div class="tcell">${pairAv(t)}<div><b>${esc(t.sym)} / AVAX</b><small>${esc(t.name)}</small></div></div>
         <div class="mkprice"><b>${price==null?'—':price.toPrecision(5)} AVAX</b>${chg==null?'':`<span class="${chg>=0?'ok':'err'}">${chg>=0?'+':''}${chg.toFixed(2)}%</span>`}</div></div>
       <div class="chartbox"><canvas id="chart"></canvas><div class="tip hidden" id="chTip"></div></div>
@@ -1283,9 +1291,9 @@ async function loadMarket(tok){
       ${trades.length?`<table><tbody>${trades.map(x=>`<tr><td class="${x.buy?'ok':'err'}">${x.buy?'Buy':'Sell'}</td><td>${fmt(x.tok,t.dec,4)} ${esc(t.sym)}</td><td class="r">${fmt(x.av,18,4)} AVAX</td><td class="r dim"><a href="${FUJI.explorer}/tx/${x.tx}" target="_blank">~${ago((latest-x.b)*2)} ago</a></td></tr>`).join('')}</tbody></table>`:'<div class="dim">No swaps found in recent blocks.</div>'}
       <div class="actions"><button class="btn sm ghost" id="mkAdd">Add liquidity</button></div>`;
     $('mkAdd').onclick=()=>openLiq(tok,'add');
-    setupChart(pts);
+    setupChart(pts,host);
   }catch(e){
-    if(id===mkId) $('market').innerHTML=mkEmpty('Could not load market data. Check the router in Settings.');
+    if(id===mkId) host.innerHTML=mkEmpty('Could not load market data. Check the router in Settings.');
   }
 }
 function drawChart(cv,pts,hi){
@@ -1323,19 +1331,19 @@ function drawChart(cv,pts,hi){
     g.fillStyle=col;g.beginPath();g.arc(X(hi),Y(pts[hi].p),4,0,7);g.fill();
   }
 }
-function setupChart(pts){
-  chartPts=pts;const cv=$('chart');if(!cv) return;
+function setupChart(pts,host=$('market')){
+  chartPts=pts;const cv=host.querySelector('#chart');if(!cv) return;
   drawChart(cv,pts,-1);
   cv.onmousemove=e=>{
     if(pts.length<2) return;
     const r=cv.getBoundingClientRect();
     const k=Math.max(0,Math.min(pts.length-1,Math.round((e.clientX-r.left)/r.width*(pts.length-1))));
     drawChart(cv,pts,k);
-    const tip=$('chTip');tip.classList.remove('hidden');const q=pts[k];tip.textContent=(q.buy?'▲ Buy ':'▼ Sell ')+fmt(q.tok,q.dec||18,4)+' for '+fmt(q.av,18,4)+' AVAX · '+q.p.toPrecision(5)+' AVAX/token · block '+q.b;
+    const tip=host.querySelector('#chTip');tip.classList.remove('hidden');const q=pts[k];tip.textContent=(q.buy?'▲ Buy ':'▼ Sell ')+fmt(q.tok,q.dec||18,4)+' for '+fmt(q.av,18,4)+' AVAX · '+q.p.toPrecision(5)+' AVAX/token · block '+q.b;
   };
-  cv.onmouseleave=()=>{drawChart(cv,pts,-1);$('chTip')?.classList.add('hidden')};
+  cv.onmouseleave=()=>{drawChart(cv,pts,-1);host.querySelector('#chTip')?.classList.add('hidden')};
 }
-window.addEventListener('resize',()=>{const cv=$('chart');if(cv&&chartPts.length) drawChart(cv,chartPts,-1)});
+window.addEventListener('resize',()=>{const cv=host.querySelector('#chart');if(cv&&chartPts.length) drawChart(cv,chartPts,-1)});
 
 /* ---------- pools ---------- */
 async function loadPools(){
@@ -1768,7 +1776,7 @@ document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('.m
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.modal.open').forEach(m=>m.classList.remove('open'));$('drawer').classList.remove('open');$('acct').classList.add('hidden')}});
 
 /* ---------- views ---------- */
-const VIEWS=['swap','pools','earn','launch','casino','mine','port'];
+const VIEWS=['swap','dex','pools','earn','launch','casino','mine','port'];
 function show(view){
   if(!VIEWS.includes(view)) view='swap';
   VIEWS.forEach(v=>$('v-'+v).classList.toggle('hidden',v!==view));
@@ -1781,6 +1789,7 @@ function show(view){
   if(view==='launch') run(renderTT);
   if(view==='casino') run(renderCasino);
   if(view==='mine') run(renderMining);
+  if(view==='dex') run(renderDex);
   window.scrollTo(0,0);
 }
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>show(b.dataset.view));
@@ -2204,23 +2213,29 @@ contract Miners {
         uint256 earned = excluded[u] ? 0 : balanceOf[u] * (acc - userDebt[u]) / 1e18;
         return owed[u] + earned;
     }
-    function mint() external returns (uint256 id) {
-        require(minted < maxSupply, "sold out");
+    function mint() external returns (uint256) { return _mintMany(1); }
+    function mintMany(uint256 n) external returns (uint256) { return _mintMany(n); }
+    function _mintMany(uint256 n) internal returns (uint256 firstId) {
+        require(n > 0 && n <= 20, "1-20");
+        require(minted + n <= maxSupply, "sold out");
         _update();
-        require(token.transferFrom(msg.sender, owner, price), "pay");
-        id = ++minted;
-        uint256 r = uint256(keccak256(abi.encodePacked(blockhash(block.number - 1), id, msg.sender))) % 100;
-        uint256 p = r < 60 ? 1 : (r < 90 ? 3 : (r < 98 ? 10 : 25));
-        uint256 sh = p * 1e18;
+        require(token.transferFrom(msg.sender, owner, price * n), "pay");
         _settle(msg.sender);
-        ownerOf[id] = msg.sender;
-        powerOf[id] = p;
-        nftsOf[msg.sender] += 1;
-        totalSupply += sh;
-        balanceOf[msg.sender] += sh;
-        if (!excluded[msg.sender]) totalCounted += sh;
-        emit Transfer(address(0), msg.sender, sh);
-        emit Minted(msg.sender, id, p);
+        firstId = minted + 1;
+        for (uint256 k = 0; k < n; k++) {
+            uint256 id = ++minted;
+            uint256 r = uint256(keccak256(abi.encodePacked(blockhash(block.number - 1), id, msg.sender))) % 100;
+            uint256 p = r < 60 ? 1 : (r < 90 ? 3 : (r < 98 ? 10 : 25));
+            uint256 sh = p * 1e18;
+            ownerOf[id] = msg.sender;
+            powerOf[id] = p;
+            nftsOf[msg.sender] += 1;
+            totalSupply += sh;
+            balanceOf[msg.sender] += sh;
+            if (!excluded[msg.sender]) totalCounted += sh;
+            emit Transfer(address(0), msg.sender, sh);
+            emit Minted(msg.sender, id, p);
+        }
     }
     function _move(address from, address to, uint256 amt) internal {
         _update();
@@ -2287,7 +2302,7 @@ contract Miners {
     }
 }
 `;
-const MN_ABI=['function price() view returns (uint256)','function maxSupply() view returns (uint256)','function minted() view returns (uint256)','function totalCounted() view returns (uint256)','function totalSupply() view returns (uint256)','function rate() view returns (uint256)','function owner() view returns (address)','function balanceOf(address) view returns (uint256)','function ownerOf(uint256) view returns (address)','function powerOf(uint256) view returns (uint256)','function pendingOf(address) view returns (uint256)','function excluded(address) view returns (bool)','function mint() returns (uint256)','function claim() returns (uint256)','function fund(uint256 amt)','function setRate(uint256 r)','function setExcluded(address a,bool ex)'];
+const MN_ABI=['function price() view returns (uint256)','function maxSupply() view returns (uint256)','function minted() view returns (uint256)','function totalCounted() view returns (uint256)','function totalSupply() view returns (uint256)','function rate() view returns (uint256)','function owner() view returns (address)','function balanceOf(address) view returns (uint256)','function ownerOf(uint256) view returns (address)','function powerOf(uint256) view returns (uint256)','function pendingOf(address) view returns (uint256)','function excluded(address) view returns (bool)','function mint() returns (uint256)','function mintMany(uint256 n) returns (uint256)','function claim() returns (uint256)','function fund(uint256 amt)','function setRate(uint256 r)','function setExcluded(address a,bool ex)'];
 const TIERS=[[1,'Common','#94a3b8'],[3,'Rare','#60a5fa'],[10,'Epic','#c084fc'],[25,'Legendary','#fbbf24']];
 const tierOf=p=>TIERS.find(t=>t[0]===Number(p))||[Number(p),'Miner','#94a3b8'];
 window.mnState=null;
@@ -2349,13 +2364,73 @@ async function mnDeploy(){
 }
 const mnAct=fn=>run(async()=>{needWallet();const s=window.mnState;if(!s) throw new Error('Pick a token with miners');await fn(s);await renderMining();await refreshBalances()});
 $('mnTok').onchange=()=>run(renderMining);
-$('mnMint').onclick=()=>mnAct(async s=>{await ensureAllowance(s.token,s.addr,ethers.MaxUint256);await sendTx(`Mint ${s.sym} miner`,wr(s.addr,MN_ABI).mint())});
+$('mnMint').onclick=()=>mnAct(async s=>{const q=Math.min(20,Math.max(1,parseInt($('mnQty').value||'1')||1));await ensureAllowance(s.token,s.addr,ethers.MaxUint256);await sendTx(`Mint ${q} ${s.sym} miner${q>1?'s':''}`,q>1?wr(s.addr,MN_ABI).mintMany(q):wr(s.addr,MN_ABI).mint())});
 $('mnClaim').onclick=()=>mnAct(async s=>{await sendTx('Claim mining rewards',wr(s.addr,MN_ABI).claim())});
 $('mnFundBtn').onclick=()=>mnAct(async s=>{const a=parseAmt($('mnFund').value,s.dec);if(a<=0n) throw new Error('Enter an amount');await ensureAllowance(s.token,s.addr,ethers.MaxUint256);await sendTx('Fund reward pool',wr(s.addr,MN_ABI).fund(a));$('mnFund').value=''});
 $('mnRateBtn').onclick=()=>mnAct(async s=>{if(!s.owner||K(s.owner)!==K(account)) throw new Error('Only the collection creator can change emission');const d=parseAmt($('mnRate').value,s.dec);await sendTx('Set emission',wr(s.addr,MN_ABI).setRate(d/86400n));$('mnRate').value=''});
 $('mnExclBtn').onclick=()=>mnAct(async s=>{if(!s.owner||K(s.owner)!==K(account)) throw new Error('Only the creator can exclude addresses');const a=$('mnExcl').value.trim();if(!isAddr(a)) throw new Error('Enter a valid address');await sendTx('Exclude address from rewards',wr(s.addr,MN_ABI).setExcluded(ethers.getAddress(a),true));$('mnExcl').value=''});
 $('mnPool').onclick=()=>run(async()=>{const s=window.mnState;if(!s) throw new Error('Pick a token with miners');openLiq(s.addr,'add')});
 setInterval(async()=>{const s=window.mnState;if(!s||!account||$('v-mine').classList.contains('hidden')) return;try{const p=await rd(s.addr,MN_ABI).pendingOf(account);$('mnPend').textContent=fmt(p,s.dec,4)+' '+s.sym}catch(e){}},4000);
+
+/* ---------- dex ---------- */
+let dxRows=[],dxSelected=null;
+async function renderDex(){
+  if(dxSelected){return openDexToken(dxSelected)}
+  $('dxDetail').classList.add('hidden');$('dxList').classList.remove('hidden');
+  if(!state.tokens.length){$('dxList').innerHTML=mkEmpty('No tokens yet. Launch one from the Launch tab.');return}
+  $('dxList').innerHTML='<div class="skel" style="height:220px"></div>';
+  dxRows=await Promise.all(state.tokens.map(async t=>{
+    let pd={pair:null};
+    if(state.verified){try{pd=await pairData(t.addr)}catch(e){}}
+    const price=pd.pair?priceOf(pd):null;
+    const tvl=pd.pair?Number(ethers.formatEther(pd.avaxRes))+Number(ethers.formatUnits(pd.tokRes,t.dec||18))*(price||0):0;
+    const type=t.miner?'Miner shares':((state.miners||[]).some(m=>K(m.token)===K(t.addr))?'Has miners':'Token');
+    return {t,pd,price,tvl,type};
+  }));
+  drawDexList();
+}
+function drawDexList(){
+  const q=($('dxSearch').value||'').trim().toLowerCase();
+  const list=dxRows.filter(r=>!q||r.t.name.toLowerCase().includes(q)||r.t.sym.toLowerCase().includes(q));
+  $('dxList').innerHTML=list.length?`<div class="tablewrap"><table><thead><tr><th>Token</th><th class="r">Price</th><th class="r">Liquidity (AVAX)</th><th>Pool</th><th>Type</th><th>Launched</th></tr></thead><tbody>${list.map(r=>`<tr class="dxrow" data-a="${r.t.addr}" style="cursor:pointer"><td><div class="tcell">${av(r.t,'sm')}<div><b>${esc(r.t.name)}</b><small>${esc(r.t.sym)}</small></div></div></td><td class="r">${r.price==null?'—':r.price.toPrecision(4)+' AVAX'}</td><td class="r">${r.pd.pair?r.tvl.toLocaleString(undefined,{maximumFractionDigits:2}):'—'}</td><td>${r.pd.pair?'<span class="ok">Live</span>':'<span class="dim">No pool</span>'}</td><td>${esc(r.type)}</td><td class="dim">${esc(r.t.time||'')}</td></tr>`).join('')}</tbody></table></div>`:mkEmpty('No tokens match.');
+  $('dxList').querySelectorAll('.dxrow').forEach(tr=>tr.onclick=()=>{dxSelected=tr.dataset.a;renderDex()});
+}
+async function openDexToken(addr){
+  const t=tokenOf(addr);
+  if(!t){dxSelected=null;return renderDex()}
+  $('dxList').classList.add('hidden');$('dxDetail').classList.remove('hidden');
+  $('dxDetail').innerHTML=`<div class="row" style="margin-bottom:14px"><button class="btn ghost sm" id="dxBack">← All tokens</button></div>
+    <div class="grid2" style="grid-template-columns:1.6fr 1fr;align-items:start">
+      <div class="card" id="dxMarket"></div>
+      <div class="card" id="dxInfo"><div class="skel" style="height:200px"></div></div>
+    </div>`;
+  $('dxBack').onclick=()=>{dxSelected=null;renderDex()};
+  const dec=t.dec||18;
+  const mm=(state.miners||[]).find(m=>K(m.token)===K(addr));
+  loadMarket(addr,$('dxMarket'));
+  const c=rd(addr,TOKEN2_ABI);
+  const [sup,cap,burned,owner,paused]=await Promise.all([c.totalSupply(),c.cap().catch(()=>null),c.totalBurned().catch(()=>null),c.owner().catch(()=>null),c.paused().catch(()=>null)]);
+  const pd=state.verified?await pairData(addr).catch(()=>({pair:null})):{pair:null};
+  if(dxSelected!==addr) return;
+  const kv=(l,v)=>`<div class="kv"><span>${l}</span><span>${v}</span></div>`;
+  const link=(a,label)=>`<a href="${FUJI.explorer}/address/${a}" target="_blank">${label} ↗</a>`;
+  $('dxInfo').innerHTML=`<div class="tcell" style="margin-bottom:12px">${av(t,'lg')}<div><h2>${esc(t.name)}</h2><span class="dim">${esc(t.sym)}</span></div></div>
+    ${kv('Total supply',fmt(sup,dec,2)+' '+esc(t.sym))}
+    ${kv('Max cap',cap==null?'n/a':(cap>0n?fmt(cap,dec,2):'Fixed supply'))}
+    ${kv('Burned',burned==null?'n/a':fmt(burned,dec,2))}
+    ${kv('Transfers',paused==null?'n/a':(paused?'<span class="err">Paused</span>':'<span class="ok">Live</span>'))}
+    ${kv('Owner',owner==null?'n/a (older token)':short(owner))}
+    ${kv('Launched',esc(t.time||'—'))}
+    ${kv('Token contract',link(addr,short(addr)))}
+    ${kv('Pool',pd.pair?link(pd.pair,short(pd.pair)):'<span class="dim">none yet</span>')}
+    ${mm?kv('Miner collection',link(mm.addr,short(mm.addr))):''}
+    <div class="actions"><button class="btn sm" id="dxBuy">Buy / sell</button><button class="btn sm ghost" id="dxLiq">Add liquidity</button>${mm?'<button class="btn sm ghost" id="dxMine">Mining</button>':''}</div>`;
+  $('dxBuy').onclick=()=>{sw.to=addr;show('swap')};
+  $('dxLiq').onclick=()=>run(async()=>openLiq(addr,'add'));
+  if(mm) $('dxMine').onclick=()=>{$('mnTok').value=addr;show('mine')};
+}
+$('dxSearch').oninput=()=>drawDexList();
+$('dxRefresh').onclick=()=>{dxSelected=null;run(renderDex)};
 
 /* ---------- boot ---------- */
 renderTokList_dl();renderLog();renderHeader();renderPreview();renderPools();renderPort();
