@@ -1171,6 +1171,28 @@ function updateSwapUI(){
   $('swBtn').textContent=label;$('swBtn').disabled=dis;
   $('swBtn').classList.toggle('danger',!!(sw.q&&sw.q.impact>15));
 }
+// Checks the things most likely to make the router fail silently before any transaction is sent.
+async function swapPreflight(f,amt){
+  const gas=ethers.parseEther('0.01');
+  const nat=await readP.getBalance(account);
+  if(isNative(sw.from)){
+    if(nat<amt+gas) throw new Error(`Not enough AVAX: this swap needs ${fmt(amt,18,4)} AVAX plus gas, you have ${fmt(nat,18,4)}.`);
+  }else{
+    if(nat<gas) throw new Error(`You need about 0.01 AVAX for gas. You have ${fmt(nat,18,4)}.`);
+    const bal=await rd(f.addr,ERC20_ABI).balanceOf(account);
+    if(bal<amt) throw new Error(`Not enough ${f.sym}: you have ${fmt(bal,f.dec,4)}, this swap needs ${fmt(amt,f.dec,4)}.`);
+  }
+  if((await readP.getCode(LFJ.router))==='0x') throw new Error('No contract at the LFJ router address on this network. Check Settings.');
+}
+// Turns the raw router error into a message that says what to do.
+function explainSwapError(e){
+  const raw=[e?.shortMessage,e?.reason,e?.info?.error?.message,e?.message].filter(Boolean).join(' | ');
+  if(/user (rejected|denied)|ACTION_REJECTED/i.test(raw)) return 'Swap cancelled in the wallet.';
+  if(/429|rate.?limit|too many requests/i.test(raw)) return 'The RPC is rate-limiting requests. Wait a minute and retry, or set a working RPC in Settings.';
+  if(/insufficient funds/i.test(raw)) return 'Not enough AVAX to pay gas for this swap.';
+  if(/missing revert data|CALL_EXCEPTION|could not coalesce/i.test(raw)) return 'The router rejected the swap without giving a reason. Usually the quote is stale, the route has too little liquidity for this size, or slippage is too tight. Refresh the quote, lower the amount or raise slippage, then retry. If it keeps happening, the RPC may be hiding the reason: try another RPC in Settings.';
+  return 'Swap failed: '+raw.slice(0,220);
+}
 async function doSwap(){
   needWallet();
   const q=sw.q;if(!q) throw new Error('No quote');
@@ -1180,13 +1202,16 @@ async function doSwap(){
     const fresh=(await getQuote(sw.from,sw.to,q.inAmt))||q;
     const min=fresh.out*(10000n-slipBps())/10000n,dl=deadline(),R=routerW(),path=fresh.path;
     const label=`Swap ${f.sym} → ${t.sym}`;
-    if(isNative(sw.from)){
-      await sendTx(label,R.swapExactNATIVEForTokens(min,path,account,dl,{value:q.inAmt}));
-    }else{
-      await ensureAllowance(sw.from,LFJ.router,q.inAmt);
-      if(isNative(sw.to)) await sendTx(label,R.swapExactTokensForNATIVE(q.inAmt,min,path,account,dl));
-      else await sendTx(label,R.swapExactTokensForTokens(q.inAmt,min,path,account,dl));
-    }
+    await swapPreflight(f,q.inAmt);
+    try{
+      if(isNative(sw.from)){
+        await sendTx(label,R.swapExactNATIVEForTokens(min,path,account,dl,{value:q.inAmt}));
+      }else{
+        await ensureAllowance(sw.from,LFJ.router,q.inAmt);
+        if(isNative(sw.to)) await sendTx(label,R.swapExactTokensForNATIVE(q.inAmt,min,path,account,dl));
+        else await sendTx(label,R.swapExactTokensForTokens(q.inAmt,min,path,account,dl));
+      }
+    }catch(e){throw new Error(explainSwapError(e))}
     $('swIn').value='';$('swOut').value='';sw.q=null;
     await refreshBalances();loadMarketFor(true);loadPools();
   }finally{sw.busy=false;updateSwapUI()}
