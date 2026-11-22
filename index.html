@@ -1,169 +1,387 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Fuji Forge · Token & Staking</title>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Fuji Forge · Swap, Pool & Launch</title>
 <style>
-:root{--bg:#0a0c10;--side:#0e1117;--card:#131821;--card2:#1a2130;--line:#232b3a;--text:#e7ebf2;--mute:#8791a4;--acc:#e84142;--acc2:#ff7a59;--ok:#34d399;--err:#f87171;--r:14px}
+:root{--bg:#06080c;--panel:#0b0f16;--card:#111722;--card2:#171e2b;--line:#1f2736;--line2:#2a3446;--text:#eaeef6;--mute:#8590a6;--acc:#e84142;--acc2:#ff8a5b;--ok:#34d399;--warn:#fbbf24;--err:#f87171;--r:20px}
 *{box-sizing:border-box}
-body{margin:0;font:14px/1.5 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh}
-button,input{font:inherit}
-/* sidebar */
-aside{width:232px;background:var(--side);border-right:1px solid var(--line);padding:22px 14px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh}
-.brand{display:flex;align-items:center;gap:10px;padding:0 8px 18px}
-.logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:grid;place-items:center;font-weight:800}
-.brand b{font-size:16px}.brand small{display:block;color:var(--mute);font-size:11px}
-nav button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:0;color:var(--mute);padding:10px 12px;border-radius:10px;cursor:pointer;font-weight:500}
-nav button:hover{background:var(--card);color:var(--text)}
-nav button.on{background:var(--card2);color:var(--text);box-shadow:inset 3px 0 0 var(--acc)}
-nav i{font-style:normal;width:20px;text-align:center}
-.side-foot{margin-top:auto;font-size:12px;color:var(--mute);padding:10px 8px}
-/* main */
-main{flex:1;min-width:0;padding:26px 32px 40px}
-.top{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:24px;flex-wrap:wrap}
-.top h1{margin:0;font-size:22px;letter-spacing:-.01em}
-.top p{margin:2px 0 0;color:var(--mute);font-size:13px}
-.pills{display:flex;gap:10px;align-items:center}
-.pill{padding:7px 12px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:12px;color:var(--mute)}
+html{scroll-behavior:smooth}
+body{margin:0;font:14px/1.5 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+.bg{position:fixed;inset:0;z-index:-1;background:radial-gradient(900px 500px at 85% -10%,#3a1218 0%,transparent 60%),radial-gradient(700px 500px at -10% 30%,#101d3a 0%,transparent 60%),radial-gradient(600px 400px at 50% 110%,#2a1410 0%,transparent 60%),var(--bg)}
+button,input,select{font:inherit}
+a{color:#8fb4ff;text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3{margin:0;letter-spacing:-.02em}
+.hidden{display:none!important}
+.mono{font-family:ui-monospace,Menlo,monospace;font-size:12px}
+.ok{color:var(--ok)}.err{color:var(--err)}.warn{color:var(--warn)}.dim{color:var(--mute)}
+.r{text-align:right}
+/* nav */
+.nav{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 24px;background:#080b11cc;backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;color:var(--text);font-size:17px}
+.brand:hover{text-decoration:none}
+.logo{width:34px;height:34px;border-radius:11px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:grid;place-items:center;font-weight:800;box-shadow:0 6px 20px #e8414240}
+.testnet{font-size:10px;padding:2px 7px;border-radius:6px;background:#2a1418;color:var(--acc2);font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.tabs{display:flex;gap:4px;background:var(--panel);border:1px solid var(--line);padding:4px;border-radius:14px}
+.tabs button{background:none;border:0;color:var(--mute);padding:8px 16px;border-radius:10px;cursor:pointer;font-weight:600;transition:.15s;display:flex;gap:7px;align-items:center}
+.tabs button:hover{color:var(--text)}
+.tabs button.on{background:var(--card2);color:var(--text);box-shadow:inset 0 0 0 1px var(--line2)}
+.navr{display:flex;align-items:center;gap:8px}
+.pill{padding:7px 12px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:12px;color:var(--mute);white-space:nowrap}
 .pill.live{color:var(--ok);border-color:#1f4d3d}
-.pill.live::before{content:"● ";}
-.btn{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border:0;border-radius:10px;padding:10px 16px;font-weight:600;cursor:pointer}
-.btn.ghost{background:var(--card2);border:1px solid var(--line);color:var(--text)}
-.btn:disabled{opacity:.5;cursor:default}
-.btn.sm{padding:6px 10px;font-size:12px}
-/* cards */
-.grid{display:grid;gap:18px;grid-template-columns:repeat(4,1fr)}
-.grid.two{grid-template-columns:1fr 1fr}
-@media(max-width:1100px){.grid{grid-template-columns:1fr 1fr}}
-@media(max-width:760px){aside{display:none}main{padding:18px}.grid,.grid.two{grid-template-columns:1fr}}
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;margin-bottom:18px}
-.card h2{font-size:15px;margin:0 0 4px}
-.card .sub{color:var(--mute);font-size:13px;margin:0 0 16px}
-.stat{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px}
-.stat span{color:var(--mute);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
-.stat b{display:block;font-size:20px;margin-top:6px;word-break:break-all}
+.pill.live::before{content:"● "}
+.pillbtn{width:36px;height:36px;border-radius:12px;background:var(--card);border:1px solid var(--line);color:var(--text);cursor:pointer;font-size:15px}
+.pillbtn:hover{background:var(--card2)}
+.btn{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border:0;border-radius:12px;padding:10px 18px;font-weight:700;cursor:pointer;transition:.15s;box-shadow:0 6px 18px #e8414233}
+.btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn.ghost{background:var(--card2);border:1px solid var(--line2);color:var(--text);box-shadow:none}
+.btn.sm{padding:6px 11px;font-size:12px;border-radius:9px}
+.btn.big{width:100%;padding:16px;font-size:16px;border-radius:16px;margin-top:14px}
+.btn.danger{background:linear-gradient(135deg,#b91c1c,#ef4444)}
+.btn:disabled{opacity:.45;cursor:default;transform:none;filter:none}
+.menu{position:absolute;right:24px;top:62px;z-index:30;background:var(--card);border:1px solid var(--line2);border-radius:14px;padding:6px;min-width:210px;box-shadow:0 20px 50px #000a;display:flex;flex-direction:column}
+.menu button,.menu a{background:none;border:0;color:var(--text);text-align:left;padding:10px 12px;border-radius:9px;cursor:pointer;display:block}
+.menu button:hover,.menu a:hover{background:var(--card2);text-decoration:none}
+.banner{display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;padding:10px 16px;background:linear-gradient(90deg,#2a1418,#1d1520);border-bottom:1px solid #4a1d24;font-size:13px}
+/* layout */
+main{max-width:1180px;margin:0 auto;padding:30px 24px 80px}
+.view{animation:fade .25s}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.pagehead{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+.pagehead h1{font-size:28px}.pagehead p{margin:4px 0 0;color:var(--mute)}
+.card{background:linear-gradient(180deg,#131a26,var(--card));border:1px solid var(--line);border-radius:var(--r);padding:22px}
+.card h2{font-size:17px}.card .sub{color:var(--mute);margin:4px 0 18px}
+.grid2{display:grid;gap:16px;grid-template-columns:1fr 1fr}
+.grid3{display:grid;gap:16px;grid-template-columns:repeat(3,1fr)}
+.grid4{display:grid;gap:14px;grid-template-columns:repeat(4,1fr)}
+@media(max-width:980px){.grid4{grid-template-columns:1fr 1fr}.grid3{grid-template-columns:1fr 1fr}}
+@media(max-width:700px){.grid2,.grid3,.grid4{grid-template-columns:1fr}}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;position:relative;overflow:hidden}
+.stat::after{content:"";position:absolute;right:-30px;top:-30px;width:90px;height:90px;border-radius:50%;background:#e8414212}
+.stat span{color:var(--mute);font-size:11px;text-transform:uppercase;letter-spacing:.08em}
+.stat b{display:block;font-size:20px;margin-top:4px;word-break:break-all}
 .stat small{color:var(--mute);font-size:12px}
 .fields{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.fields .full{grid-column:1/-1}
 @media(max-width:700px){.fields{grid-template-columns:1fr}}
-.field.full{grid-column:1/-1}
 label{display:block;font-size:12px;color:var(--mute);margin-bottom:6px}
-input{width:100%;padding:11px 12px;background:var(--bg);border:1px solid var(--line);border-radius:10px;color:var(--text);outline:none}
-input:focus{border-color:var(--acc)}
+input,select{width:100%;padding:12px 14px;background:var(--bg);border:1px solid var(--line);border-radius:12px;color:var(--text);outline:none;transition:.15s}
+input:focus{border-color:var(--acc);box-shadow:0 0 0 3px #e8414222}
+input[type=range]{padding:0;accent-color:var(--acc);box-shadow:none;border:0}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.seg{display:inline-flex;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:4px;margin-bottom:16px}
+.seg button{background:none;border:0;color:var(--mute);padding:8px 18px;border-radius:9px;cursor:pointer;font-weight:600}
+.seg button.on{background:var(--card2);color:var(--text)}
+.chip{background:var(--card2);border:1px solid var(--line2);color:var(--text);border-radius:999px;padding:5px 12px;font-size:12px;cursor:pointer}
+.chip:hover{border-color:var(--acc)}
+.chip.on{border-color:var(--acc);background:#2a1418}
+.tag{display:inline-block;padding:2px 8px;border-radius:7px;font-size:11px;font-weight:700;background:#2b1f3d;color:#c9a7ff}
+.tag.g{background:#10301f;color:var(--ok)}
+.kv{display:flex;justify-content:space-between;gap:12px;margin:7px 0;font-size:13px}
+.kv span{color:var(--mute)}
+.empty{color:var(--mute);text-align:center;padding:28px}
 /* table */
+.tablewrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:13px}
-th{text-align:left;color:var(--mute);font-weight:500;font-size:12px;padding:8px 10px;border-bottom:1px solid var(--line)}
-td{padding:12px 10px;border-bottom:1px solid var(--line)}
+th{text-align:left;color:var(--mute);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.06em;padding:8px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:14px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
 tr:last-child td{border-bottom:0}
-.tag{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600}
-.tag.t{background:#1e2a44;color:#7aa7ff}.tag.p{background:#2b1f3d;color:#c4a1ff}
-a{color:#8fb4ff;text-decoration:none}a:hover{text-decoration:underline}
-.empty{color:var(--mute);text-align:center;padding:26px}
-.mono{font-family:ui-monospace,Menlo,monospace;font-size:12px}
-/* log */
-#log{font-family:ui-monospace,Menlo,monospace;font-size:12px;max-height:200px;overflow:auto;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px}
-#log div{padding:2px 0}
-.ok{color:var(--ok)}.err{color:var(--err)}.dim{color:var(--mute)}
-.hidden{display:none!important}
+th.r,td.r{text-align:right}
+.tcell{display:flex;align-items:center;gap:10px}
+.tcell small{display:block;color:var(--mute);font-size:11px}
+.iconrow{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+.ib{background:var(--card2);border:1px solid var(--line2);color:var(--text);width:30px;height:30px;border-radius:9px;cursor:pointer;display:inline-grid;place-items:center;font-size:13px}
+.ib:hover{border-color:var(--acc);text-decoration:none}
+/* avatars */
+.av{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,hsl(var(--h),70%,48%),hsl(calc(var(--h) + 40),70%,32%));font-weight:800;font-size:10px;color:#fff;flex-shrink:0}
+.av.sm{width:26px;height:26px;font-size:9px}.av.lg{width:46px;height:46px;font-size:13px}
+.av.avax{background:linear-gradient(135deg,#e84142,#b91c1c);font-size:13px}
+.pairav{display:inline-flex}.pairav .av+.av{margin-left:-10px;border:2px solid var(--card)}
+/* swap */
+.swapwrap{display:grid;grid-template-columns:minmax(0,460px) minmax(0,1fr);gap:20px;align-items:start}
+@media(max-width:980px){.swapwrap{grid-template-columns:1fr}}
+.cardhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.box{background:var(--bg);border:1px solid var(--line);border-radius:18px;padding:14px 16px;transition:.15s}
+.box:focus-within{border-color:#e8414266}
+.boxtop,.boxfoot{display:flex;justify-content:space-between;align-items:center;color:var(--mute);font-size:12px;min-height:20px}
+.boxmain{display:flex;align-items:center;gap:10px;margin:8px 0}
+.amt{flex:1;min-width:0;background:none!important;border:0!important;box-shadow:none!important;outline:0;font-size:30px;font-weight:600;color:var(--text);padding:0!important;letter-spacing:-.02em}
+.tokbtn{display:flex;align-items:center;gap:8px;background:var(--card2);border:1px solid var(--line2);color:var(--text);border-radius:999px;padding:5px 12px 5px 5px;font-weight:700;cursor:pointer;white-space:nowrap}
+.tokbtn:hover{border-color:var(--acc)}
+.tokbtn.sel{background:linear-gradient(135deg,var(--acc),var(--acc2));border:0;padding:10px 16px}
+.quick button{background:var(--card2);border:1px solid var(--line2);color:var(--mute);border-radius:8px;padding:2px 8px;font-size:11px;font-weight:700;cursor:pointer;margin-left:4px}
+.quick button:hover{color:var(--text);border-color:var(--acc)}
+.flipwrap{display:flex;justify-content:center;margin:-12px 0;position:relative;z-index:2}
+.flip{width:38px;height:38px;border-radius:12px;background:var(--card2);border:4px solid var(--card);color:var(--text);cursor:pointer;font-size:15px}
+.flip:hover{background:var(--acc)}
+.details{margin-top:12px;padding:10px 14px;border:1px solid var(--line);border-radius:14px;background:#0a0e15}
+/* market */
+.mkhead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.mkprice{text-align:right}.mkprice b{font-size:22px;display:block}
+.chartbox{position:relative;height:240px;border:1px solid var(--line);border-radius:14px;background:#0a0e15;overflow:hidden}
+.chartbox canvas{width:100%;height:100%;display:block}
+.tip{position:absolute;top:8px;left:10px;font-size:12px;color:var(--text);background:#000a;padding:3px 8px;border-radius:8px}
+.mkstats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}
+.mkstats div{background:#0a0e15;border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.mkstats span{display:block;color:var(--mute);font-size:11px}
+@media(max-width:700px){.mkstats{grid-template-columns:1fr 1fr}}
+.skel{height:14px;border-radius:7px;background:linear-gradient(90deg,var(--card2),var(--line),var(--card2));background-size:200% 100%;animation:sh 1.2s infinite;margin:10px 0}
+@keyframes sh{to{background-position:-200% 0}}
+/* modal / drawer */
+.modal{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;background:#000a;backdrop-filter:blur(6px);padding:16px}
+.modal.open{display:flex}
+.sheet{width:100%;max-width:440px;max-height:90vh;overflow:auto;background:var(--card);border:1px solid var(--line2);border-radius:22px;padding:20px;box-shadow:0 30px 80px #000a}
+.sheethead{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.x{background:var(--card2);border:0;color:var(--mute);width:30px;height:30px;border-radius:9px;cursor:pointer}
+.tmlist{margin-top:12px;max-height:50vh;overflow:auto;display:flex;flex-direction:column;gap:2px}
+.tokrow{display:flex;align-items:center;gap:12px;background:none;border:0;color:var(--text);text-align:left;padding:10px;border-radius:12px;cursor:pointer;width:100%}
+.tokrow:hover{background:var(--card2)}
+.tokrow div{flex:1}.tokrow small{display:block;color:var(--mute);font-size:11px}
+.tokrow.import{border:1px dashed var(--acc)}
+.plus{text-align:center;color:var(--mute);margin:6px 0;font-size:18px}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:380px;max-width:100%;transform:translateX(100%);transition:.25s;background:var(--panel);border-left:1px solid var(--line);z-index:45;padding:20px;display:flex;flex-direction:column;gap:12px}
+.drawer.open{transform:none}
+#actList{flex:1;overflow:auto;font-family:ui-monospace,Menlo,monospace;font-size:12px}
+#actList div{padding:8px 0;border-bottom:1px solid var(--line)}
+#toast{position:fixed;right:22px;bottom:22px;display:flex;flex-direction:column;gap:8px;z-index:90}
+.toast{background:var(--card2);border:1px solid var(--line);border-left:3px solid var(--acc);padding:12px 16px;border-radius:12px;max-width:340px;box-shadow:0 10px 30px #0008}
+.toast.ok{border-left-color:var(--ok)}.toast.err{border-left-color:var(--err)}
+/* launch preview */
+.pv{display:flex;align-items:center;gap:14px;padding:18px;border:1px solid var(--line);border-radius:18px;background:var(--bg)}
+.pv b{font-size:18px;display:block}
+pre.src{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px;max-height:260px;overflow:auto;font-size:11px;white-space:pre}
+details summary{cursor:pointer;color:var(--mute);margin-top:16px}
+.poolcard{cursor:pointer;transition:.15s}
+.poolcard:hover,.poolcard.on{border-color:var(--acc)}
+@media(max-width:860px){
+  .nav{padding:10px 14px}.brand b,.testnet,#netPill,#hBal{display:none}
+  .tabs{position:fixed;left:12px;right:12px;bottom:12px;z-index:40;justify-content:space-around;box-shadow:0 10px 40px #000c;background:#0b0f16f2;backdrop-filter:blur(12px)}
+  .tabs button{padding:9px 10px;flex:1;justify-content:center;font-size:12px}
+  .tabs button i{display:none}
+  main{padding:20px 14px 100px}
+  .menu{right:14px}
+}
 </style></head><body>
+<div class="bg"></div>
 
-<aside>
-  <div class="brand"><div class="logo">F</div><div><b>Fuji Forge</b><small>Testnet token & staking</small></div></div>
-  <nav>
-    <button data-view="dash" class="on"><i>◎</i>Dashboard</button>
-    <button data-view="launch"><i>＋</i>Launch token</button>
-    <button data-view="pool"><i>⧉</i>Create pool</button>
-    <button data-view="manage"><i>↯</i>Manage pool</button>
+<header class="nav">
+  <a class="brand" href="#swap"><div class="logo">F</div><b>Fuji Forge</b><span class="testnet">Fuji</span></a>
+  <nav class="tabs" id="tabs">
+    <button data-view="swap"><i>⇄</i>Swap</button>
+    <button data-view="pools"><i>≋</i>Pools</button>
+    <button data-view="earn"><i>⧉</i>Earn</button>
+    <button data-view="launch"><i>🚀</i>Launch</button>
+    <button data-view="port"><i>◎</i>Portfolio</button>
   </nav>
-  <div class="side-foot">Network: Avalanche Fuji (43113)<br>Contracts are unaudited. Testnet only.</div>
-</aside>
+  <div class="navr">
+    <button class="pillbtn" id="actBtn" title="Activity">🕘</button>
+    <span class="pill" id="netPill">Not connected</span>
+    <span class="pill" id="hBal"></span>
+    <button class="btn" id="connect">Connect wallet</button>
+    <button class="pillbtn" id="setBtn" title="Settings">⚙</button>
+  </div>
+</header>
+<div class="menu hidden" id="acct">
+  <button id="acCopy">Copy address</button>
+  <a id="acExp" target="_blank">View on Snowtrace ↗</a>
+  <button id="acRef">Refresh balances</button>
+</div>
+<div class="banner hidden" id="banner">Swaps and pools use the LFJ Liquidity Book router. <button class="btn sm" id="bannerBtn">Set router</button></div>
 
 <main>
-  <div class="top">
-    <div><h1 id="title">Overview</h1><p id="subtitle">Your deployments and wallet at a glance</p></div>
-    <div class="pills">
-      <span class="pill" id="netPill">Not connected</span>
-      <button class="btn" id="connect">Connect wallet</button>
+  <!-- SWAP -->
+  <section id="v-swap" class="view">
+    <div class="swapwrap">
+      <div class="card">
+        <div class="cardhead"><h2>Swap</h2><button class="chip" id="slipChip">⚙ 1% slippage</button></div>
+        <div class="box">
+          <div class="boxtop"><span>You pay</span><span id="swFromBal"></span></div>
+          <div class="boxmain"><input id="swIn" class="amt" type="text" inputmode="decimal" placeholder="0.0" autocomplete="off"><button class="tokbtn" id="swFromBtn"></button></div>
+          <div class="boxfoot"><span></span><span class="quick"><button data-pct="25">25%</button><button data-pct="50">50%</button><button data-pct="100">MAX</button></span></div>
+        </div>
+        <div class="flipwrap"><button class="flip" id="swFlip" title="Flip">⇅</button></div>
+        <div class="box">
+          <div class="boxtop"><span>You receive</span><span id="swToBal"></span></div>
+          <div class="boxmain"><input id="swOut" class="amt" type="text" placeholder="0.0" readonly><button class="tokbtn" id="swToBtn"></button></div>
+          <div class="boxfoot"><span id="swRate"></span><span></span></div>
+        </div>
+        <div class="details hidden" id="swDetails"></div>
+        <button class="btn big" id="swBtn">Connect wallet</button>
+      </div>
+      <div class="card" id="market"></div>
     </div>
-  </div>
+  </section>
 
-  <!-- DASHBOARD -->
-  <section data-view="dash">
-    <div class="grid">
-      <div class="stat"><span>Wallet</span><b id="dAddr" class="mono">—</b></div>
-      <div class="stat"><span>AVAX balance</span><b id="dBal">—</b><small>Gas token on Fuji</small></div>
-      <div class="stat"><span>Tokens launched</span><b id="dTok">0</b><small>This session</small></div>
-      <div class="stat"><span>Staking pools</span><b id="dPool">0</b><small>This session</small></div>
+  <!-- POOLS -->
+  <section id="v-pools" class="view hidden">
+    <div class="pagehead"><div><h1>Pools</h1><p>Provide liquidity to AVAX pairs and earn trading fees.</p></div><button class="btn" id="newPos">+ New position</button></div>
+    <div class="grid4" id="poolStats" style="margin-bottom:16px"></div>
+    <div class="card"><div class="tablewrap"><table>
+      <thead><tr><th>Pool</th><th class="r">Price</th><th class="r">TVL (AVAX)</th><th class="r">Reserves</th><th class="r">Your position</th><th></th></tr></thead>
+      <tbody id="poolsBody"></tbody></table></div></div>
+  </section>
+
+  <!-- EARN -->
+  <section id="v-earn" class="view hidden">
+    <div class="pagehead"><div><h1>Earn</h1><p>Stake a token and earn rewards paid in the same token.</p></div></div>
+    <div class="grid2" style="margin-bottom:16px">
+      <div class="card">
+        <h2>Create a staking pool</h2><p class="sub">Deploys a new staking contract. Fund its reserve after.</p>
+        <div class="fields">
+          <div class="full"><label>Token address</label><input id="poolToken" list="tokList" class="mono" placeholder="0x..."></div>
+          <div class="full"><label>APR (%)</label><input id="apr" type="text" inputmode="decimal" value="12"></div>
+        </div>
+        <div class="actions"><button class="btn" id="mkPool">Deploy pool</button></div>
+      </div>
+      <div class="card">
+        <h2>Open any pool</h2><p class="sub">Paste a staking pool address. It's saved on this device.</p>
+        <div class="row"><input id="poolAddr" class="mono" placeholder="0x..." style="flex:1"><button class="btn ghost" id="loadPool">Load</button></div>
+      </div>
     </div>
-    <div class="card" style="margin-top:18px">
-      <h2>Deployments</h2><p class="sub">Click a pool to manage it.</p>
-      <table><thead><tr><th>Type</th><th>Name</th><th>Address</th><th>Deployed</th><th></th></tr></thead>
-        <tbody id="dTable"><tr><td colspan="5" class="empty">Nothing deployed yet. Launch a token to get started.</td></tr></tbody></table>
+    <h3 style="margin:22px 0 12px">Your pools</h3>
+    <div class="grid3" id="poolCards"></div>
+    <div id="manage" class="hidden" style="margin-top:20px">
+      <div class="grid3" id="pStats" style="margin-bottom:16px"></div>
+      <div class="grid2">
+        <div class="card">
+          <h2>Stake or withdraw</h2><p class="sub">Staking asks for approval first if needed.</p>
+          <label>Amount</label><input id="amt" type="text" inputmode="decimal" placeholder="100">
+          <div class="row" style="margin-top:8px"><button class="chip" id="stakeMax">Max wallet</button><button class="chip" id="wdMax">Max staked</button></div>
+          <div class="actions"><button class="btn" id="stake">Stake</button><button class="btn ghost" id="unstake">Withdraw</button></div>
+        </div>
+        <div class="card">
+          <h2>Rewards</h2><p class="sub">Claim earnings, or top up the reserve that pays them.</p>
+          <div class="kv"><span>Pending (live)</span><b id="pendLive">0</b></div>
+          <button class="btn" id="claim">Claim rewards</button>
+          <label style="margin-top:18px">Fund reserve amount</label>
+          <div class="row"><input id="fund" type="text" inputmode="decimal" placeholder="5000" style="flex:1"><button class="btn ghost" id="fundBtn">Fund</button></div>
+        </div>
+      </div>
     </div>
   </section>
 
   <!-- LAUNCH -->
-  <section data-view="launch" class="hidden">
-    <div class="card">
-      <h2>Launch an ERC-20 token</h2>
-      <p class="sub">Fixed supply, 18 decimals, minted to your wallet on deploy.</p>
-      <div class="fields">
-        <div class="field"><label>Token name</label><input id="tName" placeholder="Grotto Coin"></div>
-        <div class="field"><label>Symbol</label><input id="tSym" placeholder="GRC"></div>
-        <div class="field full"><label>Total supply (whole tokens)</label><input id="tSup" type="number" min="1" placeholder="1000000"></div>
-      </div>
-      <div class="actions"><button class="btn" id="launch">Deploy token</button></div>
-    </div>
-  </section>
-
-  <!-- CREATE POOL -->
-  <section data-view="pool" class="hidden">
-    <div class="card">
-      <h2>Create a staking pool</h2>
-      <p class="sub">Stakers earn rewards in the same token. Fund the reward reserve after deploying.</p>
-      <div class="fields">
-        <div class="field full"><label>Token address</label><input id="poolToken" class="mono" placeholder="0x..."></div>
-        <div class="field full"><label>Annual percentage rate (%)</label><input id="apr" type="number" min="0" step="0.01" value="12"></div>
-      </div>
-      <div class="actions"><button class="btn" id="mkPool">Deploy staking pool</button></div>
-    </div>
-  </section>
-
-  <!-- MANAGE -->
-  <section data-view="manage" class="hidden">
-    <div class="card">
-      <h2>Pool</h2>
-      <p class="sub">Paste a pool address or pick one from the dashboard.</p>
-      <div class="row"><input id="mPool" class="mono" placeholder="0x..." style="flex:1"><button class="btn ghost" id="loadPool">Load</button></div>
-      <div class="grid" id="pStats" style="margin-top:18px"></div>
-    </div>
-    <div class="grid two">
+  <section id="v-launch" class="view hidden">
+    <div class="pagehead"><div><h1>Launch</h1><p>Deploy a fixed-supply ERC-20 on Fuji in one click.</p></div></div>
+    <div class="grid2">
       <div class="card">
-        <h2>Stake or withdraw</h2>
-        <p class="sub">Staking asks for approval first if needed.</p>
-        <label>Amount</label><input id="amt" type="number" min="0" placeholder="100">
-        <div class="actions"><button class="btn" id="stake">Stake</button><button class="btn ghost" id="unstake">Withdraw</button></div>
+        <div class="fields">
+          <div><label>Token name</label><input id="tName" placeholder="Grotto Coin"></div>
+          <div><label>Symbol</label><input id="tSym" placeholder="GRC"></div>
+          <div class="full"><label>Total supply (whole tokens, 18 decimals)</label><input id="tSup" type="text" inputmode="numeric" placeholder="1000000"></div>
+        </div>
+        <div class="actions"><button class="btn" id="launch">Deploy token</button></div>
+        <details><summary>View contract source</summary><pre class="src" id="srcPre"></pre><button class="btn ghost sm" id="copySrc">Copy source</button></details>
       </div>
-      <div class="card">
-        <h2>Rewards</h2>
-        <p class="sub">Claim your earnings, or top up the reserve that pays them.</p>
-        <button class="btn" id="claim">Claim rewards</button>
-        <label style="margin-top:18px">Fund reserve amount</label>
-        <div class="row"><input id="fund" type="number" min="0" placeholder="5000" style="flex:1"><button class="btn ghost" id="fundBtn">Fund</button></div>
+      <div>
+        <div class="card"><h2>Preview</h2><p class="sub">How your token will look.</p>
+          <div class="pv"><span id="pvAv"></span><div><b id="pvName">Token name</b><span class="dim" id="pvSym">SYM</span> · <span class="dim" id="pvSup">0 supply</span></div></div>
+        </div>
+        <div class="card hidden" id="launchDone" style="margin-top:16px">
+          <h2 class="ok">Token deployed</h2><p class="sub mono" id="ldAddr"></p>
+          <div class="row"><button class="btn sm" id="ldPool">Add liquidity</button><button class="btn sm ghost" id="ldStake">Create staking pool</button><button class="btn sm ghost" id="ldTrade">Trade</button><button class="btn sm ghost" id="ldWallet">Add to wallet</button></div>
+        </div>
       </div>
     </div>
   </section>
 
-  <div class="card">
-    <h2>Activity</h2>
-    <div id="log"><div class="dim">Connect a wallet to begin. The first deploy loads the Solidity compiler (about 9 MB) in a background worker.</div></div>
-  </div>
+  <!-- PORTFOLIO -->
+  <section id="v-port" class="view hidden">
+    <div class="pagehead"><div><h1>Portfolio</h1><p>Tokens saved on this device, with live on-chain balances.</p></div>
+      <div class="row"><input id="impAddr" class="mono" placeholder="Import token address 0x..." style="width:300px"><button class="btn" id="impBtn">Import</button></div></div>
+    <div class="grid4" id="portStats" style="margin-bottom:16px"></div>
+    <div class="card"><div class="tablewrap"><table>
+      <thead><tr><th>Token</th><th class="r">Balance</th><th class="r">Price (AVAX)</th><th class="r">Value (AVAX)</th><th></th></tr></thead>
+      <tbody id="portBody"></tbody></table></div></div>
+  </section>
 </main>
+
+<!-- token modal -->
+<div class="modal" id="tokModal"><div class="sheet">
+  <div class="sheethead"><h3>Select a token</h3><button class="x" data-close>✕</button></div>
+  <input id="tmSearch" placeholder="Search name, symbol or paste address" autocomplete="off">
+  <div id="tmList" class="tmlist"></div>
+</div></div>
+
+<!-- liquidity modal -->
+<div class="modal" id="lqModal"><div class="sheet">
+  <div class="sheethead"><h3 id="lqTitle">Liquidity</h3><button class="x" data-close>✕</button></div>
+  <div class="seg" id="lqTabs"><button data-m="add" class="on">Add</button><button data-m="remove">Remove</button></div>
+  <div id="lqAdd">
+    <div class="box"><div class="boxtop"><span>Token</span><span id="lqTokBal"></span></div>
+      <div class="boxmain"><input id="lqTokAmt" class="amt" type="text" inputmode="decimal" placeholder="0.0"><button class="tokbtn" id="lqTokBtn"></button></div></div>
+    <div class="plus">+</div>
+    <div class="box"><div class="boxtop"><span>AVAX</span><span id="lqAvBal"></span></div>
+      <div class="boxmain"><input id="lqAvaxAmt" class="amt" type="text" inputmode="decimal" placeholder="0.0"><span class="tokbtn" style="cursor:default"><span class="av avax sm">A</span>AVAX</span></div></div>
+  </div>
+  <div id="lqRem" class="hidden">
+    <div style="text-align:center;font-size:44px;font-weight:700" id="lqPct">50%</div>
+    <input type="range" id="lqRange" min="1" max="100" value="50">
+    <div class="row" style="justify-content:center;margin-top:10px"><button class="chip" data-p="25">25%</button><button class="chip" data-p="50">50%</button><button class="chip" data-p="75">75%</button><button class="chip" data-p="100">Max</button></div>
+  </div>
+  <div class="details" id="lqInfo"></div>
+  <button class="btn big" id="lqBtn">Supply</button>
+</div></div>
+
+<!-- send modal -->
+<div class="modal" id="sdModal"><div class="sheet">
+  <div class="sheethead"><h3 id="sdTitle">Send</h3><button class="x" data-close>✕</button></div>
+  <label>Recipient address</label><input id="sdTo" class="mono" placeholder="0x...">
+  <label style="margin-top:12px">Amount <span id="sdBal" class="dim"></span></label>
+  <div class="row"><input id="sdAmt" type="text" inputmode="decimal" placeholder="0.0" style="flex:1"><button class="chip" id="sdMax">Max</button></div>
+  <button class="btn big" id="sdBtn">Send</button>
+</div></div>
+
+<!-- settings modal -->
+<div class="modal" id="setModal"><div class="sheet">
+  <div class="sheethead"><h3>Settings</h3><button class="x" data-close>✕</button></div>
+  <label>LFJ LBRouter V2.2 (Fuji, fixed)</label>
+  <input id="router" class="mono" readonly>
+  <button class="btn" id="verifyRouter" style="width:100%;margin-top:10px">Check contracts on-chain</button>
+  <p id="routerStatus" class="dim"></p>
+  <label style="margin-top:16px">Slippage tolerance</label>
+  <div class="row" id="slipPresets"><button class="chip" data-s="0.1">0.1%</button><button class="chip" data-s="0.5">0.5%</button><button class="chip" data-s="1">1%</button><button class="chip" data-s="3">3%</button><input id="slip" type="text" inputmode="decimal" style="width:80px" placeholder="custom"></div>
+  <label style="margin-top:16px">Transaction deadline (minutes)</label>
+  <input id="dl" type="text" inputmode="numeric" style="width:100px">
+  <label style="margin-top:18px">Data on this device</label>
+  <div class="row"><button class="btn ghost sm" id="exportData">Export JSON</button><button class="btn ghost sm" id="importData">Import JSON</button><button class="btn ghost sm" id="clearData">Clear</button></div>
+  <input type="file" id="importFile" accept="application/json" class="hidden">
+  <p class="dim" style="font-size:12px;margin-top:14px">Testnet only. Contracts are unaudited. Tokens, pools and activity are stored in this browser.</p>
+</div></div>
+
+<!-- activity drawer -->
+<aside class="drawer" id="drawer">
+  <div class="sheethead" style="margin:0"><h3>Activity</h3><div class="row"><button class="btn ghost sm" id="clearLog">Clear</button><button class="x" id="closeDrawer">✕</button></div></div>
+  <div id="actList"></div>
+</aside>
+
+<datalist id="tokList"></datalist>
+<div id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
 <script>
-const FUJI={hex:'0xa869',name:'Avalanche Fuji Testnet',rpc:['https://api.avax-test.network/ext/bc/C/rpc'],currency:{name:'AVAX',symbol:'AVAX',decimals:18},explorer:'https://testnet.snowtrace.io'};
-const ERC20_ABI=['function symbol() view returns (string)','function balanceOf(address) view returns (uint256)','function allowance(address,address) view returns (uint256)','function approve(address,uint256) returns (bool)','function transfer(address,uint256) returns (bool)'];
+const FUJI={chainId:43113,hex:'0xa869',name:'Avalanche Fuji Testnet',rpc:['https://api.avax-test.network/ext/bc/C/rpc'],currency:{name:'AVAX',symbol:'AVAX',decimals:18},explorer:'https://testnet.snowtrace.io'};
+const ERC20_ABI=['function name() view returns (string)','function symbol() view returns (string)','function decimals() view returns (uint8)','function totalSupply() view returns (uint256)','function balanceOf(address) view returns (uint256)','function allowance(address,address) view returns (uint256)','function approve(address,uint256) returns (bool)','function transfer(address,uint256) returns (bool)'];
 const STAKE_ABI=['function token() view returns (address)','function aprBps() view returns (uint256)','function totalStaked() view returns (uint256)','function staked(address) view returns (uint256)','function pendingReward(address) view returns (uint256)','function stake(uint256)','function withdraw(uint256)','function claim()'];
+/* LFJ Liquidity Book V2.2 on Fuji (official deployment) */
+const LFJ=Object.fromEntries(Object.entries({router:'0x18556DA13313f3532c54711497A8FedAC273220E',factory:'0xb43120c4745967fa9b93E79C149E66B0f2D6Fe0c',quoter:'0x9A550a522BBaDFB69019b0432800Ed17855A51C3'}).map(([k,v])=>[k,ethers.getAddress(v.toLowerCase())]));
+const ID0=8388608; // LB active id 2^23 = price 1.0
+const PATH_T='tuple(uint256[] pairBinSteps,uint8[] versions,address[] tokenPath)';
+const LIQ_T='tuple(address tokenX,address tokenY,uint256 binStep,uint256 amountX,uint256 amountY,uint256 amountXMin,uint256 amountYMin,uint256 activeIdDesired,uint256 idSlippage,int256[] deltaIds,uint256[] distributionX,uint256[] distributionY,address to,address refundTo,uint256 deadline)';
+const ROUTER_ABI=[
+  'function getFactory() view returns (address)',
+  'function getWNATIVE() view returns (address)',
+  `function swapExactNATIVEForTokens(uint256 amountOutMin,${PATH_T} path,address to,uint256 deadline) payable returns (uint256)`,
+  `function swapExactTokensForNATIVE(uint256 amountIn,uint256 amountOutMinNATIVE,${PATH_T} path,address to,uint256 deadline) returns (uint256)`,
+  `function swapExactTokensForTokens(uint256 amountIn,uint256 amountOutMin,${PATH_T} path,address to,uint256 deadline) returns (uint256)`,
+  `function addLiquidityNATIVE(${LIQ_T} liquidityParameters) payable returns (uint256 amountXAdded,uint256 amountYAdded,uint256 amountXLeft,uint256 amountYLeft,uint256[] depositIds,uint256[] liquidityMinted)`,
+  'function removeLiquidityNATIVE(address token,uint16 binStep,uint256 amountTokenMin,uint256 amountNATIVEMin,uint256[] ids,uint256[] amounts,address to,uint256 deadline) returns (uint256 amountToken,uint256 amountNATIVE)',
+  'function createLBPair(address tokenX,address tokenY,uint24 activeId,uint16 binStep) returns (address)'
+];
+const QUOTER_ABI=['function findBestPathFromAmountIn(address[] route,uint128 amountIn) view returns (tuple(address[] route,address[] pairs,uint256[] binSteps,uint8[] versions,uint128[] amounts,uint128[] virtualAmountsWithoutSlippage,uint128[] fees) quote)'];
+const FACTORY_ABI=['function getAllLBPairs(address tokenX,address tokenY) view returns (tuple(uint16 binStep,address LBPair,bool createdByOwner,bool ignoredForRouting)[])','function getOpenBinSteps() view returns (uint256[])','function isQuoteAsset(address) view returns (bool)'];
+const LBPAIR_ABI=['function getActiveId() view returns (uint24)','function getBin(uint24 id) view returns (uint128 binReserveX,uint128 binReserveY)','function getTokenX() view returns (address)','function getTokenY() view returns (address)','function getBinStep() view returns (uint16)','function getReserves() view returns (uint128 reserveX,uint128 reserveY)','function totalSupply(uint256 id) view returns (uint256)','function balanceOfBatch(address[] accounts,uint256[] ids) view returns (uint256[])','function isApprovedForAll(address owner,address spender) view returns (bool)','function approveForAll(address spender,bool approved)'];
+const PAIR_EVT=new ethers.Interface(['event Swap(address indexed sender,address indexed to,uint24 id,bytes32 amountsIn,bytes32 amountsOut,uint24 volatilityAccumulator,bytes32 totalFees,bytes32 protocolFees)']);
 
 const TOKEN_SRC=String.raw`pragma solidity ^0.8.26;
 contract Token {
@@ -226,31 +444,26 @@ contract Staking {
   }
 }`;
 
-/* ---------- Solidity compiler runs in a Web Worker (sync wasm compile is allowed off the main thread) ---------- */
+/* ---------- compiler runs in a Web Worker (sync wasm compile is only allowed off the main thread) ---------- */
 const WORKER_SRC=`
 let compileFn=null;
 self.Module={onRuntimeInitialized(){compileFn=self.Module.cwrap('solidity_compile','string',['string','number','number']);self.postMessage({type:'ready'})}};
 importScripts('https://cdn.jsdelivr.net/npm/solc@0.8.26/soljson.js');
 self.onmessage=e=>{try{self.postMessage({id:e.data.id,out:compileFn(e.data.input,0,0)})}catch(err){self.postMessage({id:e.data.id,error:String(err)})}};
 `;
-let worker=null,workerReady=null,reqId=0;
-const pending=new Map();
+let worker=null,workerReady=null,reqId=0;const pending=new Map();
 function getCompiler(){
   if(workerReady) return workerReady;
   workerReady=new Promise((res,rej)=>{
-    const url=URL.createObjectURL(new Blob([WORKER_SRC],{type:'text/javascript'}));
-    worker=new Worker(url);
+    worker=new Worker(URL.createObjectURL(new Blob([WORKER_SRC],{type:'text/javascript'})));
     worker.onmessage=e=>{
       if(e.data.type==='ready') return res();
       const p=pending.get(e.data.id); if(!p) return; pending.delete(e.data.id);
       e.data.error?p.rej(new Error(e.data.error)):p.res(e.data.out);
     };
-    worker.onerror=ev=>{ workerReady=null; rej(new Error('Compiler worker failed: '+(ev.message||'could not load soljson')));};
+    worker.onerror=ev=>{workerReady=null;rej(new Error('Compiler failed to load: '+(ev.message||'soljson')))};
   });
   return workerReady;
-}
-function solcCompile(input){
-  return new Promise((res,rej)=>{const id=++reqId;pending.set(id,{res,rej});worker.postMessage({id,input});});
 }
 let compiled=null;
 async function compile(){
@@ -258,89 +471,734 @@ async function compile(){
   log('Loading Solidity compiler (first run only)…');
   await getCompiler();
   const input={language:'Solidity',sources:{'Token.sol':{content:TOKEN_SRC},'Staking.sol':{content:STAKING_SRC}},settings:{outputSelection:{'*':{'*':['abi','evm.bytecode.object']}}}};
-  const out=JSON.parse(await solcCompile(JSON.stringify(input)));
+  const out=JSON.parse(await new Promise((res,rej)=>{const id=++reqId;pending.set(id,{res,rej});worker.postMessage({id,input:JSON.stringify(input)})}));
   const errs=(out.errors||[]).filter(e=>e.severity==='error');
   if(errs.length) throw new Error(errs[0].formattedMessage);
-  compiled={token:out.contracts['Token.sol'].Token,staking:out.contracts['Staking.sol'].Staking};
-  return compiled;
+  return compiled={token:out.contracts['Token.sol'].Token,staking:out.contracts['Staking.sol'].Staking};
 }
 
-/* ---------- state & helpers ---------- */
+/* ---------- state (persisted in localStorage; migrates from v2) ---------- */
+const KEY='fuji-forge:v3';
+const DEFAULT={router:'',verified:false,slippage:1,deadline:20,tokens:[],pools:[],log:[]};
+function loadState(){
+  let s={};
+  try{s=JSON.parse(localStorage.getItem(KEY)||'null')||JSON.parse(localStorage.getItem('fuji-forge:v2')||'{}')}catch(e){s={}}
+  const st={...DEFAULT,...s};
+  st.tokens=(st.tokens||[]).map(t=>({dec:18,...t}));
+  st.pools=st.pools||[];st.log=st.log||[];
+  return st;
+}
+let state=loadState();
+state.router=LFJ.router;state.verified=true;
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
+
+/* ---------- helpers ---------- */
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-let provider,signer,account,pool=null;
-const deployed=[];
-const wallets=[];
-window.addEventListener('eip6963:announceProvider',e=>wallets.push(e.detail));
+const short=a=>a?a.slice(0,6)+'…'+a.slice(-4):'';
+const hue=s=>[...String(s)].reduce((a,c)=>a+c.charCodeAt(0),0)%360;
+const K=a=>a==='native'?'native':String(a).toLowerCase();
+const NATIVE={addr:'native',sym:'AVAX',name:'Avalanche',dec:18};
+const isNative=a=>a==='native';
+const isAddr=a=>ethers.isAddress((a||'').trim());
+const slipBps=()=>BigInt(Math.round((+state.slippage||1)*100));
+const deadline=()=>Math.floor(Date.now()/1000)+60*(+state.deadline||20);
+function av(t,size=''){
+  if(t.addr==='native') return `<span class="av avax ${size}">A</span>`;
+  return `<span class="av ${size}" style="--h:${hue(t.addr)}">${esc((t.sym||'?').slice(0,3).toUpperCase())}</span>`;
+}
+const pairAv=t=>`<span class="pairav">${av(t)}${av(NATIVE)}</span>`;
+function trimDec(s,n){const [i,f='']=s.split('.');const ff=f.slice(0,n).replace(/0+$/,'');return ff?i+'.'+ff:i}
+const fmtPlain=(v,d,n=8)=>trimDec(ethers.formatUnits(v,d),n);
+function fmt(v,d=18,max=4){
+  const n=Number(ethers.formatUnits(v,d));
+  if(n===0) return '0';
+  if(n<Math.pow(10,-max)) return '<'+Math.pow(10,-max).toFixed(max);
+  return n.toLocaleString(undefined,{maximumFractionDigits:max});
+}
+function parseAmt(s,d){
+  s=String(s||'').trim();if(!s||isNaN(+s)) return 0n;
+  let [i,f='']=s.split('.');f=f.slice(0,d);if(!i) i='0';
+  try{return ethers.parseUnits(i+(f?'.'+f:''),d)}catch(e){return 0n}
+}
+function numField(el,cb){
+  el.addEventListener('input',()=>{
+    let v=el.value.replace(/,/g,'.').replace(/[^0-9.]/g,'');
+    const p=v.split('.');if(p.length>2) v=p[0]+'.'+p.slice(1).join('');
+    el.value=v;cb&&cb();
+  });
+}
+function ago(sec){if(sec<90) return Math.round(sec)+'s';if(sec<5400) return Math.round(sec/60)+'m';if(sec<172800) return Math.round(sec/3600)+'h';return Math.round(sec/86400)+'d'}
+const openM=id=>$(id).classList.add('open');
+const closeM=id=>$(id).classList.remove('open');
 
 function log(text,cls='',link){
-  const d=document.createElement('div');d.className=cls;
-  d.textContent=new Date().toLocaleTimeString()+'  '+text;
-  if(link){const a=document.createElement('a');a.href=FUJI.explorer+link;a.target='_blank';a.textContent='  view ↗';d.append(a)}
-  const L=$('log');
-  if(L.querySelector('.dim')) L.innerHTML='';
-  L.prepend(d);
+  state.log.unshift({t:new Date().toLocaleTimeString(),text,cls,link});
+  state.log=state.log.slice(0,80);save();renderLog();
 }
-async function run(fn){try{await fn()}catch(e){log(e.shortMessage||e.reason||e.message,'err')}}
-function needWallet(){ if(!signer) throw new Error('Connect your wallet first'); }
-function short(a){return a.slice(0,6)+'…'+a.slice(-4)}
+function renderLog(){
+  $('actList').innerHTML=state.log.length?state.log.map(l=>`<div class="${l.cls}">${esc(l.t)}  ${esc(l.text)}${l.link?` <a href="${FUJI.explorer}${l.link}" target="_blank">view ↗</a>`:''}</div>`).join(''):'<div class="dim">No activity yet.</div>';
+}
+function toast(text,cls=''){
+  const d=document.createElement('div');d.className='toast '+cls;d.textContent=text;$('toast').append(d);setTimeout(()=>d.remove(),4200);
+}
+async function run(fn){
+  try{await fn()}catch(e){
+    const m=String(e.shortMessage||e.reason||e.message||e);
+    log(m,'err');toast(m.length>140?m.slice(0,140)+'…':m,'err');
+  }
+}
+function needWallet(){if(!signer) throw new Error('Connect your wallet first')}
 
-const TITLES={dash:['Overview','Your deployments and wallet at a glance'],launch:['Launch token','Deploy a fixed-supply ERC-20 on Fuji'],pool:['Create pool','Deploy a staking contract for a token'],manage:['Manage pool','Stake, claim, and fund rewards']};
-function show(view){
-  document.querySelectorAll('[data-view]').forEach(el=>{
-    if(el.tagName==='SECTION') el.classList.toggle('hidden',el.dataset.view!==view);
-  });
-  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.view===view));
-  $('title').textContent=TITLES[view][0];$('subtitle').textContent=TITLES[view][1];
+/* ---------- chain access ---------- */
+let provider=null,signer=null,account=null,rawProv=null,bound=false;
+const readP=new ethers.JsonRpcProvider(FUJI.rpc[0],FUJI.chainId,{staticNetwork:true});
+const wallets=[];
+window.addEventListener('eip6963:announceProvider',e=>wallets.push(e.detail));
+const rd=(addr,abi)=>new ethers.Contract(addr,abi,readP);
+const wr=(addr,abi)=>new ethers.Contract(addr,abi,signer);
+const routerR=()=>rd(state.router,ROUTER_ABI);
+const routerW=()=>wr(state.router,ROUTER_ABI);
+let wavaxCache={},factoryCache={};
+async function wavax(){
+  if(!wavaxCache.w) wavaxCache.w=await routerR().getWNATIVE();
+  return wavaxCache.w;
 }
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>show(b.dataset.view));
+async function factoryAddr(){return LFJ.factory}
+function ensureRouter(){if(!state.router||!state.verified) throw new Error('Set and verify the LFJ router in Settings first')}
+async function ensureAllowance(tokAddr,spender,amt){
+  const tk=wr(tokAddr,ERC20_ABI);
+  if((await tk.allowance(account,spender))>=amt) return;
+  await sendTx('Approve',tk.approve(spender,amt));
+}
+async function sendTx(label,txPromise){
+  const tx=await txPromise;
+  log(label+' submitted…','','/tx/'+tx.hash);
+  await tx.wait();
+  log(label+' confirmed','ok');
+  toast(label+' confirmed','ok');
+  return tx;
+}
 
-function renderDash(){
-  $('dTok').textContent=deployed.filter(d=>d.type==='Token').length;
-  $('dPool').textContent=deployed.filter(d=>d.type==='Pool').length;
-  const tb=$('dTable');
-  if(!deployed.length){tb.innerHTML='<tr><td colspan="5" class="empty">Nothing deployed yet. Launch a token to get started.</td></tr>';return;}
-  tb.innerHTML=deployed.map(d=>`<tr>
-    <td><span class="tag ${d.type==='Token'?'t':'p'}">${d.type}</span></td>
-    <td>${esc(d.name)}</td>
-    <td class="mono"><a href="${FUJI.explorer}/address/${d.addr}" target="_blank">${short(d.addr)}</a></td>
-    <td class="dim">${d.time}</td>
-    <td>${d.type==='Pool'?`<button class="btn sm ghost" data-pool="${d.addr}">Manage</button>`:''}</td></tr>`).join('');
-  tb.querySelectorAll('[data-pool]').forEach(b=>b.onclick=()=>{$('mPool').value=b.dataset.pool;show('manage');run(loadPool)});
+/* ---------- tokens (saved on device) ---------- */
+const bals={};
+const pdCache={};
+const tokenOf=a=>{if(!a) return null;if(a==='native') return NATIVE;return state.tokens.find(t=>K(t.addr)===K(a))||null};
+const allTokens=()=>[NATIVE,...state.tokens];
+function renderTokList_dl(){$('tokList').innerHTML=state.tokens.map(t=>`<option value="${t.addr}">${esc(t.sym)} · ${esc(t.name)}</option>`).join('')}
+async function importToken(addr){
+  const raw=String(addr||'').trim();
+  if(!isAddr(raw)) throw new Error('Invalid token address');
+  addr=ethers.getAddress(raw);
+  const ex=tokenOf(addr);if(ex) return ex;
+  if((await readP.getCode(addr))==='0x') throw new Error('No contract at that address on Fuji');
+  const c=rd(addr,ERC20_ABI);
+  let sym,name,dec;
+  try{[sym,dec]=await Promise.all([c.symbol(),c.decimals().catch(()=>18n)]);name=await c.name().catch(()=>sym)}
+  catch(e){throw new Error('That contract does not look like an ERC-20')}
+  const t={addr,name:name||sym,sym,dec:Number(dec),owner:null,time:new Date().toLocaleDateString(),imported:true};
+  state.tokens.push(t);save();
+  if(account) try{bals[K(addr)]=await c.balanceOf(account)}catch(e){}
+  renderTokList_dl();renderPort();
+  log(`Imported ${sym}`,'ok','/address/'+addr);
+  return t;
 }
-function record(type,name,addr){deployed.unshift({type,name,addr,time:new Date().toLocaleTimeString()});renderDash();}
+function removeToken(a){
+  state.tokens=state.tokens.filter(t=>K(t.addr)!==K(a));
+  if(sw.from&&K(sw.from)===K(a)) sw.from='native';
+  if(sw.to&&K(sw.to)===K(a)) sw.to=null;
+  save();renderTokList_dl();renderPort();renderPools();updateSwapUI();loadMarketFor(true);toast('Token removed from this device');
+}
+async function refreshBalances(){
+  if(!account) return;
+  try{bals.native=await readP.getBalance(account)}catch(e){}
+  await Promise.all(state.tokens.map(async t=>{try{bals[K(t.addr)]=await rd(t.addr,ERC20_ABI).balanceOf(account)}catch(e){}}));
+  renderHeader();renderPort();updateSwapUI();
+  if($('tokModal').classList.contains('open')) renderTokList();
+}
+async function watchAsset(t){
+  if(!rawProv) throw new Error('Connect your wallet first');
+  await rawProv.request({method:'wallet_watchAsset',params:{type:'ERC20',options:{address:t.addr,symbol:String(t.sym).slice(0,11),decimals:t.dec}}});
+}
+async function revoke(a){
+  needWallet();ensureRouter();
+  const t=tokenOf(a);
+  const al=await rd(a,ERC20_ABI).allowance(account,state.router);
+  if(al===0n){toast('No active router approval for '+t.sym);return}
+  await sendTx('Revoke '+t.sym+' approval',wr(a,ERC20_ABI).approve(state.router,0n));
+}
 
 /* ---------- wallet ---------- */
 async function ensureFuji(raw){
-  const cid=await raw.request({method:'eth_chainId'});
-  if(cid===FUJI.hex) return;
-  try{ await raw.request({method:'wallet_switchEthereumChain',params:[{chainId:FUJI.hex}]}); }
+  if((await raw.request({method:'eth_chainId'}))===FUJI.hex) return;
+  try{await raw.request({method:'wallet_switchEthereumChain',params:[{chainId:FUJI.hex}]})}
   catch(e){
     if(e.code===4902||e.code===-32603) await raw.request({method:'wallet_addEthereumChain',params:[{chainId:FUJI.hex,chainName:FUJI.name,rpcUrls:FUJI.rpc,nativeCurrency:FUJI.currency,blockExplorerUrls:[FUJI.explorer]}]});
     else throw e;
   }
 }
-async function connect(){
+async function connect(silent=false){
   window.dispatchEvent(new Event('eip6963:requestProvider'));
   await new Promise(r=>setTimeout(r,200));
   const raw=wallets[0]?.provider||window.ethereum;
-  if(!raw) throw new Error('No wallet found. Install MetaMask or Core.');
-  await raw.request({method:'eth_requestAccounts'});
+  if(!raw){if(!silent) throw new Error('No wallet found. Install MetaMask or Core.');return}
+  if(silent){const acc=await raw.request({method:'eth_accounts'});if(!acc.length) return}
+  else await raw.request({method:'eth_requestAccounts'});
   await ensureFuji(raw);
+  rawProv=raw;
   provider=new ethers.BrowserProvider(raw);
   signer=await provider.getSigner();
   account=await signer.getAddress();
   $('connect').textContent=short(account);
   $('netPill').textContent='Fuji · 43113';$('netPill').classList.add('live');
-  raw.on?.('accountsChanged',()=>location.reload());
-  raw.on?.('chainChanged',()=>location.reload());
-  $('dAddr').textContent=account;
-  $('dBal').textContent=Number(ethers.formatEther(await provider.getBalance(account))).toFixed(4)+' AVAX';
-  log('Connected '+account,'ok');
-  if(ethers.isAddress($('mPool').value.trim())) await loadPool();
+  $('acExp').href=FUJI.explorer+'/address/'+account;
+  if(!bound){bound=true;raw.on?.('accountsChanged',()=>location.reload());raw.on?.('chainChanged',()=>location.reload())}
+  if(!silent) log('Connected '+account,'ok');
+  await refreshBalances();
+  loadPools();
+  if(cur) loadPool(cur.addr).catch(()=>{});
 }
-$('connect').onclick=()=>run(connect);
+$('connect').onclick=()=>{
+  if(account){$('acct').classList.toggle('hidden');return}
+  run(()=>connect(false));
+};
+$('acCopy').onclick=()=>{navigator.clipboard?.writeText(account);toast('Address copied','ok');$('acct').classList.add('hidden')};
+$('acRef').onclick=()=>{run(refreshBalances);$('acct').classList.add('hidden')};
+document.addEventListener('click',e=>{if(!e.target.closest('#acct')&&!e.target.closest('#connect')) $('acct').classList.add('hidden')});
+function renderHeader(){
+  $('hBal').textContent=bals.native!=null?fmt(bals.native,18,3)+' AVAX':'';
+  $('banner').classList.toggle('hidden',state.verified);
+}
 
+/* ---------- swap ---------- */
+let sw={from:'native',to:null,q:null,err:'',loading:false,busy:false};
+let swAction=null,qId=0,qt=null;
+const quoterR=()=>rd(LFJ.quoter,QUOTER_ABI);
+async function bestQuote(route,inAmt){
+  const q=await quoterR().findBestPathFromAmountIn(route,inAmt);
+  const amounts=q.amounts,virt=q.virtualAmountsWithoutSlippage;
+  const out=amounts[amounts.length-1];
+  if(!(out>0n)) return null;
+  const rt=Array.from(q.route);
+  return {out,route:rt,virt:virt[virt.length-1],path:{pairBinSteps:Array.from(q.binSteps),versions:Array.from(q.versions).map(Number),tokenPath:rt}};
+}
+async function getQuote(a,b,inAmt){
+  const W=await wavax();
+  const A=isNative(a)?W:a,B=isNative(b)?W:b;
+  if(A.toLowerCase()===B.toLowerCase()) return null;
+  const routes=(isNative(a)||isNative(b))?[[A,B]]:[[A,B],[A,W,B]];
+  let best=null;
+  for(const r of routes){
+    try{const x=await bestQuote(r,inAmt);if(x&&(!best||x.out>best.out)) best=x}catch(e){}
+  }
+  return best;
+}
+function symOf(a){
+  const W=wavaxCache.w;
+  if(W&&W.toLowerCase()===a.toLowerCase()) return 'WAVAX';
+  return tokenOf(a)?.sym||short(a);
+}
+function schedQuote(){
+  clearTimeout(qt);qId++;
+  sw.q=null;sw.err='';
+  const f=tokenOf(sw.from);
+  const ok=state.verified&&sw.to&&f&&parseAmt($('swIn').value,f.dec)>0n;
+  if(!ok){sw.loading=false;$('swOut').value='';updateSwapUI();return}
+  sw.loading=true;updateSwapUI();
+  qt=setTimeout(doQuote,300);
+}
+async function doQuote(){
+  const id=qId;
+  const f=tokenOf(sw.from),t=tokenOf(sw.to);
+  try{
+    const inAmt=parseAmt($('swIn').value,f.dec);
+    const x=await getQuote(sw.from,sw.to,inAmt);
+    if(id!==qId) return;
+    if(!x) throw new Error('none');
+    const impact=x.virt>0n?Math.max(0,Number(x.virt-x.out)*100/Number(x.virt)):null;
+    sw.q={inAmt,out:x.out,path:x.path,route:x.route,impact};sw.err='';
+    $('swOut').value=fmtPlain(x.out,t.dec);
+  }catch(e){
+    if(id!==qId) return;
+    sw.q=null;sw.err='Insufficient liquidity / no route';$('swOut').value='';
+  }
+  sw.loading=false;updateSwapUI();
+}
+function updateSwapUI(){
+  const f=tokenOf(sw.from),t=tokenOf(sw.to);
+  $('swFromBtn').className='tokbtn';
+  $('swFromBtn').innerHTML=f?`${av(f,'sm')}<b>${esc(f.sym)}</b> ▾`:'<b>Select</b> ▾';
+  $('swToBtn').className='tokbtn'+(t?'':' sel');
+  $('swToBtn').innerHTML=t?`${av(t,'sm')}<b>${esc(t.sym)}</b> ▾`:'<b>Select token</b> ▾';
+  const fb=f&&bals[K(f.addr)],tb=t&&bals[K(t.addr)];
+  $('swFromBal').textContent=account&&f&&fb!=null?'Balance: '+fmt(fb,f.dec,4):'';
+  $('swToBal').textContent=account&&t&&tb!=null?'Balance: '+fmt(tb,t.dec,4):'';
+  $('slipChip').textContent='⚙ '+state.slippage+'% slippage';
+  const inAmt=f?parseAmt($('swIn').value,f.dec):0n;
+  const q=sw.q;
+  if(q&&t&&f){
+    const rate=Number(ethers.formatUnits(q.out,t.dec))/Number(ethers.formatUnits(q.inAmt,f.dec));
+    const min=q.out*(10000n-slipBps())/10000n;
+    const imp=q.impact;
+    $('swRate').textContent=`1 ${f.sym} ≈ ${rate.toPrecision(5)} ${t.sym}`;
+    $('swDetails').innerHTML=`<div class="kv"><span>Price impact</span><b class="${imp==null?'':imp>5?'err':imp>1?'warn':'ok'}">${imp==null?'—':'~'+imp.toFixed(2)+'%'}</b></div>
+      <div class="kv"><span>Min. received (${esc(state.slippage)}%)</span><b>${fmt(min,t.dec,6)} ${esc(t.sym)}</b></div>
+      <div class="kv"><span>Route</span><b>${q.route.map(a=>esc(symOf(a))).join(' → ')}</b></div>`;
+    $('swDetails').classList.remove('hidden');
+  }else{$('swRate').textContent='';$('swDetails').classList.add('hidden')}
+  let label,dis=true,act=null;
+  if(!account){label='Connect wallet';dis=false;act='connect'}
+  else if(!state.verified){label='Set up router';dis=false;act='settings'}
+  else if(!f||!t){label='Select a token'}
+  else if(!(inAmt>0n)){label='Enter an amount'}
+  else if(fb!=null&&inAmt>fb){label='Insufficient '+f.sym+' balance'}
+  else if(sw.busy){label='Swapping…'}
+  else if(sw.loading){label='Fetching quote…'}
+  else if(!sw.q){label=sw.err||'No route found'}
+  else{label=sw.q.impact>15?'Swap anyway':'Swap';dis=false;act='swap'}
+  swAction=act;
+  $('swBtn').textContent=label;$('swBtn').disabled=dis;
+  $('swBtn').classList.toggle('danger',!!(sw.q&&sw.q.impact>15));
+}
+async function doSwap(){
+  needWallet();
+  const q=sw.q;if(!q) throw new Error('No quote');
+  const f=tokenOf(sw.from),t=tokenOf(sw.to);
+  sw.busy=true;updateSwapUI();
+  try{
+    const fresh=(await getQuote(sw.from,sw.to,q.inAmt))||q;
+    const min=fresh.out*(10000n-slipBps())/10000n,dl=deadline(),R=routerW(),path=fresh.path;
+    const label=`Swap ${f.sym} → ${t.sym}`;
+    if(isNative(sw.from)){
+      await sendTx(label,R.swapExactNATIVEForTokens(min,path,account,dl,{value:q.inAmt}));
+    }else{
+      await ensureAllowance(sw.from,LFJ.router,q.inAmt);
+      if(isNative(sw.to)) await sendTx(label,R.swapExactTokensForNATIVE(q.inAmt,min,path,account,dl));
+      else await sendTx(label,R.swapExactTokensForTokens(q.inAmt,min,path,account,dl));
+    }
+    $('swIn').value='';$('swOut').value='';sw.q=null;
+    await refreshBalances();loadMarketFor(true);loadPools();
+  }finally{sw.busy=false;updateSwapUI()}
+}
+$('swBtn').onclick=()=>run(async()=>{
+  if(swAction==='connect') return connect(false);
+  if(swAction==='settings'){openSettings();return}
+  if(swAction==='swap') await doSwap();
+});
+numField($('swIn'),schedQuote);
+document.querySelectorAll('.quick button').forEach(b=>b.onclick=()=>{
+  const f=tokenOf(sw.from),bal=f&&bals[K(f.addr)];
+  if(!f||bal==null) return;
+  const pct=BigInt(b.dataset.pct);let v=bal*pct/100n;
+  if(isNative(sw.from)&&pct===100n){const gas=ethers.parseEther('0.01');v=bal>gas?bal-gas:0n}
+  $('swIn').value=fmtPlain(v,f.dec);schedQuote();
+});
+$('swFlip').onclick=()=>{
+  if(!sw.to) return;
+  const o=$('swOut').value;
+  [sw.from,sw.to]=[sw.to,sw.from];
+  $('swIn').value=o;$('swOut').value='';schedQuote();loadMarketFor();
+};
+function setSwapTok(side,addr){
+  const other=side==='from'?'to':'from';
+  if(sw[other]&&K(sw[other])===K(addr)) sw[other]=sw[side];
+  sw[side]=addr;$('swOut').value='';
+  schedQuote();loadMarketFor();
+}
+$('swFromBtn').onclick=()=>openTokenModal(a=>setSwapTok('from',a));
+$('swToBtn').onclick=()=>openTokenModal(a=>setSwapTok('to',a));
+$('slipChip').onclick=openSettings;
+
+/* ---------- token modal ---------- */
+let tm={cb:null,noNative:false};
+function openTokenModal(cb,opts={}){tm={cb,...opts};$('tmSearch').value='';renderTokList();openM('tokModal');setTimeout(()=>$('tmSearch').focus(),50)}
+function renderTokList(){
+  const q=$('tmSearch').value.trim().toLowerCase();
+  const list=allTokens().filter(t=>!(tm.noNative&&t.addr==='native'));
+  const matches=list.filter(t=>!q||t.sym.toLowerCase().includes(q)||t.name.toLowerCase().includes(q)||K(t.addr).includes(q));
+  let html=matches.map(t=>`<button class="tokrow" data-pick="${t.addr}">${av(t)}<div><b>${esc(t.sym)}</b><small>${esc(t.name)}</small></div><span>${bals[K(t.addr)]!=null?fmt(bals[K(t.addr)],t.dec,4):''}</span></button>`).join('');
+  if(isAddr(q)&&!tokenOf(q)) html=`<button class="tokrow import" data-import="${esc(q)}"><span class="av sm">+</span><div><b>Import token</b><small>${short(q)}</small></div></button>`+html;
+  $('tmList').innerHTML=html||'<div class="empty">No tokens match.</div>';
+}
+$('tmSearch').addEventListener('input',renderTokList);
+function pickTok(addr){const cb=tm.cb;closeM('tokModal');cb&&cb(addr)}
+$('tmList').onclick=e=>{
+  const b=e.target.closest('button');if(!b) return;
+  if(b.dataset.pick) pickTok(b.dataset.pick);
+  else if(b.dataset.import) run(async()=>{const t=await importToken(b.dataset.import);pickTok(t.addr)});
+};
+
+/* ---------- market panel (price chart + recent swaps from pair events) ---------- */
+let mkId=0,mkTok=null,chartPts=[];
+function mkEmpty(msg){return `<div class="empty" style="padding:70px 20px"><div style="font-size:34px">📈</div><p>${msg}</p></div>`}
+function loadMarketFor(force){
+  const focus=(sw.to&&sw.to!=='native')?sw.to:(sw.from&&sw.from!=='native'?sw.from:null);
+  if(!focus){mkTok=null;mkId++;chartPts=[];$('market').innerHTML=mkEmpty('Pick a token to see its price, pool and recent swaps.');return}
+  if(!state.verified){mkTok=null;mkId++;$('market').innerHTML=mkEmpty('Set your LFJ router in Settings to load market data.');return}
+  if(!force&&mkTok&&K(mkTok)===K(focus)) return;
+  mkTok=focus;loadMarket(focus);
+}
+function avaxPerTok(id,bs,tokIsX,decT){
+  const raw=Math.pow(1+bs/10000,id-ID0); // raw Y per raw X
+  const yPerX=raw*Math.pow(10,(tokIsX?decT:18)-(tokIsX?18:decT));
+  const p=tokIsX?yPerX:1/yPerX;
+  return isFinite(p)&&p>0?p:null;
+}
+const hasPos=pd=>!!(pd&&pd.pair&&pd.pos&&pd.pos.length);
+async function pairData(tok){
+  const W=await wavax();
+  const t=tokenOf(tok),decT=t?t.dec:18;
+  const infos=await rd(LFJ.factory,FACTORY_ABI).getAllLBPairs(tok,W);
+  const cands=[];
+  for(const i of infos){const pair=i[1];if(!pair||pair===ethers.ZeroAddress) continue;cands.push({pair,binStep:Number(i[0])})}
+  if(!cands.length) return {pair:null};
+  const loaded=await Promise.all(cands.map(async c=>{
+    const p=rd(c.pair,LBPAIR_ABI);
+    const [[rx,ry],activeId,tx]=await Promise.all([p.getReserves(),p.getActiveId(),p.getTokenX()]);
+    const tokIsX=tx.toLowerCase()===tok.toLowerCase();
+    return {...c,activeId:Number(activeId),tokIsX,tokRes:tokIsX?rx:ry,avaxRes:tokIsX?ry:rx};
+  }));
+  loaded.sort((a,b)=>a.avaxRes>b.avaxRes?-1:a.avaxRes<b.avaxRes?1:0);
+  const pd=loaded[0];
+  pd.decT=decT;pd.price=avaxPerTok(pd.activeId,pd.binStep,pd.tokIsX,decT);
+  pd.pos=[];pd.myTok=0n;pd.myAvax=0n;
+  if(account){
+    const p=rd(pd.pair,LBPAIR_ABI),ids=[];
+    for(let d=-100;d<=100;d++){const id=pd.activeId+d;if(id>=0&&id<16777216) ids.push(id)}
+    try{
+      const bs=await p.balanceOfBatch(ids.map(()=>account),ids);
+      const mine=[];ids.forEach((id,i)=>{if(bs[i]>0n) mine.push({id,bal:bs[i]})});
+      await Promise.all(mine.map(async m=>{const [sup,bin]=await Promise.all([p.totalSupply(m.id),p.getBin(m.id)]);m.sup=sup;m.binX=bin[0];m.binY=bin[1]}));
+      pd.pos=mine;
+      for(const m of mine){
+        if(m.sup<=0n) continue;
+        const x=m.binX*m.bal/m.sup,y=m.binY*m.bal/m.sup;
+        if(pd.tokIsX){pd.myTok+=x;pd.myAvax+=y}else{pd.myTok+=y;pd.myAvax+=x}
+      }
+    }catch(e){}
+  }
+  return pd;
+}
+const priceOf=pd=>(pd&&pd.pair)?pd.price:null;
+async function fetchPairLogs(pair){
+  const latest=await readP.getBlockNumber();
+  for(const sp of [200000,50000,10000,2000]){
+    try{return {logs:await readP.getLogs({address:pair,fromBlock:Math.max(0,latest-sp),toBlock:latest}),latest}}catch(e){}
+  }
+  return {logs:[],latest};
+}
+async function loadMarket(tok){
+  const id=++mkId,t=tokenOf(tok);
+  $('market').innerHTML='<div class="skel" style="width:40%"></div><div class="skel" style="height:200px"></div><div class="skel"></div>';
+  try{
+    const pd=await pairData(tok);
+    if(id!==mkId) return;
+    if(!pd.pair){
+      chartPts=[];
+      $('market').innerHTML=mkEmpty(`No ${esc(t.sym)}/AVAX pool yet.`)+`<div style="text-align:center"><button class="btn sm" id="mkCreate">Create pool</button></div>`;
+      $('mkCreate').onclick=()=>openLiq(tok,'add');return;
+    }
+    pdCache[K(tok)]=pd;
+    const price=priceOf(pd,t.dec);
+    const {logs,latest}=await fetchPairLogs(pd.pair);
+    if(id!==mkId) return;
+    let pts=[],trades=[];
+    const MASK=(1n<<128n)-1n;
+    for(const l of logs){
+      let ev;try{ev=PAIR_EVT.parseLog({topics:l.topics,data:l.data})}catch(e){continue}
+      if(!ev||ev.name!=='Swap') continue;
+      const id=Number(ev.args[2]),inA=BigInt(ev.args[3]),outA=BigInt(ev.args[4]);
+      const inX=inA&MASK,inY=inA>>128n,outX=outA&MASK,outY=outA>>128n;
+      const p=avaxPerTok(id,pd.binStep,pd.tokIsX,t.dec);
+      if(p) pts.push({b:l.blockNumber,p});
+      const tokIn=pd.tokIsX?inX:inY,avIn=pd.tokIsX?inY:inX,tokOut=pd.tokIsX?outX:outY,avOut=pd.tokIsX?outY:outX;
+      const buy=tokOut>0n;
+      trades.push({b:l.blockNumber,tx:l.transactionHash,buy,tok:buy?tokOut:tokIn,av:buy?avIn:avOut});
+    }
+    if(pts.length>400){const step=Math.ceil(pts.length/400);pts=pts.filter((_,i)=>i%step===0||i===pts.length-1)}
+    trades=trades.slice(-10).reverse();
+    const chg=pts.length>1?(pts[pts.length-1].p/pts[0].p-1)*100:null;
+    const tvl=Number(ethers.formatEther(pd.avaxRes))+Number(ethers.formatUnits(pd.tokRes,t.dec))*(price||0);
+    $('market').innerHTML=`
+      <div class="mkhead"><div class="tcell">${pairAv(t)}<div><b>${esc(t.sym)} / AVAX</b><small>${esc(t.name)}</small></div></div>
+        <div class="mkprice"><b>${price==null?'—':price.toPrecision(5)} AVAX</b>${chg==null?'':`<span class="${chg>=0?'ok':'err'}">${chg>=0?'+':''}${chg.toFixed(2)}%</span>`}</div></div>
+      <div class="chartbox"><canvas id="chart"></canvas><div class="tip hidden" id="chTip"></div></div>
+      <div class="mkstats"><div><span>TVL (AVAX)</span><b>${tvl.toLocaleString(undefined,{maximumFractionDigits:2})}</b></div>
+        <div><span>${esc(t.sym)} reserve</span><b>${fmt(pd.tokRes,t.dec,2)}</b></div>
+        <div><span>AVAX reserve</span><b>${fmt(pd.avaxRes,18,3)}</b></div>
+        <div><span>Pair</span><a class="mono" href="${FUJI.explorer}/address/${pd.pair}" target="_blank">${short(pd.pair)} ↗</a></div></div>
+      <h3 style="font-size:14px;margin:6px 0">Recent swaps</h3>
+      ${trades.length?`<table><tbody>${trades.map(x=>`<tr><td class="${x.buy?'ok':'err'}">${x.buy?'Buy':'Sell'}</td><td>${fmt(x.tok,t.dec,4)} ${esc(t.sym)}</td><td class="r">${fmt(x.av,18,4)} AVAX</td><td class="r dim"><a href="${FUJI.explorer}/tx/${x.tx}" target="_blank">~${ago((latest-x.b)*2)} ago</a></td></tr>`).join('')}</tbody></table>`:'<div class="dim">No swaps found in recent blocks.</div>'}
+      <div class="actions"><button class="btn sm ghost" id="mkAdd">Add liquidity</button></div>`;
+    $('mkAdd').onclick=()=>openLiq(tok,'add');
+    setupChart(pts);
+  }catch(e){
+    if(id===mkId) $('market').innerHTML=mkEmpty('Could not load market data. Check the router in Settings.');
+  }
+}
+function drawChart(cv,pts,hi){
+  const dpr=window.devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;
+  if(!w||!h) return;
+  cv.width=w*dpr;cv.height=h*dpr;
+  const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
+  if(pts.length<2){g.fillStyle='#8590a6';g.font='13px system-ui';g.textAlign='center';g.fillText('Not enough swap history yet',w/2,h/2);return}
+  let lo=Infinity,hv=-Infinity;
+  for(const p of pts){lo=Math.min(lo,p.p);hv=Math.max(hv,p.p)}
+  if(hv===lo){hv*=1.01;lo*=0.99}
+  const pad=(hv-lo)*.15;lo-=pad;hv+=pad;
+  const X=i=>i/(pts.length-1)*w,Y=v=>h-12-(v-lo)/(hv-lo)*(h-24);
+  const col=pts[pts.length-1].p>=pts[0].p?'#34d399':'#f87171';
+  g.strokeStyle='#1f2736';g.lineWidth=1;
+  for(let k=1;k<4;k++){const y=h*k/4;g.beginPath();g.moveTo(0,y);g.lineTo(w,y);g.stroke()}
+  const grad=g.createLinearGradient(0,0,0,h);grad.addColorStop(0,col+'55');grad.addColorStop(1,col+'00');
+  g.beginPath();pts.forEach((p,i)=>i?g.lineTo(X(i),Y(p.p)):g.moveTo(X(i),Y(p.p)));
+  g.strokeStyle=col;g.lineWidth=2;g.lineJoin='round';g.stroke();
+  g.lineTo(w,h);g.lineTo(0,h);g.closePath();g.fillStyle=grad;g.fill();
+  if(hi>=0){
+    g.strokeStyle='#8590a6';g.setLineDash([4,4]);g.beginPath();g.moveTo(X(hi),0);g.lineTo(X(hi),h);g.stroke();g.setLineDash([]);
+    g.fillStyle=col;g.beginPath();g.arc(X(hi),Y(pts[hi].p),4,0,7);g.fill();
+  }
+}
+function setupChart(pts){
+  chartPts=pts;const cv=$('chart');if(!cv) return;
+  drawChart(cv,pts,-1);
+  cv.onmousemove=e=>{
+    if(pts.length<2) return;
+    const r=cv.getBoundingClientRect();
+    const k=Math.max(0,Math.min(pts.length-1,Math.round((e.clientX-r.left)/r.width*(pts.length-1))));
+    drawChart(cv,pts,k);
+    const tip=$('chTip');tip.classList.remove('hidden');tip.textContent=pts[k].p.toPrecision(5)+' AVAX · block '+pts[k].b;
+  };
+  cv.onmouseleave=()=>{drawChart(cv,pts,-1);$('chTip')?.classList.add('hidden')};
+}
+window.addEventListener('resize',()=>{const cv=$('chart');if(cv&&chartPts.length) drawChart(cv,chartPts,-1)});
+
+/* ---------- pools ---------- */
+async function loadPools(){
+  if(!state.verified){renderPools();return}
+  const toks=state.tokens.slice();
+  const res=await Promise.allSettled(toks.map(t=>pairData(t.addr)));
+  res.forEach((r,i)=>{if(r.status==='fulfilled') pdCache[K(toks[i].addr)]=r.value});
+  renderPools();renderPort();
+}
+function myLpAvax(pd){
+  if(!hasPos(pd)) return 0;
+  return Number(ethers.formatEther(pd.myAvax))+Number(ethers.formatUnits(pd.myTok,pd.decT||18))*(pd.price||0);
+}
+function renderPools(){
+  const rows=state.tokens.map(t=>({t,pd:pdCache[K(t.addr)]}));
+  rows.sort((a,b)=>myLpAvax(b.pd)-myLpAvax(a.pd)||(Number(b.pd?.avaxRes||0n)-Number(a.pd?.avaxRes||0n)));
+  let positions=0,val=0,pooled=0;
+  rows.forEach(({pd})=>{if(pd?.pair){pooled++;if(hasPos(pd)){positions++;val+=myLpAvax(pd)}}});
+  const stat=(l,v,s='')=>`<div class="stat"><span>${l}</span><b>${v}</b>${s?`<small>${s}</small>`:''}</div>`;
+  $('poolStats').innerHTML=stat('Your positions',positions)+stat('Liquidity value',val.toLocaleString(undefined,{maximumFractionDigits:4})+' AVAX')+stat('Pools with liquidity',pooled)+stat('Saved tokens',state.tokens.length);
+  $('poolsBody').innerHTML=rows.length?rows.map(({t,pd})=>{
+    const name=`<div class="tcell">${pairAv(t)}<div><b>${esc(t.sym)} / AVAX</b></div></div>`;
+    if(!pd) return `<tr><td>${name}</td><td colspan="4" class="dim r">Loading…</td><td></td></tr>`;
+    if(!pd.pair) return `<tr><td>${name}</td><td colspan="4" class="dim r">No pool yet</td><td class="r"><button class="btn sm" data-lq="add" data-addr="${t.addr}">Create</button></td></tr>`;
+    const price=priceOf(pd),tvl=Number(ethers.formatEther(pd.avaxRes))+Number(ethers.formatUnits(pd.tokRes,t.dec))*(price||0);
+    return `<tr><td>${name}<span class="tag" style="margin-top:4px">${pd.binStep/100}% bin</span></td><td class="r">${price==null?'—':price.toPrecision(4)}</td><td class="r">${tvl.toLocaleString(undefined,{maximumFractionDigits:2})}</td>
+      <td class="r dim">${fmt(pd.tokRes,t.dec,2)} ${esc(t.sym)}<br>${fmt(pd.avaxRes,18,3)} AVAX</td>
+      <td class="r">${hasPos(pd)?`<b>${myLpAvax(pd).toFixed(4)} AVAX</b><br><span class="dim">${fmt(pd.myTok,t.dec,4)} ${esc(t.sym)} + ${fmt(pd.myAvax,18,4)} AVAX</span>`:'<span class="dim">—</span>'}</td>
+      <td class="r"><div class="iconrow"><button class="btn sm" data-lq="add" data-addr="${t.addr}">Add</button>${hasPos(pd)?`<button class="btn sm ghost" data-lq="remove" data-addr="${t.addr}">Remove</button>`:''}</div></td></tr>`;
+  }).join(''):'<tr><td colspan="6" class="empty">No saved tokens yet. Launch or import one to see its pool.</td></tr>';
+}
+$('poolsBody').onclick=e=>{const b=e.target.closest('button[data-lq]');if(b) openLiq(b.dataset.addr,b.dataset.lq)};
+$('newPos').onclick=()=>openTokenModal(a=>openLiq(a,'add'),{noNative:true});
+
+/* ---------- liquidity modal (Liquidity Book: liquidity sits in price bins) ---------- */
+let lq={tok:null,mode:'add',pd:null};
+const fx=x=>trimDec(x.toFixed(10),8);
+async function openLiq(tok,mode='add'){
+  lq={tok,mode,pd:pdCache[K(tok)]||null};
+  $('lqTokAmt').value='';$('lqAvaxAmt').value='';$('lqRange').value=50;
+  openM('lqModal');renderLq();await refreshLqPd();
+}
+async function refreshLqPd(){
+  if(!lq.tok) return;
+  const tok=lq.tok;
+  try{const pd=await pairData(tok);if(lq.tok!==tok) return;lq.pd=pd;pdCache[K(tok)]=pd}catch(e){}
+  renderLq();
+}
+function lqExpected(pd,pct){
+  let tk=0n,av=0n;
+  for(const m of pd.pos){
+    if(m.sup<=0n) continue;
+    const a=pct===100n?m.bal:m.bal*pct/100n;
+    const x=m.binX*a/m.sup,y=m.binY*a/m.sup;
+    if(pd.tokIsX){tk+=x;av+=y}else{tk+=y;av+=x}
+  }
+  return {tk,av};
+}
+function renderLq(){
+  const t=tokenOf(lq.tok);if(!t) return;
+  const pd=lq.pd,add=lq.mode==='add';
+  $('lqTitle').textContent=add?'Add liquidity':'Remove liquidity';
+  document.querySelectorAll('#lqTabs button').forEach(b=>b.classList.toggle('on',b.dataset.m===lq.mode));
+  $('lqAdd').classList.toggle('hidden',!add);$('lqRem').classList.toggle('hidden',add);
+  $('lqTokBtn').innerHTML=`${av(t,'sm')}<b>${esc(t.sym)}</b> ▾`;
+  $('lqTokBal').textContent=bals[K(t.addr)]!=null?'Balance: '+fmt(bals[K(t.addr)],t.dec,4):'';
+  $('lqAvBal').textContent=bals.native!=null?'Balance: '+fmt(bals.native,18,4):'';
+  let btn=add?'Supply':'Remove',dis=false,info='';
+  if(add){
+    const tw=parseAmt($('lqTokAmt').value,t.dec),aw=parseAmt($('lqAvaxAmt').value,18);
+    if(pd?.pair){
+      info=`<div class="kv"><span>Pool price</span><b>1 ${esc(t.sym)} = ${pd.price?pd.price.toPrecision(5):'—'} AVAX</b></div><div class="kv"><span>Bin step</span><b>${pd.binStep/100}% per bin</b></div><div class="kv"><span>Liquidity spread</span><b>11 bins around the price</b></div>`;
+    }else if(pd&&!pd.pair){
+      info=`<div class="kv"><span>New Liquidity Book pool</span><b>You set the starting price</b></div>`;
+      if(tw>0n&&aw>0n) info+=`<div class="kv"><span>Initial price</span><b>1 ${esc(t.sym)} = ${(Number(ethers.formatEther(aw))/Number(ethers.formatUnits(tw,t.dec))).toPrecision(5)} AVAX</b></div>`;
+    }
+    if(account){
+      if(!(tw>0n&&aw>0n)){btn='Enter amounts';dis=true}
+      else if(tw>(bals[K(t.addr)]||0n)){btn='Insufficient '+t.sym;dis=true}
+      else if(aw>(bals.native||0n)){btn='Insufficient AVAX';dis=true}
+    }
+  }else{
+    const pct=BigInt($('lqRange').value);
+    $('lqPct').textContent=pct+'%';
+    if(!hasPos(pd)){info='<div class="dim">You have no position in this pool.</div>';dis=!!account}
+    else{
+      const e=lqExpected(pd,pct);
+      info=`<div class="kv"><span>You receive</span><b>${fmt(e.tk,t.dec,4)} ${esc(t.sym)}</b></div><div class="kv"><span></span><b>${fmt(e.av,18,4)} AVAX</b></div><div class="kv"><span>Bins with your liquidity</span><b>${pd.pos.length}</b></div>`;
+    }
+  }
+  if(!account) btn='Connect wallet';
+  $('lqInfo').innerHTML=info;$('lqInfo').classList.toggle('hidden',!info);
+  $('lqBtn').textContent=btn;$('lqBtn').disabled=!!dis;
+}
+numField($('lqTokAmt'),()=>{
+  const t=tokenOf(lq.tok),pd=lq.pd;
+  if(t&&pd?.pair&&pd.price){const v=Number($('lqTokAmt').value)||0;$('lqAvaxAmt').value=v>0?fx(v*pd.price):''}
+  renderLq();
+});
+numField($('lqAvaxAmt'),()=>{
+  const t=tokenOf(lq.tok),pd=lq.pd;
+  if(t&&pd?.pair&&pd.price){const v=Number($('lqAvaxAmt').value)||0;$('lqTokAmt').value=v>0?fx(v/pd.price):''}
+  renderLq();
+});
+$('lqRange').oninput=renderLq;
+document.querySelectorAll('#lqRem [data-p]').forEach(b=>b.onclick=()=>{$('lqRange').value=b.dataset.p;renderLq()});
+document.querySelectorAll('#lqTabs button').forEach(b=>b.onclick=()=>{lq.mode=b.dataset.m;renderLq()});
+$('lqTokBtn').onclick=()=>openTokenModal(a=>{lq.tok=a;lq.pd=pdCache[K(a)]||null;$('lqTokAmt').value='';$('lqAvaxAmt').value='';renderLq();refreshLqPd()},{noNative:true});
+async function lqAdd(t){
+  const tw=parseAmt($('lqTokAmt').value,t.dec),aw=parseAmt($('lqAvaxAmt').value,18);
+  if(!(tw>0n&&aw>0n)) throw new Error('Enter both token and AVAX amounts');
+  const W=await wavax(),F=rd(LFJ.factory,FACTORY_ABI),keep=10000n-slipBps();
+  let pd=await pairData(t.addr);
+  if(!pd.pair){
+    if(!(await F.isQuoteAsset(W))) throw new Error('AVAX is not a quote asset on this LFJ factory, so new pools cannot be created here');
+    const steps=(await F.getOpenBinSteps()).map(Number);
+    if(!steps.length) throw new Error('No open bin steps on this factory');
+    const bs=steps.includes(25)?25:steps[0];
+    const price=Number(ethers.formatEther(aw))/Number(ethers.formatUnits(tw,t.dec));
+    const raw=price*Math.pow(10,18-t.dec); // raw WAVAX (Y) per raw token (X)
+    const id=Math.round(ID0+Math.log(raw)/Math.log(1+bs/10000));
+    if(!(id>0&&id<16777215)) throw new Error('Initial price is out of range for this bin step');
+    await sendTx(`Create ${t.sym}/AVAX pool`,routerW().createLBPair(t.addr,W,id,bs));
+    pd=await pairData(t.addr);
+    if(!pd.pair) throw new Error('Pool was not found after creation, try again');
+  }
+  await ensureAllowance(t.addr,LFJ.router,tw);
+  const R=5,PREC=10n**18n,n=BigInt(R+1),base=PREC/n,rem=PREC-base*n;
+  const deltaIds=[],dX=[],dY=[];
+  for(let d=-R;d<=R;d++){
+    deltaIds.push(d);
+    dX.push(d>=0?base+(d===0?rem:0n):0n); // token/X above the active price
+    dY.push(d<=0?base+(d===0?rem:0n):0n); // Y below the active price
+  }
+  const tokIsX=pd.tokIsX;
+  const amountX=tokIsX?tw:aw,amountY=tokIsX?aw:tw;
+  const params={tokenX:tokIsX?t.addr:W,tokenY:tokIsX?W:t.addr,binStep:pd.binStep,amountX,amountY,amountXMin:amountX*keep/10000n,amountYMin:amountY*keep/10000n,activeIdDesired:pd.activeId,idSlippage:5,deltaIds,distributionX:dX,distributionY:dY,to:account,refundTo:account,deadline:deadline()};
+  await sendTx(`Add liquidity ${t.sym}/AVAX`,routerW().addLiquidityNATIVE(params,{value:aw}));
+  $('lqTokAmt').value='';$('lqAvaxAmt').value='';
+}
+async function lqRemove(t){
+  const pd=await pairData(t.addr);
+  if(!hasPos(pd)) throw new Error('No position to remove');
+  const pct=BigInt($('lqRange').value),keep=10000n-slipBps();
+  const ids=[],amts=[];
+  for(const m of pd.pos){const a=pct===100n?m.bal:m.bal*pct/100n;if(a>0n){ids.push(m.id);amts.push(a)}}
+  if(!ids.length) throw new Error('Nothing to remove');
+  const e=lqExpected(pd,pct);
+  const p=wr(pd.pair,LBPAIR_ABI);
+  if(!(await p.isApprovedForAll(account,LFJ.router))) await sendTx('Approve LB position',p.approveForAll(LFJ.router,true));
+  await sendTx(`Remove liquidity ${t.sym}/AVAX`,routerW().removeLiquidityNATIVE(t.addr,pd.binStep,e.tk*keep/10000n,e.av*keep/10000n,ids,amts,account,deadline()));
+}
+$('lqBtn').onclick=()=>run(async()=>{
+  if(!account){await connect(false);return}
+  needWallet();
+  const t=tokenOf(lq.tok);
+  if(lq.mode==='add') await lqAdd(t);else await lqRemove(t);
+  await refreshBalances();await refreshLqPd();loadPools();loadMarketFor(true);
+});
+
+/* ---------- send ---------- */
+let sd={tok:null};
+function openSend(a){
+  sd.tok=a;const t=tokenOf(a);
+  $('sdTitle').textContent='Send '+t.sym;$('sdTo').value='';$('sdAmt').value='';
+  $('sdBal').textContent=bals[K(a)]!=null?'· Balance: '+fmt(bals[K(a)],t.dec,4):'';
+  openM('sdModal');
+}
+numField($('sdAmt'));
+$('sdMax').onclick=()=>{
+  const t=tokenOf(sd.tok),b=bals[K(sd.tok)];if(!t||b==null) return;
+  let v=b;if(isNative(sd.tok)){const gas=ethers.parseEther('0.005');v=b>gas?b-gas:0n}
+  $('sdAmt').value=fmtPlain(v,t.dec);
+};
+$('sdBtn').onclick=()=>run(async()=>{
+  needWallet();
+  const t=tokenOf(sd.tok),to=$('sdTo').value.trim(),amt=parseAmt($('sdAmt').value,t.dec);
+  if(!isAddr(to)) throw new Error('Invalid recipient address');
+  if(!(amt>0n)) throw new Error('Enter an amount');
+  if(bals[K(sd.tok)]!=null&&amt>bals[K(sd.tok)]) throw new Error('Insufficient balance');
+  const dest=ethers.getAddress(to);
+  if(isNative(sd.tok)) await sendTx(`Send ${t.sym}`,signer.sendTransaction({to:dest,value:amt}));
+  else await sendTx(`Send ${t.sym}`,wr(t.addr,ERC20_ABI).transfer(dest,amt));
+  closeM('sdModal');await refreshBalances();
+});
+
+/* ---------- portfolio ---------- */
+function renderPort(){
+  const stat=(l,v,s='')=>`<div class="stat"><span>${l}</span><b>${v}</b>${s?`<small>${s}</small>`:''}</div>`;
+  const avaxN=bals.native!=null?Number(ethers.formatEther(bals.native)):0;
+  let total=avaxN,lpCount=0;
+  const rows=state.tokens.map(t=>{
+    const b=bals[K(t.addr)],pd=pdCache[K(t.addr)],price=priceOf(pd,t.dec);
+    const value=(b!=null&&price!=null)?Number(ethers.formatUnits(b,t.dec))*price:null;
+    if(value) total+=value;
+    if(hasPos(pd)){lpCount++;total+=myLpAvax(pd)}
+    return {t,b,price,value};
+  });
+  $('portStats').innerHTML=stat('Est. value',total.toLocaleString(undefined,{maximumFractionDigits:4})+' AVAX','Wallet + LP positions')+stat('AVAX balance',bals.native!=null?fmt(bals.native,18,4):'—','Gas token on Fuji')+stat('Saved tokens',state.tokens.length,'Stored on this device')+stat('LP positions',lpCount);
+  const act=(a,act,icon,title)=>`<button class="ib" data-act="${act}" data-addr="${a}" title="${title}">${icon}</button>`;
+  const nativeRow=`<tr><td><div class="tcell">${av(NATIVE)}<div><b>AVAX</b><small>Avalanche</small></div></div></td><td class="r">${bals.native!=null?fmt(bals.native,18,4):'—'}</td><td class="r dim">—</td><td class="r">${bals.native!=null?fmt(bals.native,18,4):'—'}</td>
+    <td><div class="iconrow">${act('native','swap','⇄','Swap')}${act('native','send','↗','Send')}</div></td></tr>`;
+  $('portBody').innerHTML=nativeRow+rows.map(({t,b,price,value})=>`<tr>
+    <td><div class="tcell">${av(t)}<div><b>${esc(t.sym)}</b> ${t.owner&&account&&t.owner===account?'<span class="tag g">Created</span>':t.imported?'<span class="tag">Imported</span>':''}<small>${esc(t.name)} · <a href="${FUJI.explorer}/address/${t.addr}" target="_blank">${short(t.addr)}</a></small></div></div></td>
+    <td class="r">${b!=null?fmt(b,t.dec,4):'—'}</td>
+    <td class="r">${price!=null?price.toPrecision(4):'<span class="dim">no pool</span>'}</td>
+    <td class="r">${value!=null?value.toLocaleString(undefined,{maximumFractionDigits:4}):'—'}</td>
+    <td><div class="iconrow">${act(t.addr,'swap','⇄','Trade')}${act(t.addr,'send','↗','Send')}${act(t.addr,'pool','≋','Liquidity')}${act(t.addr,'copy','⧉','Copy address')}${act(t.addr,'wallet','＋','Add to wallet')}${act(t.addr,'revoke','🛡','Revoke router approval')}${act(t.addr,'remove','✕','Remove from list')}</div></td></tr>`).join('');
+}
+$('portBody').onclick=e=>{
+  const b=e.target.closest('button[data-act]');if(!b) return;
+  const a=b.dataset.addr,act=b.dataset.act,t=tokenOf(a);
+  if(act==='swap'){if(a==='native') sw.from='native';else{sw.to=a;if(sw.from&&K(sw.from)===K(a)) sw.from='native'}$('swOut').value='';show('swap');schedQuote()}
+  else if(act==='send') openSend(a);
+  else if(act==='pool') openLiq(a,'add');
+  else if(act==='copy'){navigator.clipboard?.writeText(a);toast('Address copied','ok')}
+  else if(act==='wallet') run(()=>watchAsset(t));
+  else if(act==='revoke') run(()=>revoke(a));
+  else if(act==='remove'){if(confirm('Remove '+t.sym+' from this device?')) removeToken(a)}
+};
+$('impBtn').onclick=()=>run(async()=>{
+  const t=await importToken($('impAddr').value);
+  $('impAddr').value='';toast(t.sym+' imported','ok');
+  loadPools();
+});
+
+/* ---------- launch ---------- */
 async function deploy(c,args){
   const f=new ethers.ContractFactory(c.abi,'0x'+c.evm.bytecode.object,signer);
   const k=await f.deploy(...args);
@@ -348,94 +1206,209 @@ async function deploy(c,args){
   await k.waitForDeployment();
   return k.getAddress();
 }
-
-/* ---------- launch token ---------- */
+function renderPreview(){
+  const n=$('tName').value.trim()||'Token name',s=($('tSym').value.trim()||'SYM').toUpperCase();
+  const sup=$('tSup').value.replace(/\D/g,'');
+  $('pvAv').innerHTML=av({addr:'0x'+s,sym:s},'lg');
+  $('pvName').textContent=n;$('pvSym').textContent=s;
+  $('pvSup').textContent=(sup?Number(sup).toLocaleString():'0')+' supply';
+}
+['tName','tSym','tSup'].forEach(id=>$(id).addEventListener('input',()=>{if(id==='tSup') $('tSup').value=$('tSup').value.replace(/\D/g,'');renderPreview()}));
 $('launch').onclick=()=>run(async()=>{
   needWallet();
-  const name=$('tName').value.trim(), sym=$('tSym').value.trim(), sup=Math.floor(+$('tSup').value);
-  if(!name||!sym||!(sup>0)) throw new Error('Enter a name, symbol and supply');
+  const name=$('tName').value.trim(),sym=$('tSym').value.trim(),sup=$('tSup').value.replace(/\D/g,'');
+  if(!name||!sym||!sup||BigInt(sup)<=0n) throw new Error('Enter a name, symbol and supply');
   const c=await compile();
   log(`Deploying ${sym}…`);
   const addr=await deploy(c.token,[name,sym,BigInt(sup)]);
   log(`${sym} deployed at ${addr}`,'ok','/address/'+addr);
-  record('Token',`${name} (${sym})`,addr);
+  toast(`${sym} launched`,'ok');
+  state.tokens.unshift({addr,name,sym,dec:18,owner:account,time:new Date().toLocaleDateString()});
+  save();renderTokList_dl();
   $('poolToken').value=addr;
+  $('launchDone').classList.remove('hidden');$('ldAddr').textContent=addr;launched=addr;
+  await refreshBalances();loadPools();
 });
+let launched=null;
+$('ldPool').onclick=()=>launched&&openLiq(launched,'add');
+$('ldStake').onclick=()=>{if(launched){$('poolToken').value=launched;show('earn')}};
+$('ldTrade').onclick=()=>{if(launched){sw.to=launched;if(sw.from===launched) sw.from='native';$('swOut').value='';show('swap');schedQuote()}};
+$('ldWallet').onclick=()=>run(()=>watchAsset(tokenOf(launched)));
+$('srcPre').textContent=TOKEN_SRC;
+$('copySrc').onclick=()=>{navigator.clipboard?.writeText(TOKEN_SRC);toast('Source copied','ok')};
 
-/* ---------- create pool ---------- */
+/* ---------- earn / staking ---------- */
+let cur=null,live=null,cardsId=0;
 $('mkPool').onclick=()=>run(async()=>{
   needWallet();
-  const tok=$('poolToken').value.trim(), apr=+$('apr').value;
-  if(!ethers.isAddress(tok)) throw new Error('Invalid token address');
+  const tokRaw=$('poolToken').value.trim(),apr=+$('apr').value;
+  if(!isAddr(tokRaw)) throw new Error('Invalid token address');
   if(!(apr>=0)) throw new Error('APR must be 0 or higher');
+  const tok=ethers.getAddress(tokRaw);
   const c=await compile();
   log('Deploying staking pool…');
   const addr=await deploy(c.staking,[tok,BigInt(Math.round(apr*100))]);
-  log(`Staking pool deployed at ${addr} (${apr}% APR)`,'ok','/address/'+addr);
-  record('Pool',`${apr}% APR · ${short(tok)}`,addr);
-  $('mPool').value=addr;
-  show('manage');
-  await loadPool();
+  log(`Staking pool deployed at ${addr}`,'ok','/address/'+addr);
+  toast('Staking pool deployed','ok');
+  state.pools.unshift({addr,token:tok,apr,owner:account,time:new Date().toLocaleDateString()});
+  save();
+  await loadPool(addr);renderPoolCards();
 });
-
-/* ---------- manage pool ---------- */
-async function loadPool(){
-  needWallet();
-  const addr=$('mPool').value.trim();
-  if(!ethers.isAddress(addr)) throw new Error('Invalid pool address');
-  const st=new ethers.Contract(addr,STAKE_ABI,signer);
+async function loadPool(addrIn){
+  const raw=String(addrIn||$('poolAddr').value||'').trim();
+  if(!isAddr(raw)) throw new Error('Invalid pool address');
+  const addr=ethers.getAddress(raw);
+  if((await readP.getCode(addr))==='0x') throw new Error('No contract at that address on Fuji');
+  const st=rd(addr,STAKE_ABI);
   const tokAddr=await st.token();
-  const tk=new ethers.Contract(tokAddr,ERC20_ABI,signer);
-  const [sym,apr,tot,mine,pend,bal,tokBal]=await Promise.all([
-    tk.symbol(),st.aprBps(),st.totalStaked(),st.staked(account),st.pendingReward(account),tk.balanceOf(account),tk.balanceOf(addr)
-  ]);
-  pool={st,tk,addr,sym};
-  const f=v=>Number(ethers.formatUnits(v,18)).toLocaleString(undefined,{maximumFractionDigits:4});
+  const tk=rd(tokAddr,ERC20_ABI);
+  const who=account||ethers.ZeroAddress;
+  const [sym,dec,apr,tot,myStake,pend,wbal,tokBal]=await Promise.all([tk.symbol(),tk.decimals().catch(()=>18n),st.aprBps(),st.totalStaked(),st.staked(who),st.pendingReward(who),tk.balanceOf(who),tk.balanceOf(addr)]);
+  const d=Number(dec);
+  if(!state.pools.find(p=>K(p.addr)===K(addr))){
+    state.pools.unshift({addr,token:tokAddr,apr:Number(apr)/100,owner:null,time:new Date().toLocaleDateString()});save();renderPoolCards();
+  }
+  try{await importToken(tokAddr)}catch(e){}
+  cur={addr,tok:tokAddr,dec:d,sym,wbal,my:myStake};
+  live={pend,staked:myStake,apr,t:Date.now()};
+  $('poolAddr').value=addr;$('manage').classList.remove('hidden');
   const reserve=tokBal>tot?tokBal-tot:0n;
   const stat=(l,v,s='')=>`<div class="stat"><span>${esc(l)}</span><b>${esc(v)}</b>${s?`<small>${esc(s)}</small>`:''}</div>`;
-  $('pStats').innerHTML=
-    stat('APR',(Number(apr)/100)+'%')+
-    stat('Total staked',f(tot)+' '+sym)+
-    stat('Reward reserve',f(reserve)+' '+sym,'Funds payouts')+
-    stat('Your stake',f(mine)+' '+sym)+
-    stat('Pending rewards',f(pend)+' '+sym)+
-    stat('Your wallet',f(bal)+' '+sym);
-  return pool;
+  $('pStats').innerHTML=stat('APR',(Number(apr)/100)+'%')+stat('Total staked',fmt(tot,d)+' '+sym)+stat('Reward reserve',fmt(reserve,d)+' '+sym,'Pays rewards')+stat('Your stake',fmt(myStake,d)+' '+sym)+stat('Pending rewards',fmt(pend,d)+' '+sym)+stat('Your wallet',fmt(wbal,d)+' '+sym);
+  tickLive();
+  return addr;
 }
-$('loadPool').onclick=()=>run(loadPool);
-
-async function send(label,txPromise){
-  const tx=await txPromise;
-  log(label+' submitted…','',"/tx/"+tx.hash);
-  await tx.wait();
-  log(label+' confirmed','ok');
+function tickLive(){
+  if(!live||!cur||!$('pendLive')) return;
+  const ms=BigInt(Date.now()-live.t);
+  const p=live.pend+live.staked*live.apr*ms/(10000n*31536000000n);
+  $('pendLive').textContent=fmt(p,cur.dec,6)+' '+cur.sym;
 }
-async function act(fn){
-  await run(async()=>{
-    needWallet();
-    if(!pool||pool.addr!==$('mPool').value.trim()) await loadPool();
-    await fn();
-    await loadPool();
+setInterval(tickLive,1000);
+$('loadPool').onclick=()=>run(()=>loadPool());
+async function renderPoolCards(){
+  const id=++cardsId,pools=state.pools.slice();
+  $('poolCards').innerHTML=pools.length?pools.map(p=>`<div class="card poolcard ${cur&&K(cur.addr)===K(p.addr)?'on':''}" data-pool="${p.addr}"><div class="tcell">${av({addr:p.token,sym:tokenOf(p.token)?.sym||'?'})}<div><b>${esc(tokenOf(p.token)?.sym||short(p.token))}</b><small><a href="${FUJI.explorer}/address/${p.addr}" target="_blank">${short(p.addr)}</a></small></div><span class="tag" style="margin-left:auto">${esc(p.apr)}% APR</span></div><div class="kv" style="margin-top:14px"><span>Total staked</span><b data-f="tot">…</b></div><div class="kv"><span>Your stake</span><b data-f="my">…</b></div></div>`).join(''):'<div class="empty card" style="grid-column:1/-1">No staking pools yet. Create one or open one by address.</div>';
+  const res=await Promise.allSettled(pools.map(async p=>{
+    const st=rd(p.addr,STAKE_ABI);
+    const [tot,my]=await Promise.all([st.totalStaked(),account?st.staked(account):Promise.resolve(0n)]);
+    return {tot,my};
+  }));
+  if(id!==cardsId) return;
+  const cards=$('poolCards').querySelectorAll('.poolcard');
+  res.forEach((r,i)=>{
+    const c=cards[i];if(!c||r.status!=='fulfilled') return;
+    const dec=tokenOf(pools[i].token)?.dec||18,sym=tokenOf(pools[i].token)?.sym||'';
+    c.querySelector('[data-f=tot]').textContent=fmt(r.value.tot,dec)+' '+sym;
+    c.querySelector('[data-f=my]').textContent=fmt(r.value.my,dec)+' '+sym;
   });
 }
-$('stake').onclick=()=>act(async()=>{
-  const wei=ethers.parseUnits($('amt').value||'0',18);
-  if(wei<=0n) throw new Error('Enter an amount');
-  if((await pool.tk.allowance(account,pool.addr))<wei) await send('Approve '+pool.sym,pool.tk.approve(pool.addr,wei));
-  await send('Stake',pool.st.stake(wei));
+$('poolCards').onclick=e=>{
+  if(e.target.closest('a')) return;
+  const c=e.target.closest('.poolcard');if(!c) return;
+  run(async()=>{await loadPool(c.dataset.pool);renderPoolCards();$('manage').scrollIntoView({behavior:'smooth'})});
+};
+async function stakeAct(fn){
+  await run(async()=>{
+    needWallet();if(!cur) throw new Error('Load a pool first');
+    await fn(cur.addr);await loadPool(cur.addr);await refreshBalances();renderPoolCards();
+  });
+}
+numField($('amt'));numField($('fund'));numField($('apr'));
+$('stakeMax').onclick=()=>{if(cur) $('amt').value=fmtPlain(cur.wbal,cur.dec)};
+$('wdMax').onclick=()=>{if(cur) $('amt').value=fmtPlain(cur.my,cur.dec)};
+$('stake').onclick=()=>stakeAct(async addr=>{
+  const wei=parseAmt($('amt').value,cur.dec);if(wei<=0n) throw new Error('Enter an amount');
+  await ensureAllowance(cur.tok,addr,wei);
+  await sendTx('Stake',wr(addr,STAKE_ABI).stake(wei));
 });
-$('unstake').onclick=()=>act(async()=>{
-  const wei=ethers.parseUnits($('amt').value||'0',18);
-  if(wei<=0n) throw new Error('Enter an amount');
-  await send('Withdraw',pool.st.withdraw(wei));
+$('unstake').onclick=()=>stakeAct(async addr=>{
+  const wei=parseAmt($('amt').value,cur.dec);if(wei<=0n) throw new Error('Enter an amount');
+  await sendTx('Withdraw',wr(addr,STAKE_ABI).withdraw(wei));
 });
-$('claim').onclick=()=>act(async()=>{ await send('Claim',pool.st.claim()); });
-$('fundBtn').onclick=()=>act(async()=>{
-  const wei=ethers.parseUnits($('fund').value||'0',18);
-  if(wei<=0n) throw new Error('Enter an amount');
-  await send('Fund reserve',pool.tk.transfer(pool.addr,wei));
+$('claim').onclick=()=>stakeAct(async addr=>{await sendTx('Claim rewards',wr(addr,STAKE_ABI).claim())});
+$('fundBtn').onclick=()=>stakeAct(async addr=>{
+  const wei=parseAmt($('fund').value,cur.dec);if(wei<=0n) throw new Error('Enter an amount');
+  await sendTx('Fund reserve',wr(cur.tok,ERC20_ABI).transfer(addr,wei));
 });
 
-show('dash');renderDash();
+/* ---------- settings ---------- */
+function renderSettings(){
+  $('router').value=state.router||'';$('dl').value=state.deadline;
+  $('slip').value=[0.1,0.5,1,3].includes(+state.slippage)?'':state.slippage;
+  document.querySelectorAll('#slipPresets .chip').forEach(b=>b.classList.toggle('on',+b.dataset.s===+state.slippage));
+  $('routerStatus').innerHTML=state.verified?`<span class="ok">LFJ LBRouter V2.2</span> ${esc(state.router)}`:'';
+}
+function openSettings(){renderSettings();openM('setModal')}
+$('setBtn').onclick=openSettings;$('bannerBtn').onclick=openSettings;
+$('verifyRouter').onclick=()=>run(async()=>{
+  $('routerStatus').textContent='Checking contracts…';
+  for(const [n,a] of Object.entries(LFJ)) if((await readP.getCode(a))==='0x') throw new Error(n+' has no code on Fuji');
+  const [w,f]=await Promise.all([routerR().getWNATIVE(),routerR().getFactory()]);
+  $('routerStatus').innerHTML=`<span class="ok">OK.</span> WAVAX ${short(w)} · Factory ${short(f)}`+(f.toLowerCase()===LFJ.factory.toLowerCase()?'':' <span class="warn">(differs from configured factory)</span>');
+  toast('LFJ contracts verified','ok');
+});
+document.querySelectorAll('#slipPresets .chip').forEach(b=>b.onclick=()=>{state.slippage=+b.dataset.s;$('slip').value='';save();renderSettings();updateSwapUI();schedQuote()});
+numField($('slip'),()=>{const v=+$('slip').value;if(v>0&&v<=50){state.slippage=v;save();document.querySelectorAll('#slipPresets .chip').forEach(b=>b.classList.remove('on'));updateSwapUI()}});
+$('dl').addEventListener('input',()=>{$('dl').value=$('dl').value.replace(/\D/g,'');const v=+$('dl').value;if(v>0){state.deadline=v;save()}});
+$('exportData').onclick=()=>{
+  const data={tokens:state.tokens,pools:state.pools,router:state.router,slippage:state.slippage,deadline:state.deadline};
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+  a.download='fuji-forge-data.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+};
+$('importData').onclick=()=>$('importFile').click();
+$('importFile').onchange=e=>run(async()=>{
+  const f=e.target.files[0];if(!f) return;
+  const d=JSON.parse(await f.text());
+  let nt=0,np=0;
+  for(const t of d.tokens||[]){
+    if(!t||!isAddr(t.addr)||!t.sym) continue;
+    const a=ethers.getAddress(t.addr);
+    if(!tokenOf(a)){state.tokens.push({addr:a,name:String(t.name||t.sym),sym:String(t.sym),dec:Number(t.dec)||18,owner:t.owner||null,time:t.time||new Date().toLocaleDateString(),imported:true});nt++}
+  }
+  for(const p of d.pools||[]){
+    if(!p||!isAddr(p.addr)||!isAddr(p.token)) continue;
+    const a=ethers.getAddress(p.addr);
+    if(!state.pools.find(x=>K(x.addr)===K(a))){state.pools.push({addr:a,token:ethers.getAddress(p.token),apr:+p.apr||0,owner:p.owner||null,time:p.time||new Date().toLocaleDateString()});np++}
+  }
+  save();renderTokList_dl();renderPort();renderPools();renderPoolCards();refreshBalances();loadPools();
+  toast(`Imported ${nt} tokens, ${np} pools`,'ok');e.target.value='';
+});
+$('clearData').onclick=()=>{
+  if(!confirm('Delete saved tokens, pools and activity from this browser?')) return;
+  state={...DEFAULT,router:state.router,verified:state.verified,slippage:state.slippage,deadline:state.deadline};
+  save();renderTokList_dl();renderPort();renderPools();renderPoolCards();renderLog();updateSwapUI();
+};
+
+/* ---------- drawer / misc ---------- */
+$('actBtn').onclick=()=>$('drawer').classList.toggle('open');
+$('closeDrawer').onclick=()=>$('drawer').classList.remove('open');
+$('clearLog').onclick=()=>{state.log=[];save();renderLog()};
+document.querySelectorAll('.modal').forEach(m=>m.addEventListener('mousedown',e=>{if(e.target===m) m.classList.remove('open')}));
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('.modal').classList.remove('open'));
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.modal.open').forEach(m=>m.classList.remove('open'));$('drawer').classList.remove('open');$('acct').classList.add('hidden')}});
+
+/* ---------- views ---------- */
+const VIEWS=['swap','pools','earn','launch','port'];
+function show(view){
+  if(!VIEWS.includes(view)) view='swap';
+  VIEWS.forEach(v=>$('v-'+v).classList.toggle('hidden',v!==view));
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.view===view));
+  if(location.hash!=='#'+view) history.replaceState(null,'','#'+view);
+  if(view==='swap'){updateSwapUI();loadMarketFor();const cv=$('chart');if(cv&&chartPts.length) drawChart(cv,chartPts,-1)}
+  if(view==='pools'){renderPools();loadPools()}
+  if(view==='earn') renderPoolCards();
+  if(view==='port'){renderPort();loadPools()}
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>show(b.dataset.view));
+window.addEventListener('hashchange',()=>show(location.hash.slice(1)));
+
+/* ---------- boot ---------- */
+renderTokList_dl();renderLog();renderHeader();renderPreview();renderPools();renderPort();
+show(location.hash.slice(1)||'swap');
+setTimeout(()=>run(()=>connect(true)),300);
+setInterval(()=>{if(account&&!document.hidden) refreshBalances()},25000);
 </script>
 </body></html>
