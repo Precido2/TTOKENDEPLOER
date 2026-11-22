@@ -267,6 +267,7 @@ input:focus{border-color:#ff6a1a;box-shadow:0 0 0 3px rgba(255,106,26,.18)}
     <button data-view="launch"><i>🚀</i>Launch</button>
     <button data-view="casino"><i>🎲</i>Casino</button>
     <button data-view="mine"><i>⛏</i>Mining</button>
+    <button data-view="lev"><i>↕</i>Long/Short</button>
     <button data-view="port"><i>◎</i>Portfolio</button>
   </nav>
   <div class="navr">
@@ -488,6 +489,38 @@ input:focus{border-color:#ff6a1a;box-shadow:0 0 0 3px rgba(255,106,26,.18)}
       <div class="row"><input id="dxSearch" placeholder="Search name or symbol" style="width:240px"><button class="btn ghost sm" id="dxRefresh">Refresh</button></div></div>
     <div class="card" id="dxList"></div>
     <div id="dxDetail" class="hidden"></div>
+  </section>
+
+  <section id="v-lev" class="view hidden">
+    <div class="pagehead"><div><h1>Long / Short</h1><p>Leveraged long or short on a launched token, settled in that token. The creator's house takes the other side. Prices use a TWAP of recent updates, not one swap.</p></div></div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:flex-end;gap:12px">
+        <div style="flex:1;min-width:200px"><label>Token</label><select id="lsTok"></select></div>
+        <div class="dim" id="lsNote" style="font-size:12px"></div>
+      </div>
+      <div id="lsDeploy"></div>
+      <div id="lsPanel" class="hidden">
+        <div class="grid4" id="lsStats" style="margin:14px 0"></div>
+        <div class="grid2">
+          <div class="card" style="background:var(--bg)">
+            <div class="row" style="gap:8px"><div class="cg-tabs" id="lsDir"><button class="on" data-d="1">Long</button><button data-d="0">Short</button></div>
+              <div class="cg-tabs" id="lsLev"><button data-l="1">1x</button><button class="on" data-l="2">2x</button><button data-l="3">3x</button></div></div>
+            <label style="margin-top:12px">Collateral (tokens)</label>
+            <div class="row"><input id="lsAmt" type="text" inputmode="decimal" placeholder="100" style="flex:1"><button class="btn" id="lsOpen">Open position</button></div>
+            <div class="dim" id="lsPreview" style="font-size:12px;margin-top:8px"></div>
+          </div>
+          <div class="card" style="background:var(--bg)">
+            <div class="row" style="justify-content:space-between"><b>Price</b><button class="btn ghost sm" id="lsRefresh">Update price</button></div>
+            <p class="dim" style="font-size:12px">Anyone can update the price. Positions use a TWAP of recent updates.</p>
+            <details style="margin-top:10px"><summary class="dim">House (creator)</summary>
+              <div class="row" style="margin-top:8px"><input id="lsFund" type="text" inputmode="decimal" placeholder="Amount in tokens" style="flex:1"><button class="btn ghost sm" id="lsFundBtn">Fund</button><button class="btn ghost sm" id="lsWdBtn">Withdraw</button></div>
+            </details>
+          </div>
+        </div>
+        <h3 style="margin:18px 0 8px;font-size:14px">Open positions</h3>
+        <div id="lsPos"></div>
+      </div>
+    </div>
   </section>
 
   <!-- PORTFOLIO -->
@@ -793,11 +826,11 @@ async function compile(){
   if(compiled) return compiled;
   log('Loading Solidity compiler (first run only)…');
   await getCompiler();
-  const input={language:'Solidity',sources:{'Token.sol':{content:TOKEN_SRC},'Staking.sol':{content:STAKING_SRC},'StakingV2.sol':{content:STAKING2_SRC},'Casino.sol':{content:CASINO_SRC},'Miners.sol':{content:MINERS_SRC}},settings:{outputSelection:{'*':{'*':['abi','evm.bytecode.object']}}}};
+  const input={language:'Solidity',sources:{'Token.sol':{content:TOKEN_SRC},'Staking.sol':{content:STAKING_SRC},'StakingV2.sol':{content:STAKING2_SRC},'Casino.sol':{content:CASINO_SRC},'Miners.sol':{content:MINERS_SRC},'LongShort.sol':{content:LONGSHORT_SRC}},settings:{outputSelection:{'*':{'*':['abi','evm.bytecode.object']}}}};
   const out=JSON.parse(await new Promise((res,rej)=>{const id=++reqId;pending.set(id,{res,rej});worker.postMessage({id,input:JSON.stringify(input)})}));
   const errs=(out.errors||[]).filter(e=>e.severity==='error');
   if(errs.length) throw new Error(errs[0].formattedMessage);
-  return compiled={token:out.contracts['Token.sol'].Token,staking:out.contracts['Staking.sol'].Staking,staking2:out.contracts['StakingV2.sol'].StakingV2,casino:out.contracts['Casino.sol'].Casino,miners:out.contracts['Miners.sol'].Miners};
+  return compiled={token:out.contracts['Token.sol'].Token,staking:out.contracts['Staking.sol'].Staking,staking2:out.contracts['StakingV2.sol'].StakingV2,casino:out.contracts['Casino.sol'].Casino,miners:out.contracts['Miners.sol'].Miners,longshort:out.contracts['LongShort.sol'].LongShort};
 }
 
 /* ---------- state (persisted in localStorage; migrates from v2) ---------- */
@@ -1234,21 +1267,23 @@ async function pairData(tok){
 const priceOf=pd=>(pd&&pd.pair)?pd.price:null;
 const withTimeout=(p,ms,msg)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error(msg)),ms))]);
 // Scans swap history newest-first within a time budget, so the page never waits on a slow RPC indefinitely.
-async function fetchPairLogs(pair,budgetMs=12000){
+async function fetchPairLogs(pair,budgetMs=25000){
   const started=Date.now();
-  const latest=await withTimeout(readP.getBlockNumber(),6000,'RPC timed out');
-  const CH=2000,MAXCH=40,starts=[];
+  const latest=await withTimeout(readP.getBlockNumber(),10000,'RPC timed out');
+  const CH=1000,MAXCH=60,starts=[];
   for(let i=0;i<MAXCH;i++){const to=latest-i*CH;if(to<0) break;starts.push([Math.max(0,to-CH+1),to])}
-  const out=[];let failed=0,done=0,lastErr='';
-  const getChunk=async([a,b])=>{
-    for(let t=0;t<2;t++){
-      try{return await withTimeout(readP.getLogs({address:pair,fromBlock:a,toBlock:b}),6000,'timed out')}
-      catch(e){lastErr=String(e.shortMessage||e.message||e)}
+  let failed=0,done=0,lastErr='';
+  async function scan(x,y,depth){
+    try{return await withTimeout(readP.getLogs({address:pair,fromBlock:x,toBlock:y}),15000,'request timed out')}
+    catch(e){
+      lastErr=String(e.shortMessage||e.info?.error?.message||e.message||e);
+      if(y-x>99&&depth<2&&Date.now()-started<budgetMs){const m=Math.floor((x+y)/2);return [...(await scan(x,m,depth+1)||[]),...(await scan(m+1,y,depth+1)||[])]}
+      failed++;return null;
     }
-    failed++;return null;
-  };
-  for(let i=0;i<starts.length&&Date.now()-started<budgetMs;i+=4){
-    const batch=await Promise.all(starts.slice(i,i+4).map(async c=>{const r=await getChunk(c);done++;return r}));
+  }
+  const out=[];
+  for(let i=0;i<starts.length&&Date.now()-started<budgetMs;i+=3){
+    const batch=await Promise.all(starts.slice(i,i+3).map(async c=>{const r=await scan(c[0],c[1],0);done++;return r}));
     batch.forEach(x=>{if(x) out.push(...x)});
   }
   out.sort((x,y)=>x.blockNumber-y.blockNumber);
@@ -1298,7 +1333,7 @@ function paintMarket(host,tok,pd,price,st){
   const t=tokenOf(tok),{loading,pts=[],trades=[],hist}=st;
   const chg=pts.length>1?(pts[pts.length-1].p/pts[0].p-1)*100:null;
   const tvl=Number(ethers.formatEther(pd.avaxRes))+Number(ethers.formatUnits(pd.tokRes,t.dec))*(price||0);
-  const scanInfo=loading?'loading swap history…':`${trades.length} swaps · ${Math.round((hist?.scanned||0)/1800)}h scanned${hist?.failed?` · <span class="err">${hist.failed}/${hist.chunks} reads failed</span>`:''}`;
+  const scanInfo=loading?'loading swap history…':`${trades.length} swaps · ${Math.round((hist?.scanned||0)/1800)}h scanned${hist?.failed?` · <span class="err" title="${esc(hist.lastErr||'')}">${hist.failed}/${hist.chunks} reads failed</span>`:''}`;
   const table=trades.length?`<table><tbody>${trades.map(x=>`<tr><td class="${x.buy?'ok':'err'}">${x.buy?'Buy':'Sell'}</td><td>${fmt(x.tok,t.dec,4)} ${esc(t.sym)}</td><td class="r">${fmt(x.av,18,4)} AVAX</td><td class="r dim"><a href="${FUJI.explorer}/tx/${x.tx}" target="_blank">tx ↗</a></td></tr>`).join('')}</tbody></table>`:'<div class="dim">No swaps found in the scanned blocks yet.</div>';
   host.innerHTML=`
     <div class="mkhead"><div class="tcell">${pairAv(t)}<div><b>${esc(t.sym)} / AVAX</b><small>${esc(t.name)}</small></div></div>
@@ -1795,7 +1830,7 @@ document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('.m
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.modal.open').forEach(m=>m.classList.remove('open'));$('drawer').classList.remove('open');$('acct').classList.add('hidden')}});
 
 /* ---------- views ---------- */
-const VIEWS=['swap','dex','pools','earn','launch','casino','mine','port'];
+const VIEWS=['swap','dex','pools','earn','launch','casino','mine','lev','port'];
 function show(view){
   if(!VIEWS.includes(view)) view='swap';
   VIEWS.forEach(v=>$('v-'+v).classList.toggle('hidden',v!==view));
@@ -1809,6 +1844,7 @@ function show(view){
   if(view==='casino') run(renderCasino);
   if(view==='mine') run(renderMining);
   if(view==='dex') run(renderDex);
+  if(view==='lev') run(renderLS);
   window.scrollTo(0,0);
 }
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>show(b.dataset.view));
@@ -2461,6 +2497,233 @@ async function openDexToken(addr){
 };
 $('dxSearch').oninput=()=>drawDexList();
 $('dxRefresh').onclick=()=>{dxSelected=null;run(renderDex)};
+
+/* ---------- long / short ---------- */
+const LONGSHORT_SRC=`// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+interface IERC20L {
+    function transfer(address to, uint256 amt) external returns (bool);
+    function transferFrom(address from, address to, uint256 amt) external returns (bool);
+}
+interface ILBPair {
+    function getActiveId() external view returns (uint24);
+    function getTokenX() external view returns (address);
+    function getReserves() external view returns (uint128 reserveX, uint128 reserveY);
+    function getPriceFromId(uint24 id) external view returns (uint256);
+}
+contract LongShort {
+    IERC20L public immutable token;
+    ILBPair public immutable pair;
+    address public immutable owner;
+    bool public immutable tokenIsX;
+    uint256 public immutable minDepthAvax;
+    uint16 public immutable maxExposureBps;
+    uint8 public constant MAX_LEV = 3;
+    uint256 public constant WINDOW = 300;
+    uint256 public constant POKE_GAP = 60;
+    uint256 public constant STALE = 1800;
+    uint256 public houseBal;
+    uint256 public openCollat;
+    uint256 public exposure;
+    uint256 public count;
+    struct Pos { address trader; bool isLong; uint256 c; uint256 n; uint256 entry; uint8 lev; bool open; }
+    mapping(uint256 => Pos) public positions;
+    uint256[] public obsTs;
+    uint256[] public obsPx;
+    event Opened(uint256 indexed id, address indexed trader, bool isLong, uint256 c, uint8 lev, uint256 entry);
+    event Closed(uint256 indexed id, address indexed by, int256 pnl, uint256 payout, bool liquidated);
+    event Poked(uint256 px);
+    event HouseFunded(uint256 amt);
+    event HouseWithdrawn(uint256 amt);
+    modifier onlyOwner() { require(msg.sender == owner, "owner"); _; }
+    constructor(address _token, address _pair, uint256 _minDepth, uint16 _maxExpBps) {
+        require(_maxExpBps > 0 && _maxExpBps <= 8000, "exp");
+        token = IERC20L(_token);
+        pair = ILBPair(_pair);
+        owner = msg.sender;
+        tokenIsX = ILBPair(_pair).getTokenX() == _token;
+        minDepthAvax = _minDepth;
+        maxExposureBps = _maxExpBps;
+    }
+    function spot() public view returns (uint256) {
+        uint256 p128 = pair.getPriceFromId(pair.getActiveId());
+        uint256 y = (p128 * 1e18) >> 128;
+        if (y == 0) return 0;
+        return tokenIsX ? y : 1e36 / y;
+    }
+    function depthOk() public view returns (bool) {
+        (uint128 rx, uint128 ry) = pair.getReserves();
+        uint256 avax = tokenIsX ? uint256(ry) : uint256(rx);
+        return avax >= minDepthAvax;
+    }
+    function poke() public {
+        uint256 n = obsTs.length;
+        if (n > 0 && block.timestamp < obsTs[n - 1] + POKE_GAP) return;
+        uint256 s = spot();
+        require(s > 0, "no price");
+        obsTs.push(block.timestamp);
+        obsPx.push(s);
+        emit Poked(s);
+    }
+    function twap() public view returns (uint256) {
+        uint256 n = obsTs.length;
+        if (n < 2) return 0;
+        if (block.timestamp - obsTs[n - 1] > STALE) return 0;
+        uint256 k = n > 12 ? n - 12 : 0;
+        if (obsTs[n - 1] - obsTs[k] < WINDOW) return 0;
+        uint256 sum;
+        for (uint256 i = k; i < n; i++) sum += obsPx[i];
+        return sum / (n - k);
+    }
+    function pnlOf(Pos memory P, uint256 px) internal pure returns (int256) {
+        int256 d = P.isLong ? int256(px) - int256(P.entry) : int256(P.entry) - int256(px);
+        int256 p = int256(P.n) * d / int256(P.entry);
+        int256 cap = int256(P.c) * 2;
+        int256 floor_ = -int256(P.c);
+        if (p > cap) p = cap;
+        if (p < floor_) p = floor_;
+        return p;
+    }
+    function previewPnl(uint256 id) external view returns (int256) {
+        uint256 px = twap();
+        if (px == 0) return 0;
+        Pos memory P = positions[id];
+        return pnlOf(P, px);
+    }
+    function open(uint256 c, uint8 lev, bool isLong) external returns (uint256 id) {
+        require(c > 0 && lev >= 1 && lev <= MAX_LEV, "params");
+        poke();
+        uint256 px = twap();
+        require(px > 0, "warming up");
+        require(depthOk(), "pool too thin");
+        uint256 n = c * lev;
+        require(exposure + n <= houseBal * maxExposureBps / 10000, "house exposure cap");
+        require(token.transferFrom(msg.sender, address(this), c), "transfer");
+        id = ++count;
+        positions[id] = Pos(msg.sender, isLong, c, n, px, lev, true);
+        exposure += n;
+        openCollat += c;
+        emit Opened(id, msg.sender, isLong, c, lev, px);
+    }
+    function close(uint256 id) external {
+        require(positions[id].trader == msg.sender, "not yours");
+        _settle(id, false);
+    }
+    function liquidate(uint256 id) external {
+        _settle(id, true);
+    }
+    function _settle(uint256 id, bool liq) internal {
+        poke();
+        Pos storage P = positions[id];
+        require(P.open, "closed");
+        uint256 px = twap();
+        require(px > 0, "warming up");
+        Pos memory M = P;
+        int256 p = pnlOf(M, px);
+        if (liq) require(p * 100 <= -int256(M.c) * 85, "healthy");
+        P.open = false;
+        exposure -= M.n;
+        openCollat -= M.c;
+        uint256 payout;
+        if (p >= 0) {
+            uint256 up = uint256(p);
+            require(houseBal >= up, "house short");
+            houseBal -= up;
+            payout = M.c + up;
+        } else {
+            uint256 loss = uint256(-p);
+            houseBal += loss;
+            payout = M.c - loss;
+        }
+        if (payout > 0) require(token.transfer(M.trader, payout), "transfer");
+        emit Closed(id, msg.sender, p, payout, liq);
+    }
+    function fund(uint256 amt) external onlyOwner {
+        require(token.transferFrom(msg.sender, address(this), amt), "transfer");
+        houseBal += amt;
+        emit HouseFunded(amt);
+    }
+    function withdraw(uint256 amt) external onlyOwner {
+        require(amt <= houseBal, "amount");
+        require(houseBal - amt >= exposure, "open exposure");
+        houseBal -= amt;
+        require(token.transfer(owner, amt), "transfer");
+        emit HouseWithdrawn(amt);
+    }
+}
+`;
+const LS_ABI=['function token() view returns (address)','function pair() view returns (address)','function owner() view returns (address)','function houseBal() view returns (uint256)','function exposure() view returns (uint256)','function count() view returns (uint256)','function spot() view returns (uint256)','function twap() view returns (uint256)','function depthOk() view returns (bool)','function minDepthAvax() view returns (uint256)','function maxExposureBps() view returns (uint16)','function previewPnl(uint256 id) view returns (int256)','function positions(uint256) view returns (address,bool,uint256,uint256,uint256,uint8,bool)','function poke()','function open(uint256 c,uint8 lev,bool isLong) returns (uint256)','function close(uint256 id)','function liquidate(uint256 id)','function fund(uint256 amt)','function withdraw(uint256 amt)'];
+window.lsState=null;window.lsDir=true;window.lsLev=2;
+const lsAct=fn=>run(async()=>{needWallet();const s=window.lsState;if(!s) throw new Error('Pick a token with a market');await fn(s);await renderLS();await refreshBalances()});
+function lsPreview(){
+  const amt=parseAmt($('lsAmt').value||'0',window.lsState?.dec||18);
+  const lev=window.lsLev,sym=window.lsState?.sym||'';
+  $('lsPreview').textContent=amt>0n?`Notional ${fmt(amt*BigInt(lev),18,2)} ${sym} · liquidated after a ${(85/lev).toFixed(1)}% move against you · profit capped at +200% of collateral`:'Enter collateral to see the position.';
+}
+function lsBind(){
+  document.querySelectorAll('#lsDir button').forEach(b=>b.onclick=()=>{window.lsDir=b.dataset.d==='1';document.querySelectorAll('#lsDir button').forEach(x=>x.classList.toggle('on',x===b));lsPreview()});
+  document.querySelectorAll('#lsLev button').forEach(b=>b.onclick=()=>{window.lsLev=+b.dataset.l;document.querySelectorAll('#lsLev button').forEach(x=>x.classList.toggle('on',x===b));lsPreview()});
+}
+async function renderLS(){
+  const sel=$('lsTok'),keep=sel.value;
+  sel.innerHTML=state.tokens.map(t=>`<option value="${t.addr}">${esc(t.sym)} · ${esc(t.name)}</option>`).join('');
+  if(!state.tokens.length){sel.innerHTML='<option value="">Launch a token first</option>';$('lsPanel').classList.add('hidden');$('lsDeploy').innerHTML='';window.lsState=null;return}
+  if(keep&&state.tokens.some(t=>t.addr===keep)) sel.value=keep;
+  const tok=tokenOf(sel.value);
+  const mk=(state.markets||[]).find(x=>K(x.token)===K(sel.value));
+  if(!mk){
+    window.lsState=null;$('lsPanel').classList.add('hidden');$('lsNote').textContent='';
+    $('lsDeploy').innerHTML=`<div class="grid3" style="margin-top:14px"><div><label>Min pool depth (AVAX)</label><input id="lsDepth" type="text" value="1"></div><div><label>Max open exposure (% of house)</label><input id="lsExp" type="text" value="50"></div><div style="align-self:end"><button class="btn" id="lsDeployBtn">Deploy long/short for ${esc(tok.sym)}</button></div></div><p class="dim" style="font-size:12px">Needs a live ${esc(tok.sym)}/AVAX pool. The creator funds the house after deploying.</p>`;
+    $('lsDeployBtn').onclick=()=>run(lsDeploy);return;
+  }
+  $('lsDeploy').innerHTML='';$('lsPanel').classList.remove('hidden');
+  const dec=tok.dec||18,c=rd(mk.addr,LS_ABI);
+  const [spot,twap,house,expo,cnt,depth,maxBps,owner]=await Promise.all([c.spot(),c.twap(),c.houseBal(),c.exposure(),c.count(),c.depthOk(),c.maxExposureBps(),c.owner()]);
+  window.lsState={addr:mk.addr,token:tok.addr,dec,sym:tok.sym,owner};
+  const cap=house*BigInt(maxBps)/10000n,room=cap>expo?cap-expo:0n;
+  const tile=(l,v)=>`<div class="stat"><span>${l}</span><b>${esc(v)}</b></div>`;
+  $('lsNote').textContent=`Market ${short(mk.addr)} · pool ${short(mk.pair)}`;
+  $('lsStats').innerHTML=tile('Spot',spot==0n?'—':fmt(spot,18,8)+' AVAX')+tile('TWAP',twap==0n?'warming up':fmt(twap,18,8)+' AVAX')+tile('House bankroll',fmt(house,dec,2)+' '+tok.sym)+tile('Room for new trades',fmt(room,dec,2)+' '+tok.sym)+tile('Pool depth',depth?'OK':'Too thin');
+  const ids=Array.from({length:Math.min(Number(cnt),60)},(_,i)=>i+1);
+  const rows=(await Promise.all(ids.map(async id=>{const p=await c.positions(id);if(!p[6]) return null;const pnl=await c.previewPnl(id);return {id,trader:p[0],isLong:p[1],c:p[2],entry:p[4],lev:Number(p[5]),pnl}}))).filter(Boolean);
+  $('lsPos').innerHTML=rows.length?`<div class="tablewrap"><table><thead><tr><th>#</th><th>Trader</th><th>Side</th><th class="r">Collateral</th><th class="r">Entry</th><th class="r">PnL</th><th class="r"></th></tr></thead><tbody>${rows.map(r=>{
+    const mine=account&&K(r.trader)===K(account);
+    const liq=r.pnl*100n<=-r.c*85n;
+    const abs=r.pnl<0n?-r.pnl:r.pnl;
+    const act=mine?`<button class="btn sm ghost" data-close="${r.id}">Close</button>`:(liq?`<button class="btn sm danger" data-liq="${r.id}">Liquidate</button>`:'<span class="dim">—</span>');
+    return `<tr><td>${r.id}</td><td class="mono">${mine?'<b>you</b>':short(r.trader)}</td><td class="${r.isLong?'ok':'err'}">${r.isLong?'Long':'Short'} ${r.lev}x</td><td class="r">${fmt(r.c,dec,2)}</td><td class="r">${fmt(r.entry,18,8)}</td><td class="r ${r.pnl<0n?'err':'ok'}">${r.pnl<0n?'−':'+'}${fmt(abs,dec,2)}${liq?' <span class="warn">liquidatable</span>':''}</td><td class="r">${act}</td></tr>`}).join('')}</tbody></table></div>`:'<div class="dim">No open positions yet.</div>';
+  $('lsPos').querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>lsAct(s=>sendTx('Close position',wr(s.addr,LS_ABI).close(+b.dataset.close))));
+  $('lsPos').querySelectorAll('[data-liq]').forEach(b=>b.onclick=()=>lsAct(s=>sendTx('Liquidate position',wr(s.addr,LS_ABI).liquidate(+b.dataset.liq))));
+  lsBind();lsPreview();
+}
+async function lsDeploy(){
+  needWallet();
+  const tok=tokenOf($('lsTok').value);if(!tok) throw new Error('Pick a token');
+  const pd=await pairData(tok.addr);
+  if(!pd.pair) throw new Error('Create the token/AVAX pool first (Liquidity panel)');
+  const dec=tok.dec||18;
+  const minDepth=parseAmt($('lsDepth').value,18);
+  const maxBps=Math.round(parseFloat($('lsExp').value||'0')*100);
+  if(!(maxBps>0&&maxBps<=8000)) throw new Error('Max exposure must be between 0.01% and 80%');
+  const c=await compile();
+  log(`Deploying ${tok.sym} long/short market…`);
+  const addr=await deploy(c.longshort,[tok.addr,pd.pair,minDepth,maxBps]);
+  log('Market deployed at '+addr,'ok','/address/'+addr);
+  state.markets=state.markets||[];
+  state.markets.unshift({addr,token:tok.addr,pair:pd.pair,owner:account,time:new Date().toLocaleDateString()});
+  save();await renderLS();
+}
+$('lsTok').onchange=()=>run(renderLS);
+$('lsAmt').oninput=()=>lsPreview();
+$('lsOpen').onclick=()=>lsAct(async s=>{
+  const amt=parseAmt($('lsAmt').value,s.dec);if(amt<=0n) throw new Error('Enter collateral');
+  await ensureAllowance(s.token,s.addr,ethers.MaxUint256);
+  await sendTx(`Open ${window.lsDir?'long':'short'} ${window.lsLev}x`,wr(s.addr,LS_ABI).open(amt,window.lsLev,window.lsDir));
+  $('lsAmt').value='';
+});
+$('lsRefresh').onclick=()=>lsAct(async s=>{await sendTx('Update price',wr(s.addr,LS_ABI).poke())});
+$('lsFundBtn').onclick=()=>lsAct(async s=>{if(!s.owner||K(s.owner)!==K(account)) throw new Error('Only the creator can fund the house');const a=parseAmt($('lsFund').value,s.dec);if(a<=0n) throw new Error('Enter an amount');await ensureAllowance(s.token,s.addr,ethers.MaxUint256);await sendTx('Fund house',wr(s.addr,LS_ABI).fund(a));$('lsFund').value=''});
+$('lsWdBtn').onclick=()=>lsAct(async s=>{if(!s.owner||K(s.owner)!==K(account)) throw new Error('Only the creator can withdraw');const a=parseAmt($('lsFund').value,s.dec);if(a<=0n) throw new Error('Enter an amount in the field');await sendTx('Withdraw from house',wr(s.addr,LS_ABI).withdraw(a));$('lsFund').value=''});
 
 /* ---------- boot ---------- */
 renderTokList_dl();renderLog();renderHeader();renderPreview();renderPools();renderPort();
