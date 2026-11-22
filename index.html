@@ -554,7 +554,7 @@ function needWallet(){if(!signer) throw new Error('Connect your wallet first')}
 let provider=null,signer=null,account=null,rawProv=null,bound=false;
 const readP=new ethers.JsonRpcProvider(FUJI.rpc[0],FUJI.chainId,{staticNetwork:true});
 const wallets=[];
-window.addEventListener('eip6963:announceProvider',e=>wallets.push(e.detail));
+window.addEventListener('eip6963:announceProvider',e=>{if(!wallets.some(w=>w.info.uuid===e.detail.info.uuid)) wallets.push(e.detail)});
 const rd=(addr,abi)=>new ethers.Contract(addr,abi,readP);
 const wr=(addr,abi)=>new ethers.Contract(addr,abi,signer);
 const routerR=()=>rd(state.router,ROUTER_ABI);
@@ -637,13 +637,41 @@ async function ensureFuji(raw){
     else throw e;
   }
 }
+/* Wallets announce themselves (EIP-6963) or inject window.ethereum, sometimes a moment after load. Poll briefly. */
+function findProvider(timeout){
+  return new Promise(res=>{
+    const t0=Date.now();
+    const tick=()=>{
+      window.dispatchEvent(new Event('eip6963:requestProvider'));
+      const p=wallets[0]?.provider||window.ethereum;
+      if(p) return res(p);
+      if(Date.now()-t0>timeout) return res(null);
+      setTimeout(tick,100);
+    };
+    tick();
+  });
+}
+function walletMissingMsg(){
+  return location.protocol==='file:'
+    ?'Wallets do not inject into file:// pages. Serve the app locally (python3 -m http.server 8000) and open http://localhost:8000'
+    :'No wallet detected. Install MetaMask or Core, allow it on this site, then refresh.';
+}
 async function connect(silent=false){
-  window.dispatchEvent(new Event('eip6963:requestProvider'));
-  await new Promise(r=>setTimeout(r,200));
-  const raw=wallets[0]?.provider||window.ethereum;
-  if(!raw){if(!silent) throw new Error('No wallet found. Install MetaMask or Core.');return}
+  try{ await connectInner(silent) }
+  catch(e){
+    if(!account){$('netPill').textContent='Not connected';$('netPill').classList.remove('live');$('connect').textContent='Connect wallet'}
+    throw e;
+  }
+}
+async function connectInner(silent){
+  const raw=await findProvider(silent?300:2000);
+  if(!raw){
+    if(silent) return;
+    $('netPill').textContent='No wallet';
+    throw new Error(walletMissingMsg());
+  }
   if(silent){const acc=await raw.request({method:'eth_accounts'});if(!acc.length) return}
-  else await raw.request({method:'eth_requestAccounts'});
+  else{ $('netPill').textContent='Connecting…'; await raw.request({method:'eth_requestAccounts'}) }
   await ensureFuji(raw);
   rawProv=raw;
   provider=new ethers.BrowserProvider(raw);
