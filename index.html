@@ -1063,12 +1063,12 @@ function findProvider(timeout){
 function walletMissingMsg(){
   return location.protocol==='file:'
     ?'Wallets do not inject into file:// pages. Serve the app locally (python3 -m http.server 8000) and open http://localhost:8000'
-    :'No wallet detected. Install MetaMask or Core, allow it on this site, then refresh.';
+    :'No wallet extension detected. Install MetaMask, Rabby or Core, allow this site, then refresh the page.';
 }
 async function connect(silent=false){
   try{ await connectInner(silent) }
   catch(e){
-    if(!account){$('netPill').textContent='Not connected';$('netPill').classList.remove('live');$('connect').textContent='Connect wallet'}
+    if(!account){if($('netPill').textContent!=='No wallet')$('netPill').textContent='Not connected';$('netPill').classList.remove('live');$('connect').textContent='Connect wallet'}
     throw e;
   }
 }
