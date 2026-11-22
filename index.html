@@ -935,7 +935,32 @@ function needWallet(){if(!signer) throw new Error('Connect your wallet first')}
 /* ---------- chain access ---------- */
 let provider=null,signer=null,account=null,rawProv=null,bound=false;
 // Uses your own RPC URL from Settings when one is saved; otherwise the default endpoint.
-const readP=new ethers.JsonRpcProvider(localStorage.getItem('fuji-forge:rpc-url')||FUJI.rpc[0],FUJI.chainId,{staticNetwork:true});
+// Every read goes through this gate: at most 2 requests in flight, a gap between them,
+// and a shared pause with exponential backoff when the RPC answers 429.
+class GatedProvider extends ethers.JsonRpcProvider{
+  constructor(url,chainId){super(url,chainId,{staticNetwork:true});this._active=0;this._waiters=[];this._max=2;this._gap=120;this._last=0;this._pauseUntil=0}
+  _slot(){return new Promise(res=>{const go=()=>{if(this._active<this._max){this._active++;res()}else this._waiters.push(go)};go()})}
+  _free(){this._active--;const w=this._waiters.shift();if(w) w()}
+  async send(method,params){
+    await this._slot();
+    try{
+      for(let attempt=0;;attempt++){
+        const wait=Math.max(this._pauseUntil,this._last+this._gap)-Date.now();
+        if(wait>0) await new Promise(r=>setTimeout(r,wait));
+        this._last=Date.now();
+        try{return await super.send(method,params)}
+        catch(e){
+          const text=String(e?.message||e?.shortMessage||'')+' '+String(e?.info?.error?.message||'')+' '+String(e?.info?.responseStatus||'');
+          const limited=/429|rate.?limit|too many requests/i.test(text);
+          if(!limited||attempt>=3) throw e;
+          const backoff=1000*2**attempt;
+          this._pauseUntil=Math.max(this._pauseUntil,Date.now()+backoff);
+        }
+      }
+    }finally{this._free()}
+  }
+}
+const readP=new GatedProvider(localStorage.getItem('fuji-forge:rpc-url')||FUJI.rpc[0],FUJI.chainId);
 const wallets=[];
 window.addEventListener('eip6963:announceProvider',e=>{if(!wallets.some(w=>w.info.uuid===e.detail.info.uuid)) wallets.push(e.detail)});
 const rd=(addr,abi)=>new ethers.Contract(addr,abi,readP);
@@ -958,6 +983,7 @@ async function sendTx(label,txPromise){
   const tx=await txPromise;
   log(label+' submitted…','','/tx/'+tx.hash);
   await tx.wait();
+  pdTTL.clear();
   log(label+' confirmed','ok');
   toast(label+' confirmed','ok');
   return tx;
@@ -995,7 +1021,7 @@ function removeToken(a){
 async function refreshBalances(){
   if(!account) return;
   try{bals.native=await readP.getBalance(account)}catch(e){}
-  await Promise.all(state.tokens.map(async t=>{try{bals[K(t.addr)]=await rd(t.addr,ERC20_ABI).balanceOf(account)}catch(e){}}));
+  await mapLimit(state.tokens,2,async t=>{try{bals[K(t.addr)]=await rd(t.addr,ERC20_ABI).balanceOf(account)}catch(e){}});
   renderHeader();renderPort();updateSwapUI();
   if($('tokModal').classList.contains('open')) renderTokList();
 }
@@ -1281,7 +1307,17 @@ function avaxPerTok(id,bs,tokIsX,decT){
   return isFinite(p)&&p>0?p:null;
 }
 const hasPos=pd=>!!(pd&&pd.pair&&pd.pos&&pd.pos.length);
+const pdTTL=new Map(),pdFlight=new Map();
 async function pairData(tok){
+  const k=K(tok)+'|'+(account||'');
+  const hit=pdTTL.get(k);
+  if(hit&&Date.now()-hit.t<15000) return hit.v;
+  if(pdFlight.has(k)) return pdFlight.get(k);
+  const p=pairDataRaw(tok).then(v=>{pdTTL.set(k,{t:Date.now(),v});pdFlight.delete(k);return v},e=>{pdFlight.delete(k);throw e});
+  pdFlight.set(k,p);
+  return p;
+}
+async function pairDataRaw(tok){
   const W=await wavax();
   const t=tokenOf(tok),decT=t?t.dec:18;
   const infos=await rd(LFJ.factory,FACTORY_ABI).getAllLBPairs(tok,W);
@@ -1316,6 +1352,13 @@ async function pairData(tok){
   return pd;
 }
 const priceOf=pd=>(pd&&pd.pair)?pd.price:null;
+async function mapLimit(items,limit,fn){
+  const out=new Array(items.length);let i=0;
+  await Promise.all(Array.from({length:Math.min(limit,items.length)},async()=>{
+    while(i<items.length){const k=i++;out[k]=await fn(items[k],k)}
+  }));
+  return out;
+}
 const withTimeout=(p,ms,msg)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error(msg)),ms))]);
 // Scans swap history newest-first within a time budget, so the page never waits on a slow RPC indefinitely.
 // Swap history is cached per pool. Later loads fetch only blocks added since the last scan,
@@ -1339,7 +1382,7 @@ async function fetchPairLogs(pair,budgetMs=25000){
     try{return await withTimeout(readP.getLogs({address:pair,topics:[topic],fromBlock:x,toBlock:y}),15000,'getLogs request timed out')}
     catch(e){
       lastErr=String(e.shortMessage||e.info?.error?.message||e.message||e);
-      if(y-x>199&&depth<1){
+      if(y-x>199&&depth<1&&!/429|rate.?limit|too many/i.test(lastErr)){
         const m=Math.floor((x+y)/2);
         const left=await scan(x,m,depth+1),right=await scan(m+1,y,depth+1);
         if(left===null||right===null){failed++;return null}
@@ -2503,7 +2546,7 @@ $('mnFundBtn').onclick=()=>mnAct(async s=>{const a=parseAmt($('mnFund').value,s.
 $('mnRateBtn').onclick=()=>mnAct(async s=>{if(!s.owner||K(s.owner)!==K(account)) throw new Error('Only the collection creator can change emission');const d=parseAmt($('mnRate').value,s.dec);await sendTx('Set emission',wr(s.addr,MN_ABI).setRate(d/86400n));$('mnRate').value=''});
 $('mnExclBtn').onclick=()=>mnAct(async s=>{if(!s.owner||K(s.owner)!==K(account)) throw new Error('Only the creator can exclude addresses');const a=$('mnExcl').value.trim();if(!isAddr(a)) throw new Error('Enter a valid address');await sendTx('Exclude address from rewards',wr(s.addr,MN_ABI).setExcluded(ethers.getAddress(a),true));$('mnExcl').value=''});
 $('mnPool').onclick=()=>run(async()=>{const s=window.mnState;if(!s) throw new Error('Pick a token with miners');openLiq(s.addr,'add')});
-setInterval(async()=>{const s=window.mnState;if(!s||!account||$('v-mine').classList.contains('hidden')) return;try{const p=await rd(s.addr,MN_ABI).pendingOf(account);$('mnPend').textContent=fmt(p,s.dec,4)+' '+s.sym}catch(e){}},4000);
+setInterval(async()=>{const s=window.mnState;if(!s||!account||$('v-mine').classList.contains('hidden')) return;try{const p=await rd(s.addr,MN_ABI).pendingOf(account);$('mnPend').textContent=fmt(p,s.dec,4)+' '+s.sym}catch(e){}},15000);
 
 /* ---------- dex ---------- */
 let dxRows=[],dxSelected=null;
@@ -2512,14 +2555,14 @@ async function renderDex(){
   $('dxDetail').classList.add('hidden');$('dxList').classList.remove('hidden');
   if(!state.tokens.length){$('dxList').innerHTML=mkEmpty('No tokens yet. Launch one from the Launch tab.');return}
   $('dxList').innerHTML='<div class="skel" style="height:220px"></div>';
-  dxRows=await Promise.all(state.tokens.map(async t=>{
+  dxRows=await mapLimit(state.tokens,2,async t=>{
     let pd={pair:null};
     if(state.verified){try{pd=await pairData(t.addr)}catch(e){}}
     const price=pd.pair?priceOf(pd):null;
     const tvl=pd.pair?Number(ethers.formatEther(pd.avaxRes))+Number(ethers.formatUnits(pd.tokRes,t.dec||18))*(price||0):0;
     const type=t.miner?'Miner shares':((state.miners||[]).some(m=>K(m.token)===K(t.addr))?'Has miners':'Token');
     return {t,pd,price,tvl,type};
-  }));
+  });
   drawDexList();
 }
 function drawDexList(){
@@ -2808,7 +2851,8 @@ renderTokList_dl();renderLog();renderHeader();renderPreview();renderPools();rend
 plPreview();renderLaunches();
 show(location.hash.slice(1)||'swap');
 setTimeout(()=>run(()=>connect(true)),300);
-setInterval(()=>{if(account&&!document.hidden) refreshBalances()},25000);
+let balBusy=false;
+setInterval(async()=>{if(!account||document.hidden||balBusy) return;balBusy=true;try{await refreshBalances()}finally{balBusy=false}},60000);
 
 </script>
 </body></html>
