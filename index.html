@@ -1321,7 +1321,7 @@ const withTimeout=(p,ms,msg)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()
 // Swap history is cached per pool. Later loads fetch only blocks added since the last scan,
 // and only Swap events are requested, so repeat visits cost one or two RPC calls.
 const histCache=new Map();
-const HIST_WINDOW=12000,HIST_CH=800;
+const HIST_WINDOW=4000,HIST_CH=1000;
 async function fetchPairLogs(pair,budgetMs=25000){
   const started=Date.now();
   const latest=await withTimeout(readP.getBlockNumber(),10000,'RPC timed out');
@@ -1358,7 +1358,7 @@ async function fetchPairLogs(pair,budgetMs=25000){
   logs.sort((x,y)=>x.blockNumber-y.blockNumber||x.index-y.index);
   return {logs,latest,scanned:Math.min(HIST_WINDOW,latest+1),failed,chunks:ranges.length,lastErr};
 }
-async function loadMarket(tok,host=$('market')){
+async function loadMarket(tok,host=$('market'),force=false){
   const id=++mkId,t=tokenOf(tok);
   host.innerHTML='<div class="skel" style="width:40%"></div><div class="skel" style="height:200px"></div><div class="skel"></div>';
   try{
@@ -1371,6 +1371,7 @@ async function loadMarket(tok,host=$('market')){
     }
     pdCache[K(tok)]=pd;
     const price=priceOf(pd);
+    if(!force&&!histCache.has(K(pd.pair))){chartPts=[];paintMarket(host,tok,pd,price,{lazy:true});return}
     paintMarket(host,tok,pd,price,{loading:true});
     let hist;
     try{hist=await fetchPairLogs(pd.pair)}catch(e){hist={logs:[],scanned:0,failed:1,chunks:1,lastErr:String(e.message||e)}}
@@ -1407,17 +1408,18 @@ function paintMarket(host,tok,pd,price,st){
   host.innerHTML=`
     <div class="mkhead"><div class="tcell">${pairAv(t)}<div><b>${esc(t.sym)} / AVAX</b><small>${esc(t.name)}</small></div></div>
       <div class="mkprice"><b>${price==null?'—':price.toPrecision(5)} AVAX</b>${chg==null?'':`<span class="${chg>=0?'ok':'err'}">${chg>=0?'+':''}${chg.toFixed(2)}%</span>`}</div></div>
-    <div class="chartbox">${loading?'<div class="empty" style="padding:90px 20px">Loading swap history…</div>':'<canvas id="chart"></canvas><div class="tip hidden" id="chTip"></div>'}</div>
+    <div class="chartbox">${st.lazy?'<div class="empty" style="padding:70px 20px"><p>Swap history is not loaded yet.</p><button class="btn sm" id="mkLoadHist">Load swap history</button></div>':loading?'<div class="empty" style="padding:90px 20px">Loading swap history…</div>':'<canvas id="chart"></canvas><div class="tip hidden" id="chTip"></div>'}</div>
     <div class="mkleg"><span class="ok">▲ buys</span><span class="err">▼ sells</span><span class="dim">bars = volume in AVAX</span><span class="dim">${scanInfo}</span></div>
     <div class="mkstats"><div><span>TVL (AVAX)</span><b>${tvl.toLocaleString(undefined,{maximumFractionDigits:2})}</b></div>
       <div><span>${esc(t.sym)} reserve</span><b>${fmt(pd.tokRes,t.dec,2)}</b></div>
       <div><span>AVAX reserve</span><b>${fmt(pd.avaxRes,18,3)}</b></div>
       <div><span>Pair</span><a class="mono" href="${FUJI.explorer}/address/${pd.pair}" target="_blank">${short(pd.pair)} ↗</a></div></div>
     <h3 style="font-size:14px;margin:6px 0">Recent swaps</h3>
-    ${loading?'<div class="dim">Loading…</div>':table}
+    ${st.lazy?'<div class="dim">Load swap history to see recent trades.</div>':loading?'<div class="dim">Loading…</div>':table}
     <div class="actions"><button class="btn sm ghost" id="mkAdd">Add liquidity</button></div>`;
   host.querySelector('#mkAdd').onclick=()=>openLiq(tok,'add');
-  if(!loading) setupChart(pts,host);
+  if(st.lazy) host.querySelector('#mkLoadHist').onclick=()=>loadMarket(tok,host,true);
+  else if(!loading) setupChart(pts,host);
 }
 function drawChart(cv,pts,hi){
   const dpr=window.devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;
