@@ -1113,7 +1113,7 @@ function findProvider(timeout){
 function walletMissingMsg(){
   return location.protocol==='file:'
     ?'Wallets do not inject into file:// pages. Serve the app locally (python3 -m http.server 8000) and open http://localhost:8000'
-    :'No wallet detected. Install MetaMask or Core, allow it on this site, then refresh.';
+    :'No wallet extension detected. Install MetaMask, Rabby or Core, allow it on this site and refresh. Or use the Browser wallet option below.';
 }
 async function connect(silent=false){
   try{ await connectInner(silent) }
@@ -1197,7 +1197,7 @@ $('acLock').onclick=()=>{vaultWallet=null;signer=null;provider=null;account=null
 $('browserWalletBtn').onclick=()=>{renderWalletVault();openM('walletModal')};
 $('connect').onclick=()=>{
   if(account){$('acct').classList.toggle('hidden');return}
-  run(async()=>{const raw=await findProvider(700);if(raw)return connect(false);renderWalletVault();openM('walletModal')});
+  run(async()=>{const raw=await findProvider(700);if(raw)return connect(false);toast(walletMissingMsg(),'err');renderWalletVault();openM('walletModal')});
 };
 $('acCopy').onclick=()=>{navigator.clipboard?.writeText(account);toast('Address copied','ok');$('acct').classList.add('hidden')};
 $('acRef').onclick=()=>{run(refreshBalances);$('acct').classList.add('hidden')};
