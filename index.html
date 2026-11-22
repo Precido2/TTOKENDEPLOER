@@ -652,7 +652,7 @@ input:focus{border-color:#ff6a1a;box-shadow:0 0 0 3px rgba(255,106,26,.18)}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
 <script>
-const FUJI={chainId:43113,hex:'0xa869',name:'Avalanche Fuji Testnet',rpc:['https://api.avax-test.network/ext/bc/C/rpc','https://avalanche-fuji-c-chain-rpc.publicnode.com','https://ava-testnet.public.blastapi.io/ext/bc/C/rpc'],currency:{name:'AVAX',symbol:'AVAX',decimals:18},explorer:'https://testnet.snowtrace.io'};
+const FUJI={chainId:43113,hex:'0xa869',name:'Avalanche Fuji Testnet',rpc:['https://api.avax-test.network/ext/bc/C/rpc'],currency:{name:'AVAX',symbol:'AVAX',decimals:18},explorer:'https://testnet.snowtrace.io'};
 const ERC20_ABI=['function name() view returns (string)','function symbol() view returns (string)','function decimals() view returns (uint8)','function totalSupply() view returns (uint256)','function balanceOf(address) view returns (uint256)','function allowance(address,address) view returns (uint256)','function approve(address,uint256) returns (bool)','function transfer(address,uint256) returns (bool)'];
 const STAKE_ABI=['function token() view returns (address)','function aprBps() view returns (uint256)','function totalStaked() view returns (uint256)','function staked(address) view returns (uint256)','function pendingReward(address) view returns (uint256)','function stake(uint256)','function withdraw(uint256)','function claim()'];
 const STAKE2_ABI=['function token() view returns (address)','function aprBps() view returns (uint256)','function totalStaked() view returns (uint256)','function staked(address) view returns (uint256)','function pendingReward(address) view returns (uint256)','function positionOf(address) view returns (uint256 amount,uint256 pending,uint8 tier,uint256 unlockAt,uint256 weight)','function stake(uint256,uint8)','function withdraw(uint256)','function claim()','function compound()'];
@@ -964,9 +964,9 @@ function needWallet(){if(!signer) throw new Error('Connect your wallet first')}
 /* ---------- chain access ---------- */
 let provider=null,signer=null,account=null,rawProv=null,bound=false;
 // Public Fuji RPCs rate-limit bursts (HTTP 429). Every read goes through this gate:
-// at most 3 requests in flight, a small gap between them, and exponential backoff on 429.
+// at most 2 requests in flight, a gap between them, and exponential backoff on 429.
 class ThrottledProvider extends ethers.JsonRpcProvider{
-  constructor(url,chainId){super(url,chainId,{staticNetwork:true});this._active=0;this._waiters=[];this._max=3;this._gap=70;this._last=0}
+  constructor(url,chainId){super(url,chainId,{staticNetwork:true});this._active=0;this._waiters=[];this._max=2;this._gap=150;this._last=0}
   _slot(){return new Promise(res=>{const go=()=>{if(this._active<this._max){this._active++;res()}else this._waiters.push(go)};go()})}
   _free(){this._active--;const w=this._waiters.shift();if(w) w()}
   async send(method,params){
@@ -979,8 +979,8 @@ class ThrottledProvider extends ethers.JsonRpcProvider{
         catch(e){
           const text=String(e?.message||e?.shortMessage||'')+' '+String(e?.info?.error?.message||'')+' '+String(e?.info?.responseStatus||'');
           const limited=/429|rate.?limit|too many requests/i.test(text);
-          if(!limited||attempt>=1) throw e;
-          await new Promise(r=>setTimeout(r,400));
+          if(!limited||attempt>=3) throw e;
+          await new Promise(r=>setTimeout(r,800*2**attempt));
         }
       }
     }finally{this._free()}
@@ -1012,6 +1012,7 @@ async function sendTx(label,txPromise){
   const tx=await txPromise;
   log(label+' submitted…','','/tx/'+tx.hash);
   await tx.wait();
+  pdTTL.clear();
   log(label+' confirmed','ok');
   toast(label+' confirmed','ok');
   return tx;
@@ -1360,7 +1361,16 @@ function avaxPerTok(id,bs,tokIsX,decT){
   return isFinite(p)&&p>0?p:null;
 }
 const hasPos=pd=>!!(pd&&pd.pair&&pd.pos&&pd.pos.length);
+const pdTTL=new Map();
 async function pairData(tok){
+  const k=K(tok)+'|'+(account||'');
+  const hit=pdTTL.get(k);
+  if(hit&&Date.now()-hit.t<15000) return hit.v;
+  const v=await pairDataRaw(tok);
+  pdTTL.set(k,{t:Date.now(),v});
+  return v;
+}
+async function pairDataRaw(tok){
   const W=await wavax();
   const t=tokenOf(tok),decT=t?t.dec:18;
   const infos=await rd(LFJ.factory,FACTORY_ABI).getAllLBPairs(tok,W);
@@ -2659,7 +2669,7 @@ async function renderMining(){
   $('mnDeploy').innerHTML='';$('mnPanel').classList.remove('hidden');
   const c=rd(m.addr,MN_ABI),dec=tok.dec||18;
   const [price,max,minted,counted,supply,rate,pool,owner]=await Promise.all([c.price(),c.maxSupply(),c.minted(),c.totalCounted(),c.totalSupply(),c.rate(),rd(tok.addr,ERC20_ABI).balanceOf(m.addr),c.owner()]);
-  const n=Math.min(Number(minted),100);
+  const n=Math.min(Number(minted),40);
   const all=await Promise.all(Array.from({length:n},(_,i)=>i+1).map(async id=>({id,o:await c.ownerOf(id),p:await c.powerOf(id)})));
   const mine=account?all.filter(x=>K(x.o)===K(account)):[];
   const myShares=account?await c.balanceOf(account):0n;
@@ -2667,7 +2677,7 @@ async function renderMining(){
   window.mnState={addr:m.addr,token:tok.addr,dec,sym:tok.sym,shareSym:m.sym,price,owner};
   const share=counted>0n?(Number(myShares*10000n/counted)/100).toFixed(2):'0.00';
   const stat=(l,v)=>`<div class="stat"><span>${esc(l)}</span><b>${esc(v)}</b></div>`;
-  $('mnNote').textContent=`${Number(minted)}/${Number(max)} minted${Number(minted)>100?' · showing first 100':''}`;
+  $('mnNote').textContent=`${Number(minted)}/${Number(max)} minted${Number(minted)>40?' · showing first 40':''}`;
   $('mnStats').innerHTML=stat('Shares earning',fmt(counted,18,0)+' '+m.sym)+stat('Emission / day',fmt(rate*86400n,dec,2)+' '+tok.sym)+stat('Reward pool',fmt(pool,dec,2)+' '+tok.sym)+stat('Your share',share+'%');
   $('mnPend').textContent=fmt(pend,dec,4)+' '+tok.sym;
   $('mnPrice').textContent=`Mint: ${fmt(price,dec,2)} ${tok.sym} → 1 NFT + power in ${m.sym} · ${Number(max)-Number(minted)} left · you hold ${fmt(myShares,18,2)} ${m.sym}`;
