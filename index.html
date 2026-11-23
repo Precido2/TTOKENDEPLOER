@@ -1278,10 +1278,22 @@ function av(t,size=''){
 }
 const pairAv=t=>`<span class="pairav">${av(t)}${av(NATIVE)}</span>`;
 function trimDec(s,n){const [i,f='']=s.split('.');const ff=f.slice(0,n).replace(/0+$/,'');return ff?i+'.'+ff:i}
-const fmtPlain=(v,d,n=8)=>trimDec(ethers.formatUnits(v,d),n);
+/* safe number helpers: undefined / null / '' / NaN never throw "invalid BigNumberish value" */
+const toBig=v=>{
+  if(typeof v==='bigint') return v;
+  if(v==null||v==='') return 0n;
+  if(typeof v==='number') return Number.isFinite(v)?BigInt(Math.trunc(v)):0n;
+  if(typeof v==='string'){const t=v.trim();if(/^-?\d+$/.test(t)) return BigInt(t);if(/^0x[0-9a-f]+$/i.test(t)) return BigInt(t);return 0n}
+  try{return BigInt(v.toString())}catch(e){return 0n}
+};
+const decOf=d=>{const n=Number(d);return Number.isInteger(n)&&n>=0&&n<=77?n:18};
+const fu=(v,d=18)=>ethers.formatUnits(toBig(v),decOf(d));
+const fe=v=>ethers.formatEther(toBig(v));
+const fmtPlain=(v,d,n=8)=>trimDec(fu(v,d),n);
 function fmt(v,d=18,max=4){
-  const n=Number(ethers.formatUnits(v,d));
-  if(n===0) return '0';
+  if(toBig(v)<0n) return '−'+fmt(-toBig(v),d,max);
+  const n=Number(fu(v,d));
+  if(n===0||!Number.isFinite(n)) return '0';
   if(n<Math.pow(10,-max)) return '<'+Math.pow(10,-max).toFixed(max);
   return n.toLocaleString(undefined,{maximumFractionDigits:max});
 }
@@ -1313,7 +1325,8 @@ function toast(text,cls=''){
 }
 async function run(fn){
   try{await fn()}catch(e){
-    const m=String(e.shortMessage||e.reason||e.message||e);
+    let m=String(e.shortMessage||e.reason||e.message||e);
+    if(/BigNumberish|invalid numeric|invalid decimal|cannot convert .* to a BigInt/i.test(m)) m='A number field is empty or not valid. Check the amounts and try again.';
     log(m,'err');toast(m.length>140?m.slice(0,140)+'…':m,'err');
   }
 }
@@ -1409,8 +1422,7 @@ async function refreshBalances(){
   if(!account) return;
   try{bals.native=await readP.getBalance(account)}catch(e){}
   await mapLimit(state.tokens,2,async t=>{try{bals[K(t.addr)]=await rd(t.addr,ERC20_ABI).balanceOf(account)}catch(e){}});
-  renderHeader();renderPort();updateSwapUI();
-  if($('tokModal').classList.contains('open')) renderTokList();
+  for(const f of [renderHeader,renderPort,updateSwapUI,()=>{if($('tokModal').classList.contains('open')) renderTokList()}]){try{f()}catch(e){console.warn('render',e)}}
 }
 async function watchAsset(t){
   if(!rawProv) throw new Error('Connect your wallet first');
@@ -1426,7 +1438,7 @@ async function revoke(a){
 
 /* ---------- wallet ---------- */
 async function ensureFuji(raw){
-  if((await raw.request({method:'eth_chainId'}))===FUJI.hex) return;
+  if(Number(await raw.request({method:'eth_chainId'}))===FUJI.chainId) return;
   try{await raw.request({method:'wallet_switchEthereumChain',params:[{chainId:FUJI.hex}]})}
   catch(e){
     if(e.code===4902||e.code===-32603) await raw.request({method:'wallet_addEthereumChain',params:[{chainId:FUJI.hex,chainName:FUJI.name,rpcUrls:FUJI.rpc,nativeCurrency:FUJI.currency,blockExplorerUrls:[FUJI.explorer]}]});
@@ -1472,7 +1484,8 @@ async function connectInner(silent){
   else{ $('netPill').textContent='Connecting…'; await raw.request({method:'eth_requestAccounts'}) }
   await ensureFuji(raw);
   rawProv=raw;
-  provider=new ethers.BrowserProvider(raw);
+  const fujiNet=ethers.Network.from(FUJI.chainId);
+  provider=new ethers.BrowserProvider(raw,fujiNet,{staticNetwork:fujiNet});
   signer=await provider.getSigner();
   account=await signer.getAddress();
   $('connect').textContent=short(account);
@@ -1480,9 +1493,9 @@ async function connectInner(silent){
   $('acExp').href=FUJI.explorer+'/address/'+account;
   if(!bound){bound=true;raw.on?.('accountsChanged',()=>location.reload());raw.on?.('chainChanged',()=>location.reload())}
   if(!silent) log('Connected '+account,'ok');
-  await refreshBalances();
-  loadPools();
-  if(cur) loadPool(cur.addr).catch(()=>{});
+  try{await refreshBalances()}catch(e){console.warn('balances',e)}
+  try{loadPools().catch(e=>console.warn('pools',e))}catch(e){console.warn('pools',e)}
+  try{if(cur) loadPool(cur.addr).catch(()=>{})}catch(e){}
 }
 $('connect').onclick=()=>{
   if(account){$('acct').classList.toggle('hidden');return}
@@ -1563,7 +1576,7 @@ function updateSwapUI(){
   const inAmt=f?parseAmt($('swIn').value,f.dec):0n;
   const q=sw.q;
   if(q&&t&&f){
-    const rate=Number(ethers.formatUnits(q.out,t.dec))/Number(ethers.formatUnits(q.inAmt,f.dec));
+    const rate=Number(fu(q.out,t.dec))/Number(fu(q.inAmt,f.dec));
     const min=q.out*(10000n-slipBps())/10000n;
     const imp=q.impact;
     $('swRate').textContent=`1 ${f.sym} ≈ ${rate.toPrecision(5)} ${t.sym}`;
@@ -1820,7 +1833,7 @@ async function loadMarket(tok,host=$('market'),force=false){
       const buy=tokOut>0n;
       const tr={b:l.blockNumber,tx:l.transactionHash,buy,dec:t.dec,tok:buy?tokOut:tokIn,av:buy?avIn:avOut};
       trades.push(tr);
-      if(p) pts.push({...tr,p,vol:Number(ethers.formatEther(tr.av))});
+      if(p) pts.push({...tr,p,vol:Number(fe(tr.av))});
     }
     if(pts.length>400){const step=Math.ceil(pts.length/400);pts=pts.filter((_,i)=>i%step===0||i===pts.length-1)}
     trades=trades.slice(-10).reverse();
@@ -1834,7 +1847,7 @@ async function loadMarket(tok,host=$('market'),force=false){
 function paintMarket(host,tok,pd,price,st){
   const t=tokenOf(tok),{loading,pts=[],trades=[],hist}=st;
   const chg=pts.length>1?(pts[pts.length-1].p/pts[0].p-1)*100:null;
-  const tvl=Number(ethers.formatEther(pd.avaxRes))+Number(ethers.formatUnits(pd.tokRes,t.dec))*(price||0);
+  const tvl=Number(fe(pd.avaxRes))+Number(fu(pd.tokRes,t.dec))*(price||0);
   const scanInfo=loading?'loading swap history…':`${trades.length} swaps · ${Math.round((hist?.scanned||0)/1800)}h scanned${hist?.failed?` · <span class="err" title="${esc(hist.lastErr||'')}">${hist.failed}/${hist.chunks} reads failed</span>`:''}`;
   const table=trades.length?`<table><tbody>${trades.map(x=>`<tr><td class="${x.buy?'ok':'err'}">${x.buy?'Buy':'Sell'}</td><td>${fmt(x.tok,t.dec,4)} ${esc(t.sym)}</td><td class="r">${fmt(x.av,18,4)} AVAX</td><td class="r dim"><a href="${FUJI.explorer}/tx/${x.tx}" target="_blank">tx ↗</a></td></tr>`).join('')}</tbody></table>`:'<div class="dim">No swaps found in the scanned blocks yet.</div>';
   host.innerHTML=`
@@ -1912,7 +1925,7 @@ async function loadPools(){
 }
 function myLpAvax(pd){
   if(!hasPos(pd)) return 0;
-  return Number(ethers.formatEther(pd.myAvax))+Number(ethers.formatUnits(pd.myTok,pd.decT||18))*(pd.price||0);
+  return Number(fe(pd.myAvax))+Number(fu(pd.myTok,pd.decT||18))*(pd.price||0);
 }
 function renderPools(){
   const rows=state.tokens.map(t=>({t,pd:pdCache[K(t.addr)]}));
@@ -1925,7 +1938,7 @@ function renderPools(){
     const name=`<div class="tcell">${pairAv(t)}<div><b>${esc(t.sym)} / AVAX</b></div></div>`;
     if(!pd) return `<tr><td>${name}</td><td colspan="4" class="dim r">Loading…</td><td></td></tr>`;
     if(!pd.pair) return `<tr><td>${name}</td><td colspan="4" class="dim r">No pool yet</td><td class="r"><button class="btn sm" data-lq="add" data-addr="${t.addr}">Create</button></td></tr>`;
-    const price=priceOf(pd),tvl=Number(ethers.formatEther(pd.avaxRes))+Number(ethers.formatUnits(pd.tokRes,t.dec))*(price||0);
+    const price=priceOf(pd),tvl=Number(fe(pd.avaxRes))+Number(fu(pd.tokRes,t.dec))*(price||0);
     return `<tr><td>${name}<span class="tag" style="margin-top:4px">${pd.binStep/100}% bin</span></td><td class="r">${price==null?'—':price.toPrecision(4)}</td><td class="r">${tvl.toLocaleString(undefined,{maximumFractionDigits:2})}</td>
       <td class="r dim">${fmt(pd.tokRes,t.dec,2)} ${esc(t.sym)}<br>${fmt(pd.avaxRes,18,3)} AVAX</td>
       <td class="r">${hasPos(pd)?`<b>${myLpAvax(pd).toFixed(4)} AVAX</b><br><span class="dim">${fmt(pd.myTok,t.dec,4)} ${esc(t.sym)} + ${fmt(pd.myAvax,18,4)} AVAX</span>`:'<span class="dim">—</span>'}</td>
@@ -1975,7 +1988,7 @@ function renderLq(){
       info=`<div class="kv"><span>Pool price</span><b>1 ${esc(t.sym)} = ${pd.price?pd.price.toPrecision(5):'—'} AVAX</b></div><div class="kv"><span>Bin step</span><b>${pd.binStep/100}% per bin</b></div><div class="kv"><span>Liquidity spread</span><b>11 bins around the price</b></div>`;
     }else if(pd&&!pd.pair){
       info=`<div class="kv"><span>New Liquidity Book pool</span><b>You set the starting price</b></div>`;
-      if(tw>0n&&aw>0n) info+=`<div class="kv"><span>Initial price</span><b>1 ${esc(t.sym)} = ${(Number(ethers.formatEther(aw))/Number(ethers.formatUnits(tw,t.dec))).toPrecision(5)} AVAX</b></div>`;
+      if(tw>0n&&aw>0n) info+=`<div class="kv"><span>Initial price</span><b>1 ${esc(t.sym)} = ${(Number(fe(aw))/Number(fu(tw,t.dec))).toPrecision(5)} AVAX</b></div>`;
     }
     if(account){
       if(!(tw>0n&&aw>0n)){btn='Enter amounts';dis=true}
@@ -2019,7 +2032,7 @@ async function lqAdd(t,twIn,awIn){
     const steps=(await F.getOpenBinSteps()).map(Number);
     if(!steps.length) throw new Error('No open bin steps on this factory');
     const bs=steps.includes(25)?25:steps[0];
-    const price=Number(ethers.formatEther(aw))/Number(ethers.formatUnits(tw,t.dec));
+    const price=Number(fe(aw))/Number(fu(tw,t.dec));
     const raw=price*Math.pow(10,18-t.dec); // raw WAVAX (Y) per raw token (X)
     const id=Math.round(ID0+Math.log(raw)/Math.log(1+bs/10000));
     if(!(id>0&&id<16777215)) throw new Error('Initial price is out of range for this bin step');
@@ -2090,11 +2103,11 @@ $('sdBtn').onclick=()=>run(async()=>{
 /* ---------- portfolio ---------- */
 function renderPort(){
   const stat=(l,v,s='')=>`<div class="stat"><span>${l}</span><b>${v}</b>${s?`<small>${s}</small>`:''}</div>`;
-  const avaxN=bals.native!=null?Number(ethers.formatEther(bals.native)):0;
+  const avaxN=bals.native!=null?Number(fe(bals.native)):0;
   let total=avaxN,lpCount=0;
   const rows=state.tokens.map(t=>{
     const b=bals[K(t.addr)],pd=pdCache[K(t.addr)],price=priceOf(pd,t.dec);
-    const value=(b!=null&&price!=null)?Number(ethers.formatUnits(b,t.dec))*price:null;
+    const value=(b!=null&&price!=null)?Number(fu(b,t.dec))*price:null;
     if(value) total+=value;
     if(hasPos(pd)){lpCount++;total+=myLpAvax(pd)}
     return {t,b,price,value};
@@ -2178,7 +2191,7 @@ $('mkPool').onclick=()=>run(async()=>{
   const mech=+$('mech').value;
   const c=await compile();
   log('Deploying '+(mech===2?'lock-tier':'classic')+' staking pool…');
-  const addr=await deploy(mech===2?c.staking2:c.staking,[tok,BigInt(Math.round(apr*100))]);
+  const addr=await deploy(mech===2?c.staking2:c.staking,[tok,BigInt(Math.round((+apr||0)*100))]);
   log(`Staking pool deployed at ${addr}`,'ok','/address/'+addr);
   toast('Staking pool deployed','ok');
   state.pools.unshift({addr,token:tok,apr,v:mech,owner:account,time:new Date().toLocaleDateString()});
@@ -2371,13 +2384,13 @@ function plNums(){
   const sup=BigInt((($('tSup').value||'').replace(/\D/g,''))||'0');
   const lpPct=Math.max(0,+$('plPct').value||0),rwPct=Math.max(0,+$('plRew').value||0);
   const on=$('plLpOn').checked,st=$('plStakeOn').checked;
-  const lpW=on?sup*10n**18n*BigInt(Math.round(lpPct*100))/10000n:0n;
-  const rwW=st?sup*10n**18n*BigInt(Math.round(rwPct*100))/10000n:0n;
+  const lpW=on?sup*10n**18n*BigInt(Math.round((+lpPct||0)*100))/10000n:0n;
+  const rwW=st?sup*10n**18n*BigInt(Math.round((+rwPct||0)*100))/10000n:0n;
   return {sup,lpW,rwW,avaxW:parseAmt($('plAvax').value,18),lpPct,rwPct,on,st};
 }
 function plPreview(){
   const n=plNums();
-  const price=n.lpW>0n&&n.avaxW>0n?Number(ethers.formatEther(n.avaxW))/Number(ethers.formatEther(n.lpW)):null;
+  const price=n.lpW>0n&&n.avaxW>0n?Number(fe(n.avaxW))/Number(fe(n.lpW)):null;
   const kept=n.sup*10n**18n-n.lpW-n.rwW;
   const stat=(l,v)=>`<div class="stat"><span>${l}</span><b>${v}</b></div>`;
   $('plSum').innerHTML=stat('Pool tokens',n.on?fmt(n.lpW,18,0):'—')+stat('Reward reserve',n.st?fmt(n.rwW,18,0):'—')+stat('You keep',kept<0n?'Over 100%':fmt(kept,18,0))+stat('Start price',price==null?'—':price.toPrecision(4)+' AVAX'+(n.sup>0n?' · FDV '+(price*Number(n.sup)).toLocaleString(undefined,{maximumFractionDigits:2}):''));
@@ -2406,7 +2419,7 @@ async function deployTokenRaw(name,sym,sup,cap){
 async function deployPoolRaw(tok,apr,mech){
   const c=await compile();
   log('Deploying '+(mech===2?'lock-tier':'classic')+' staking pool…');
-  const addr=await deploy(mech===2?c.staking2:c.staking,[tok,BigInt(Math.round(apr*100))]);
+  const addr=await deploy(mech===2?c.staking2:c.staking,[tok,BigInt(Math.round((+apr||0)*100))]);
   log(`Staking pool deployed at ${addr}`,'ok','/address/'+addr);
   state.pools.unshift({addr,token:tok,apr,v:mech,owner:account,time:new Date().toLocaleDateString()});
   save();
@@ -3119,7 +3132,7 @@ $('cgPlay').onclick=()=>run(cgPlay);
 $('cgChips').querySelectorAll('button').forEach(b=>b.onclick=()=>run(async()=>{
   const s=window.cgState;if(!s) throw new Error('Pick a token with a casino');
   const cap=await rd(s.addr,CG_ABI).maxBet();
-  $('cgBet').value=ethers.formatUnits(cap*BigInt(Math.round(+b.dataset.f*100))/100n,s.dec);
+  $('cgBet').value=fu(cap*BigInt(Math.round(+b.dataset.f*100))/100n,s.dec);
 }));
 document.querySelectorAll('#cgGame button').forEach(b=>b.onclick=()=>{
   cgGame=+b.dataset.g;cgPick=0;
@@ -3361,7 +3374,7 @@ async function renderDex(){
     let pd={pair:null};
     if(state.verified){try{pd=await pairData(t.addr)}catch(e){}}
     const price=pd.pair?priceOf(pd):null;
-    const tvl=pd.pair?Number(ethers.formatEther(pd.avaxRes))+Number(ethers.formatUnits(pd.tokRes,t.dec||18))*(price||0):0;
+    const tvl=pd.pair?Number(fe(pd.avaxRes))+Number(fu(pd.tokRes,t.dec||18))*(price||0):0;
     const type=t.miner?'Miner shares':((state.miners||[]).some(m=>K(m.token)===K(t.addr))?'Has miners':'Token');
     return {t,pd,price,tvl,type};
   });
@@ -3400,8 +3413,8 @@ async function openDexToken(addr){
   const [sup,cap,burned,owner,paused,pd]=await Promise.all([c.totalSupply(),c.cap().catch(()=>null),c.totalBurned().catch(()=>null),c.owner().catch(()=>null),c.paused().catch(()=>null),state.verified?pairData(addr).catch(()=>({pair:null})):Promise.resolve({pair:null})]);
   if(dxSelected!==addr) return;
   const price=pd.pair?priceOf(pd):null;
-  const liq=pd.pair?Number(ethers.formatEther(pd.avaxRes))+Number(ethers.formatUnits(pd.tokRes,dec))*(price||0):null;
-  const mcap=price!=null?Number(ethers.formatUnits(sup,dec))*price:null;
+  const liq=pd.pair?Number(fe(pd.avaxRes))+Number(fu(pd.tokRes,dec))*(price||0):null;
+  const mcap=price!=null?Number(fu(sup,dec))*price:null;
   const tile=(l,v)=>`<div class="stat"><span>${l}</span><b>${esc(v)}</b></div>`;
   $('dxPrice').textContent=price==null?'No pool yet':price.toPrecision(5)+' AVAX';
   $('dxTiles').innerHTML=tile('Liquidity',liq==null?'—':liq.toLocaleString(undefined,{maximumFractionDigits:2})+' AVAX')+tile('Market cap (est.)',mcap==null?'—':mcap.toLocaleString(undefined,{maximumFractionDigits:2})+' AVAX')+tile('Total supply',fmt(sup,dec,0)+' '+t.sym)+tile('Burned',burned==null?'n/a':fmt(burned,dec,0)+' '+t.sym);
@@ -3835,8 +3848,8 @@ const pctStr=(v,c)=>c>0n?((v>=c?'+':'')+(Number(v-c)*100/Number(c)).toFixed(1)+'
 
 async function buyPrice(t,wei){
   const q=await getQuote('native',t.addr,wei);if(!q) return null;
-  const n=Number(ethers.formatUnits(q.out,t.dec));if(!(n>0)) return null;
-  return {price:Number(ethers.formatEther(wei))/n,q};
+  const n=Number(fu(q.out,t.dec));if(!(n>0)) return null;
+  return {price:Number(fe(wei))/n,q};
 }
 async function exitPos(s,t,tokens,cost,value,frac,reason){
   const p=s.pos;
