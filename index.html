@@ -174,6 +174,8 @@ th.r,td.r{text-align:right}
 /* modal / drawer */
 .modal{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;background:#000a;backdrop-filter:blur(6px);padding:16px}
 .modal.open{display:flex}
+/* token picker must sit above every other modal that opens it (strategy editor, liquidity, etc.) */
+#tokModal{z-index:70}
 .sheet{width:100%;max-width:440px;max-height:90vh;overflow:auto;background:var(--card);border:1px solid var(--line2);border-radius:22px;padding:20px;box-shadow:0 30px 80px #000a}
 .sheethead{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
 .x{background:var(--card2);border:0;color:var(--mute);width:30px;height:30px;border-radius:9px;cursor:pointer}
@@ -202,6 +204,8 @@ details summary{cursor:pointer;color:var(--mute);margin-top:16px}
   .tabs{position:fixed;left:12px;right:12px;bottom:12px;z-index:40;justify-content:space-around;box-shadow:0 10px 40px #000c;background:#0b0f16f2;backdrop-filter:blur(12px)}
   .tabs button{padding:9px 10px;flex:1;justify-content:center;font-size:12px}
   .tabs button i{display:none}
+  .tabs{overflow-x:auto;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
+  .tabs button{flex:0 0 auto;white-space:nowrap}
   main{padding:20px 14px 100px}
   .menu{right:14px}
 }
@@ -314,6 +318,7 @@ input:focus{border-color:#ff6a1a;box-shadow:0 0 0 3px rgba(255,106,26,.18)}
     <button data-view="mine"><i>⛏</i>Mining</button>
     <button data-view="lev"><i>↕</i>Long/Short</button>
     <button data-view="bot"><i>🤖</i>Bot</button>
+    <button data-view="cbot"><i>🎰</i>Casino Bot</button>
     <button data-view="port"><i>◎</i>Portfolio</button>
   </nav>
   <div class="navr">
@@ -679,6 +684,87 @@ input:focus{border-color:#ff6a1a;box-shadow:0 0 0 3px rgba(255,106,26,.18)}
       <div class="tablewrap"><table><thead><tr><th>Time</th><th>Strategy</th><th>Side</th><th>Token</th><th class="r">AVAX</th><th class="r">Tokens</th><th>Reason</th><th></th></tr></thead><tbody id="thBody"></tbody></table></div>
     </div>
   </section>
+
+  <section id="v-cbot" class="view hidden">
+    <div class="pagehead"><div><h1>Casino Bot</h1><p>Plays the house games (coin flip, single die, two dice) automatically from its own wallet, using the same setup as the Trading Bot.</p></div>
+      <div class="row"><span class="pill" id="cbPill">No bot wallet</span><span class="pill" id="cbEng">Bot stopped</span></div></div>
+    <div class="bot-warn">Testnet only. The bot bets automatically while this tab stays open and the wallet is unlocked; closing the tab stops it. Every game has a house edge (about 1% on coin flip, 4–5% on the dice games), so no betting pattern beats it over time. Use test funds only.</div>
+
+    <div class="grid2">
+      <div class="card">
+        <h2>Casino bot wallet</h2><p class="sub">Separate from the Trading Bot wallet. Created in your browser, encrypted with your password and saved on this device.</p>
+        <div id="cbNew">
+          <label>Password (8+ characters)</label><input id="cbPw1" type="password" autocomplete="new-password">
+          <label style="margin-top:10px">Confirm password</label><input id="cbPw2" type="password" autocomplete="new-password">
+          <div class="row" style="margin-top:12px"><button class="btn" id="cbCreate">Create bot wallet</button><button class="btn ghost" id="cbRestoreToggle">Restore from private key</button></div>
+          <div id="cbRestore" class="hidden" style="margin-top:12px">
+            <label>Private key (encrypted with the password above)</label><input id="cbPk" class="mono" type="password" autocomplete="off" placeholder="0x…">
+            <button class="btn sm" id="cbRestoreBtn" style="margin-top:8px">Restore wallet</button>
+          </div>
+        </div>
+        <div id="cbLocked" class="hidden">
+          <div class="kv"><span>Address</span><b class="mono bot-addr" id="cbAddrL"></b></div>
+          <div class="kv"><span>AVAX balance</span><b id="cbAvaxL"></b></div>
+          <label style="margin-top:12px">Password</label><input id="cbPwU" type="password" autocomplete="current-password">
+          <div class="row" style="margin-top:12px"><button class="btn" id="cbUnlock">Unlock</button><button class="btn ghost" id="cbDelL">Delete wallet</button></div>
+        </div>
+        <div id="cbOpen" class="hidden">
+          <div class="kv"><span>Address</span><b class="mono bot-addr" id="cbAddr"></b></div>
+          <div class="kv"><span>AVAX balance</span><b id="cbAvax"></b></div>
+          <div class="row" style="margin-top:12px">
+            <button class="btn sm ghost" id="cbCopy">Copy address</button>
+            <a class="btn sm ghost" id="cbExp" target="_blank" rel="noopener">Snowtrace ↗</a>
+            <button class="btn sm ghost" id="cbRefresh">Refresh</button>
+            <button class="btn sm" id="cbLock">Lock</button>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <button class="btn sm ghost" id="cbDl">Download encrypted backup</button>
+            <button class="btn sm ghost" id="cbReveal">Show private key</button>
+            <button class="btn sm ghost" id="cbDel">Delete wallet</button>
+          </div>
+          <div id="cbKeyBox" class="bot-keybox hidden"><span class="warn" style="font-size:12px">Anyone with this key controls the wallet. It hides itself after 30 seconds.</span><code id="cbKey"></code><button class="btn sm ghost" id="cbKeyCopy">Copy key</button></div>
+        </div>
+        <div id="cbProg" class="dim" style="font-size:12px;margin-top:10px"></div>
+      </div>
+
+      <div class="card">
+        <h2>Fund &amp; withdraw</h2><p class="sub">Move AVAX (for gas) and the casino token (the bankroll it bets with) between your connected wallet and the bot wallet.</p>
+        <div class="seg" id="cbDir"><button data-d="fund" class="on">Fund bot</button><button data-d="wd">Withdraw</button></div>
+        <label>Asset</label>
+        <select id="cbAsset" style="margin-bottom:12px"></select>
+        <label>Amount <span id="cbBal" class="dim"></span></label>
+        <div class="row"><input id="cbAmt" type="text" inputmode="decimal" placeholder="0.0" style="flex:1"><button class="chip" id="cbMax">Max</button></div>
+        <button class="btn big" id="cbGo">Send</button>
+        <p class="dim" id="cbNote" style="font-size:12px;margin:10px 0 0"></p>
+      </div>
+    </div>
+
+    <div class="card bot-gap">
+      <div class="pagehead" style="margin-bottom:12px"><div><h2>Strategies</h2><p class="sub" style="margin:2px 0 0">Each strategy bets on one token's casino. Switch strategies on, then press Start bot.</p></div>
+        <div class="row"><button class="btn" id="cbEnGo">Start bot</button><button class="btn ghost" id="cbStNew">+ New strategy</button></div></div>
+      <div id="cbStList"></div>
+    </div>
+
+    <div class="grid2 bot-gap">
+      <div class="card">
+        <h2>Bot balances</h2><p class="sub">AVAX and tokens held by the casino bot wallet.</p>
+        <div class="tablewrap"><table><thead><tr><th>Token</th><th class="r">Balance</th></tr></thead><tbody id="cbBbBody"></tbody></table></div>
+      </div>
+      <div class="card">
+        <h2>Manual bet</h2><p class="sub">One-off bet from the bot wallet (needs it unlocked).</p>
+        <label>Casino</label>
+        <select id="cbMCas" style="margin-bottom:12px"></select>
+        <div class="row" style="margin-bottom:12px"><div style="flex:1"><label>Game</label><select id="cbMGame"></select></div><div style="flex:1"><label>Pick</label><select id="cbMPick"></select></div></div>
+        <label>Bet amount <span id="cbMInfo" class="dim"></span></label>
+        <div class="row"><input id="cbMBet" type="text" inputmode="decimal" placeholder="Bet amount" style="flex:1"><button class="chip" id="cbMMax">Max</button><button class="btn" id="cbMGo">Bet</button></div>
+      </div>
+    </div>
+
+    <div class="card bot-gap">
+      <div class="pagehead" style="margin-bottom:8px"><div><h2>Casino bot history</h2></div><button class="btn ghost sm" id="cbHistClear">Clear</button></div>
+      <div class="tablewrap"><table><thead><tr><th>Time</th><th>Strategy</th><th>Game</th><th class="r">Bet</th><th>Result</th><th class="r">Payout</th><th></th></tr></thead><tbody id="cbHistBody"></tbody></table></div>
+    </div>
+  </section>
 </main>
 
 <!-- token modal -->
@@ -772,6 +858,35 @@ input:focus{border-color:#ff6a1a;box-shadow:0 0 0 3px rgba(255,106,26,.18)}
   </div>
   <p class="dim" style="font-size:12px;margin:12px 0 0">Stop loss and trailing stop sell the whole position. Values are measured by what the position would actually sell for, so price impact is included.</p>
   <div class="row" style="margin-top:14px"><button class="btn" id="edSave">Save strategy</button><button class="btn ghost" data-close>Cancel</button></div>
+</div></div>
+
+<!-- casino bot strategy editor -->
+<div class="modal" id="cbEdModal"><div class="sheet bot-wide">
+  <div class="sheethead"><h3 id="cbEdTitle">New casino strategy</h3><button class="x" data-close>✕</button></div>
+  <div class="bot-presets" id="cbEdPresets">
+    <button class="chip" data-pr="steady">Steady flip</button><button class="chip" data-pr="mart">Martingale</button><button class="chip" data-pr="paroli">Paroli</button><button class="chip" data-pr="die">Lucky die</button>
+  </div>
+  <div class="bot-grid">
+    <div><label>Name</label><input id="cbEdName" maxlength="32" placeholder="My casino strategy"></div>
+    <div><label>Casino (token)</label><select id="cbEdCasino"></select></div>
+    <div><label>Game</label><select id="cbEdGame"></select></div>
+    <div><label>Pick</label><select id="cbEdPickMode"><option value="fixed">Always the same pick</option><option value="alt">Alternate picks</option><option value="rand">Random pick</option></select></div>
+    <div id="cbEdPickW" class="full"><label>Fixed pick</label><select id="cbEdPick"></select></div>
+    <div class="full"><label>Bet sizing</label>
+      <select id="cbEdSize"><option value="flat">Flat: same bet every round</option><option value="cappct">% of the house max bet</option><option value="mart">Martingale: multiply after a loss</option><option value="paroli">Paroli: multiply after a win</option></select></div>
+    <div id="cbEdBaseW"><label>Base bet (tokens)</label><input id="cbEdBase" type="text" inputmode="decimal"></div>
+    <div id="cbEdCapW"><label>Bet as % of house max bet</label><input id="cbEdCap" type="text" inputmode="decimal"></div>
+    <div id="cbEdMultW"><label>Multiplier</label><input id="cbEdMult" type="text" inputmode="decimal"></div>
+    <div id="cbEdParW"><label>Reset after N wins in a row</label><input id="cbEdParN" type="text" inputmode="decimal"></div>
+    <div id="cbEdMaxW"><label>Max bet (tokens, 0 = house cap only)</label><input id="cbEdMax" type="text" inputmode="decimal"></div>
+    <div><label>Take profit at +% of start bankroll (0 = off)</label><input id="cbEdTp" type="text" inputmode="decimal"></div>
+    <div><label>Stop loss at −% of start bankroll (0 = off)</label><input id="cbEdSl" type="text" inputmode="decimal"></div>
+    <div><label>Stop after rounds (0 = no limit)</label><input id="cbEdRounds" type="text" inputmode="decimal"></div>
+    <div><label>Seconds between bets</label><input id="cbEdDelay" type="text" inputmode="decimal"></div>
+    <div><label>Keep AVAX for gas</label><input id="cbEdRes" type="text" inputmode="decimal"></div>
+  </div>
+  <p class="dim" style="font-size:12px;margin:12px 0 0">Start bankroll is the bot wallet's token balance when the strategy places its first bet. If the next martingale/paroli bet would go above your max bet, the streak resets to the base bet; bets are always capped at the house max.</p>
+  <div class="row" style="margin-top:14px"><button class="btn" id="cbEdSave">Save strategy</button><button class="btn ghost" data-close>Cancel</button></div>
 </div></div>
 
 <datalist id="tokList"></datalist>
@@ -4001,6 +4116,515 @@ window.addEventListener('beforeunload',e=>{if(eng.on){e.preventDefault();e.retur
 renderBot();
 if(addrNow()) refreshBot();
 if(location.hash==='#bot') window.show('bot');
+})();
+</script>
+<script id="casino-bot-module">
+/* =====================================================================
+   Casino bot module (additive). Same mechanics as the trading bot:
+   its own encrypted wallet, strategies, start/stop engine, fund/withdraw.
+   The connected Rabby/MetaMask signer is only used to FUND the bot.
+   Nothing here touches the connect-wallet code.
+   ===================================================================== */
+(function(){
+'use strict';
+if(typeof ethers==='undefined'||typeof readP==='undefined'||typeof CG_ABI==='undefined'||typeof state==='undefined'||typeof VIEWS==='undefined'){
+  console.warn('Casino bot module: app core not found, tab disabled');return;
+}
+const WKEY='fuji-forge:casinobotwallet:v1',SKEY='fuji-forge:casinobot:v1';
+const rdJ=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)||'null')||d}catch(e){return d}};
+const wrJ=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}};
+
+let store=rdJ(WKEY,null);
+let cs=rdJ(SKEY,{strategies:[],trades:[]});
+cs.strategies=cs.strategies||[];cs.trades=cs.trades||[];
+const saveCS=()=>wrJ(SKEY,cs);
+
+let bw=null,txBusy=false,pendingLock=false,keyT=null;
+const eng={on:false,timer:null};
+const B={native:null,tok:{}};
+const addrNow=()=>bw?bw.address:(store&&store.address)||null;
+const botBal=t=>t.addr==='native'?B.native:(B.tok[K(t.addr)]??null);
+const prog=t=>{$('cbProg').textContent=t||''};
+const sleepUI=()=>new Promise(r=>setTimeout(r,30));
+const casinoList=()=>(state.casinos||[]).filter(c=>tokenOf(c.token));
+const casinoOf=addr=>(state.casinos||[]).find(c=>K(c.addr)===K(addr));
+const num=(id,label,min,max,intOnly)=>{
+  const v=parseFloat(String($(id).value).trim().replace(',','.'));
+  if(!isFinite(v)||v<min||v>max) throw new Error(`${label} must be between ${min} and ${max}`);
+  return intOnly?Math.round(v):v;
+};
+const sfmt=(v,d,m)=>v<0n?'−'+fmt(-v,d,m):fmt(v,d,m);
+const clean=id=>String($(id).value).trim().replace(',','.');
+
+/* ---------- wallet ---------- */
+async function makeWallet(pk){
+  const p1=$('cbPw1').value,p2=$('cbPw2').value;
+  if(p1.length<8) throw new Error('Use a password with at least 8 characters');
+  if(p1!==p2) throw new Error('Passwords do not match');
+  const base=pk?new ethers.Wallet(pk.trim()):new ethers.Wallet(ethers.Wallet.createRandom().privateKey);
+  prog('Encrypting wallet…');await sleepUI();
+  const json=await base.encrypt(p1,p=>prog('Encrypting wallet… '+Math.round(p*100)+'%'));
+  if(!wrJ(WKEY,{json,address:base.address,created:Date.now()})) throw new Error('Could not save to browser storage (private mode or storage full?)');
+  store=rdJ(WKEY,null);
+  bw=new ethers.Wallet(base.privateKey,readP);
+  $('cbPw1').value=$('cbPw2').value='';$('cbPk').value='';prog('');
+  log('🎰 Casino bot wallet ready '+short(bw.address),'ok','/address/'+bw.address);
+  toast(pk?'Casino bot wallet restored and unlocked':'Casino bot wallet created. Back it up below.','ok');
+  renderCB();refreshCB();
+}
+async function unlock(){
+  if(!store) throw new Error('No casino bot wallet on this device');
+  const pw=$('cbPwU').value;if(!pw) throw new Error('Enter the bot wallet password');
+  prog('Decrypting…');await sleepUI();
+  try{
+    const w=await ethers.Wallet.fromEncryptedJson(store.json,pw,p=>prog('Decrypting… '+Math.round(p*100)+'%'));
+    bw=new ethers.Wallet(w.privateKey,readP);
+  }catch(e){
+    prog('');
+    throw new Error(/password/i.test(String(e&&e.message))?'Wrong password':'Could not unlock: '+(e.shortMessage||e.message));
+  }
+  $('cbPwU').value='';prog('');
+  toast('Casino bot wallet unlocked','ok');renderCB();refreshCB();
+}
+function doLock(){bw=null;pendingLock=false;eng.on=false;clearInterval(eng.timer);hideKey();renderCB();toast('Casino bot wallet locked')}
+function lock(){
+  eng.on=false;clearInterval(eng.timer);
+  if(txBusy){pendingLock=true;toast('Locking as soon as the current transaction finishes…');renderCB();return}
+  doLock();
+}
+function hideKey(){clearTimeout(keyT);$('cbKey').textContent='';$('cbKeyBox').classList.add('hidden')}
+function deleteWallet(){
+  if(txBusy) throw new Error('A bot transaction is in progress. Try again in a few seconds.');
+  const bal=B.native!=null?fmt(B.native,18,4)+' AVAX':'an unknown amount';
+  const t=prompt(`Delete the casino bot wallet from this browser?\n\nIt currently holds ${bal} plus any tokens. Without a saved backup (encrypted file or private key) that money is gone for good.\n\nType DELETE to confirm.`);
+  if(t!=='DELETE') return;
+  eng.on=false;clearInterval(eng.timer);hideKey();
+  try{localStorage.removeItem(WKEY)}catch(e){}
+  store=null;bw=null;B.native=null;B.tok={};
+  cs.strategies.forEach(s=>{s.enabled=false});saveCS();
+  toast('Casino bot wallet deleted from this browser');renderCB();
+}
+function downloadBackup(){
+  if(!store) return;
+  const blob=new Blob([store.json],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='fuji-forge-casino-bot-wallet-'+store.address.slice(2,8)+'.json';
+  document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+
+/* ---------- balances ---------- */
+let refBusy=false;
+async function refreshCB(){
+  const a=addrNow();if(!a||refBusy) return;
+  refBusy=true;
+  try{
+    try{B.native=await readP.getBalance(a)}catch(e){}
+    await mapLimit(state.tokens,2,async t=>{try{B.tok[K(t.addr)]=await rd(t.addr,ERC20_ABI).balanceOf(a)}catch(e){}});
+  }finally{refBusy=false}
+  renderCB();
+}
+
+/* ---------- bot transactions (always signed by the bot wallet) ---------- */
+async function btx(label,p){
+  const tx=await p;
+  log('🎰 '+label+' submitted…','','/tx/'+tx.hash);
+  const rc=await withTimeout(tx.wait(),180000,'Timed out waiting for '+label+' to confirm');
+  if(!rc||rc.status===0) throw new Error(label+' reverted on-chain');
+  log('🎰 '+label+' confirmed','ok','/tx/'+tx.hash);
+  return rc;
+}
+async function exclusive(fn){
+  if(!bw) throw new Error('Unlock the bot wallet first');
+  if(txBusy) throw new Error('The bot is busy with another transaction. Try again in a few seconds.');
+  txBusy=true;renderPills();
+  try{return await fn()}
+  finally{txBusy=false;if(pendingLock) doLock();renderPills()}
+}
+const cbIface=new ethers.Interface(CG_ABI);
+function parseBet(rc,casinoAddr){
+  for(const l of rc.logs||[]){
+    if(K(l.address)!==K(casinoAddr)) continue;
+    try{const p=cbIface.parseLog(l);if(p&&p.name==='Bet') return p.args}catch(e){}
+  }
+  return null;
+}
+function addTrade(x){cs.trades.unshift({ts:Date.now(),...x});cs.trades=cs.trades.slice(0,150);saveCS();renderTrades()}
+async function placeBet(c,t,game,amt,pick,strategy){
+  const ct=new ethers.Contract(t.addr,ERC20_ABI,bw);
+  if((await ct.allowance(bw.address,c.addr))<amt) await btx('Approve '+t.sym+' for casino',ct.approve(c.addr,ethers.MaxUint256));
+  const rc=await btx(`Bet on ${CG_GAMES[game]}`,new ethers.Contract(c.addr,CG_ABI,bw).play(game,amt,pick));
+  const ev=parseBet(rc,c.addr);
+  if(!ev) throw new Error('Bet confirmed but the result could not be read');
+  const out={won:ev.won,payout:ev.payout,roll:ev.roll};
+  addTrade({strategy,sym:t.sym,dec:t.dec,game,bet:amt.toString(),won:ev.won,payout:ev.payout.toString(),roll:Number(ev.roll),hash:rc.hash});
+  return out;
+}
+
+/* ---------- strategy engine ---------- */
+const BP={
+  steady:{game:0,pickMode:'alt',pick:0,size:'cappct',base:'1',capPct:10,mult:2,maxBet:'0',paroliN:3,tpPct:25,slPct:25,maxRounds:0,delaySec:10,reserve:'0.02'},
+  mart:{game:0,pickMode:'fixed',pick:0,size:'mart',base:'1',capPct:10,mult:2,maxBet:'16',paroliN:3,tpPct:30,slPct:50,maxRounds:0,delaySec:10,reserve:'0.02'},
+  paroli:{game:2,pickMode:'fixed',pick:1,size:'paroli',base:'1',capPct:10,mult:2,maxBet:'8',paroliN:3,tpPct:40,slPct:20,maxRounds:0,delaySec:10,reserve:'0.02'},
+  die:{game:1,pickMode:'rand',pick:0,size:'flat',base:'1',capPct:10,mult:2,maxBet:'0',paroliN:3,tpPct:100,slPct:30,maxRounds:0,delaySec:12,reserve:'0.02'}
+};
+const emptySt=()=>({rounds:0,wins:0,losses:0,net:'0',start:null,curBet:null,streakW:0,alt:0});
+const mulOf=m=>BigInt(Math.max(100,Math.round((+m||2)*100)));
+function nextBet(s,cap,dec){
+  const st=s.st;
+  const base=s.size==='cappct'?cap*BigInt(Math.round((+s.capPct||1)*100))/10000n:parseAmt(s.base,dec);
+  let bet=(s.size==='mart'||s.size==='paroli')&&st.curBet?BigInt(st.curBet):base;
+  const userMax=parseAmt(s.maxBet||'0',dec);
+  if((s.size==='mart'||s.size==='paroli')&&userMax>0n&&bet>userMax) bet=base;
+  if(bet>cap) bet=cap;
+  return bet;
+}
+function afterRound(s,bet,res,cap,dec){
+  const st=s.st;
+  st.rounds++;
+  const net=BigInt(st.net)+(res.won?res.payout-bet:-bet);st.net=net.toString();
+  if(res.won){st.wins++;st.streakW++}else{st.losses++;st.streakW=0}
+  const base=s.size==='cappct'?0n:parseAmt(s.base,dec);
+  if(s.size==='mart') st.curBet=(res.won?base:bet*mulOf(s.mult)/100n).toString();
+  else if(s.size==='paroli'){
+    if(res.won&&st.streakW<(+s.paroliN||3)) st.curBet=(bet*mulOf(s.mult)/100n).toString();
+    else{st.curBet=base.toString();if(res.won) st.streakW=0}
+  }
+  st.alt++;
+}
+function pickFor(s){
+  const n=CG_PICKS[s.game].length;
+  if(s.pickMode==='alt') return s.st.alt%n;
+  if(s.pickMode==='rand') return Math.floor(Math.random()*n);
+  return Math.min(n-1,+s.pick||0);
+}
+function stopWith(s,msg){s.enabled=false;s.status=msg;log(`🎰 ${s.name}: ${msg}`,'ok');toast(s.name+': '+msg,'ok')}
+async function tickStrategy(s){
+  const c=casinoOf(s.casino),t=tokenOf(s.token);
+  if(!c||!t) throw new Error('Casino or token is not on this device anymore. Edit the strategy.');
+  const st=s.st;
+  const nat=await readP.getBalance(bw.address);B.native=nat;
+  if(nat<parseAmt(s.reserve||'0.02',18)){s.status='Waiting for AVAX (gas) in the bot wallet';return}
+  const bal=await rd(t.addr,ERC20_ABI).balanceOf(bw.address);B.tok[K(t.addr)]=bal;
+  if(st.start==null){if(bal<=0n){s.status=`Waiting for ${t.sym} in the bot wallet`;return}st.start=bal.toString()}
+  const start=BigInt(st.start),net=BigInt(st.net);
+  if(s.tpPct>0&&start>0n&&net*10000n>=start*BigInt(Math.round(s.tpPct*100))) return stopWith(s,`Take profit hit (+${sfmt(net,t.dec,2)} ${t.sym})`);
+  if(s.slPct>0&&start>0n&&-net*10000n>=start*BigInt(Math.round(s.slPct*100))) return stopWith(s,`Stop loss hit (${sfmt(net,t.dec,2)} ${t.sym})`);
+  if(s.maxRounds>0&&st.rounds>=s.maxRounds) return stopWith(s,'Finished all rounds');
+  const cap=await rd(c.addr,CG_ABI).maxBet();
+  if(cap<=0n){s.status='House has no bankroll (max bet is 0). Fund the casino first';return}
+  const bet=nextBet(s,cap,t.dec);
+  if(bet<=0n) throw new Error('Bet size is zero. Edit the strategy.');
+  if(bal<bet){s.status=`Need ${fmt(bet,t.dec,4)} ${t.sym} in the bot wallet (has ${fmt(bal,t.dec,4)})`;return}
+  const pick=pickFor(s);
+  s.status=`Betting ${fmt(bet,t.dec,2)} ${t.sym} on ${CG_PICKS[s.game][pick]}…`;renderStrats();
+  const res=await placeBet(c,t,s.game,bet,pick,s.name);
+  afterRound(s,bet,res,cap,t.dec);
+  s.status=(res.won?'Won ':'Lost ')+fmt(bet,t.dec,2)+' '+t.sym+' · '+cgRollText(s.game,res.roll);
+  await refreshCB();
+}
+async function engTick(){
+  if(!eng.on||!bw||txBusy) return;
+  txBusy=true;renderPills();
+  try{
+    for(const s of cs.strategies){
+      if(!eng.on||!bw) break;
+      if(!s.enabled||Date.now()<(s.nextAt||0)) continue;
+      try{
+        await tickStrategy(s);
+        s.errs=0;s.nextAt=Date.now()+Math.max(3,+s.delaySec||10)*1000;
+      }catch(e){
+        const m=String(e.shortMessage||e.reason||e.message||e).slice(0,200);
+        s.errs=(s.errs||0)+1;s.status='Error: '+m;
+        s.nextAt=Date.now()+Math.max(20,+s.delaySec||10)*1000;
+        log(`🎰 ${s.name}: ${m}`,'err');
+        if(s.errs>=5){s.enabled=false;log(`🎰 ${s.name} paused after 5 errors in a row`,'err');toast(s.name+' paused after repeated errors','err')}
+      }
+      saveCS();renderStrats();
+    }
+  }finally{txBusy=false;if(pendingLock) doLock();renderPills();renderStrats()}
+}
+function startEngine(){
+  if(!bw) throw new Error('Unlock the bot wallet first');
+  if(!cs.strategies.some(s=>s.enabled)) throw new Error('Switch at least one strategy on first');
+  eng.on=true;clearInterval(eng.timer);eng.timer=setInterval(engTick,3000);
+  log('🎰 Casino bot started','ok');toast('Casino bot started','ok');renderPills();engTick();
+}
+function stopEngine(){eng.on=false;clearInterval(eng.timer);log('🎰 Casino bot stopped');toast('Casino bot stopped');renderPills();renderStrats()}
+
+/* ---------- rendering ---------- */
+function renderPills(){
+  const pw=$('cbPill'),pe=$('cbEng');
+  if(!store){pw.textContent='No bot wallet';pw.className='pill'}
+  else if(bw){pw.textContent='Unlocked · '+short(bw.address);pw.className='pill live'}
+  else{pw.textContent='Locked · '+short(store.address);pw.className='pill'}
+  const n=cs.strategies.filter(s=>s.enabled).length;
+  pe.textContent=eng.on?`Bot running · ${n} active`:'Bot stopped';
+  pe.className='pill'+(eng.on?' live':'');
+  const b=$('cbEnGo');b.textContent=eng.on?'Stop bot':'Start bot';b.classList.toggle('danger',eng.on);
+}
+function renderWallet(){
+  $('cbNew').classList.toggle('hidden',!!store);
+  $('cbLocked').classList.toggle('hidden',!(store&&!bw));
+  $('cbOpen').classList.toggle('hidden',!bw);
+  const a=addrNow();
+  if(a){
+    $('cbAddrL').textContent=a;$('cbAddr').textContent=a;
+    const v=B.native!=null?fmt(B.native,18,4)+' AVAX':'…';
+    $('cbAvaxL').textContent=v;$('cbAvax').textContent=v;
+    $('cbExp').href=FUJI.explorer+'/address/'+a;
+  }
+}
+const tr={dir:'fund'};
+function trTok(){const v=$('cbAsset').value;return v==='native'?NATIVE:tokenOf(v)}
+function renderAssets(){
+  const sel=$('cbAsset'),keep=sel.value||'native';
+  const ids=['native',...casinoList().map(c=>K(c.token)),...state.tokens.map(t=>K(t.addr))].filter((v,i,a)=>a.indexOf(v)===i);
+  sel.innerHTML=ids.map(id=>{const t=id==='native'?NATIVE:tokenOf(id);return t?`<option value="${esc(id)}">${esc(t.sym)}${id==='native'?'':' · '+esc(t.name)}</option>`:''}).join('');
+  sel.value=ids.includes(keep)?keep:'native';
+}
+function renderTransfer(){
+  renderAssets();
+  const t=trTok()||NATIVE;
+  document.querySelectorAll('#cbDir button').forEach(b=>b.classList.toggle('on',b.dataset.d===tr.dir));
+  const src=tr.dir==='fund'?bals[K(t.addr)]:botBal(t);
+  $('cbBal').textContent=src!=null?`(${tr.dir==='fund'?'connected wallet':'bot wallet'}: ${fmt(src,t.dec,4)})`:'';
+  $('cbGo').textContent=tr.dir==='fund'?`Send ${t.sym} to bot wallet`:`Withdraw ${t.sym} to connected wallet`;
+  let note='';
+  if(!store) note='Create the bot wallet first.';
+  else if(tr.dir==='fund') note=account?`Sends from your connected wallet to ${short(store.address)}. The bot wallet needs AVAX for gas and the casino token to bet with.`:'Connect your normal wallet (top right) to fund the bot.';
+  else note=!bw?'Unlock the bot wallet to withdraw.':(account?`Sends from the bot wallet to your connected wallet ${short(account)}.`:'Connect your normal wallet to choose where withdrawals go.');
+  $('cbNote').textContent=note;
+}
+const sizeTxt=s=>({flat:`flat ${s.base}`,cappct:`${s.capPct}% of max bet`,mart:`martingale ×${s.mult} from ${s.base}`,paroli:`paroli ×${s.mult} from ${s.base}`}[s.size]);
+function stratHTML(s){
+  const t=tokenOf(s.token),sym=t?t.sym:short(s.token),dec=t?t.dec:18,st=s.st;
+  const sum=[CG_GAMES[s.game],{fixed:'pick '+CG_PICKS[s.game][Math.min(s.pick,CG_PICKS[s.game].length-1)],alt:'alternating picks',rand:'random picks'}[s.pickMode],sizeTxt(s)];
+  if(+s.maxBet>0&&(s.size==='mart'||s.size==='paroli')) sum.push('max bet '+s.maxBet);
+  if(s.tpPct>0) sum.push(`TP +${s.tpPct}%`);
+  if(s.slPct>0) sum.push(`SL −${s.slPct}%`);
+  if(s.maxRounds>0) sum.push(`${s.maxRounds} rounds`);
+  sum.push(`every ${s.delaySec}s`);
+  const net=BigInt(st.net);
+  const rec=st.rounds?`${st.rounds} rounds · ${st.wins}W / ${st.losses}L · net <b class="${net>=0n?'ok':'err'}">${net>0n?'+':''}${sfmt(net,dec,4)} ${esc(sym)}</b>`:'No rounds played yet';
+  const live=s.enabled&&eng.on;
+  return `<div class="bot-strat ${s.enabled?'':'off'}">
+    <div class="top"><div class="row" style="gap:8px">${t?av(t,'sm'):''}<b>${esc(s.name)}</b><span class="dim">${esc(sym)} casino</span></div>
+      <button class="chip ${s.enabled?'on':''}" data-a="toggle" data-id="${s.id}">${s.enabled?'● On':'○ Off'}</button></div>
+    <div class="sum">${sum.map(esc).join(' · ')}</div>
+    <div class="posl">${rec}</div>
+    <div class="stat-line">${live?'● ':''}${esc(s.status||(s.enabled?'Ready':'Off'))}</div>
+    <div class="acts"><button class="btn sm ghost" data-a="edit" data-id="${s.id}">Edit</button><button class="btn sm ghost" data-a="dup" data-id="${s.id}">Duplicate</button><button class="btn sm ghost" data-a="reset" data-id="${s.id}">Reset session</button><button class="btn sm ghost" data-a="del" data-id="${s.id}">Delete</button></div>
+  </div>`;
+}
+function renderStrats(){
+  $('cbStList').innerHTML=cs.strategies.length?cs.strategies.map(stratHTML).join(''):
+    (casinoList().length?'<div class="empty">No strategies yet. Press “+ New strategy” and pick a preset (Steady flip, Martingale, Paroli, Lucky die) or set your own game, bet sizing and stop limits.</div>':'<div class="empty">No casino found on this device yet. Deploy a casino for one of your tokens in the Casino tab first, then come back here.</div>');
+}
+function renderBalances(){
+  const rows=[`<tr><td><div class="row" style="gap:8px">${av(NATIVE,'sm')}<b>AVAX</b></div></td><td class="r">${B.native!=null?fmt(B.native,18,4):'—'}</td></tr>`];
+  state.tokens.forEach(t=>{const b=B.tok[K(t.addr)];if(b&&b>0n) rows.push(`<tr><td><div class="row" style="gap:8px">${av(t,'sm')}<b>${esc(t.sym)}</b></div></td><td class="r">${fmt(b,t.dec,4)}</td></tr>`)});
+  $('cbBbBody').innerHTML=addrNow()?rows.join(''):'<tr><td colspan="2" class="empty">Create the bot wallet to see balances.</td></tr>';
+}
+function renderTrades(){
+  $('cbHistBody').innerHTML=cs.trades.length?cs.trades.map(x=>{
+    const tm=new Date(x.ts).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    const d=x.dec||18;
+    return `<tr><td class="dim">${esc(tm)}</td><td>${esc(x.strategy||'manual')}</td><td>${esc(CG_GAMES[x.game]||'')}</td><td class="r">${fmt(BigInt(x.bet),d,4)} ${esc(x.sym)}</td><td class="${x.won?'ok':'err'}">${x.won?'Won':'Lost'} · ${esc(cgRollText(x.game,x.roll))}</td><td class="r">${x.won?fmt(BigInt(x.payout),d,4):'—'}</td><td>${x.hash?`<a href="${FUJI.explorer}/tx/${esc(x.hash)}" target="_blank" rel="noopener">↗</a>`:''}</td></tr>`;
+  }).join(''):'<tr><td colspan="7" class="empty">No casino bot bets yet.</td></tr>';
+}
+const mb={game:0};
+function renderManual(){
+  const cs0=casinoList(),sel=$('cbMCas'),keep=sel.value;
+  sel.innerHTML=cs0.length?cs0.map(c=>{const t=tokenOf(c.token);return `<option value="${esc(c.addr)}">${esc(t.sym)} casino · ${esc(short(c.addr))}</option>`}).join(''):'<option value="">No casino yet</option>';
+  if(keep&&cs0.some(c=>c.addr===keep)) sel.value=keep;
+  const g=$('cbMGame'),gk=g.value||'0';
+  g.innerHTML=CG_GAMES.map((n,i)=>`<option value="${i}">${esc(n)}</option>`).join('');g.value=gk;
+  const pk=$('cbMPick'),pv=pk.value;
+  pk.innerHTML=CG_PICKS[+g.value].map((n,i)=>`<option value="${i}">${esc(n)}</option>`).join('');
+  if(pv&&+pv<CG_PICKS[+g.value].length) pk.value=pv;
+  const c=casinoOf(sel.value),t=c&&tokenOf(c.token),b=t&&botBal(t);
+  $('cbMInfo').textContent=t&&b!=null?`(bot holds ${fmt(b,t.dec,4)} ${t.sym})`:'';
+}
+function renderCB(){renderPills();renderWallet();renderTransfer();renderStrats();renderBalances();renderTrades();renderManual()}
+
+/* ---------- editor ---------- */
+let ed={id:null};
+function fillPickSel(game,val){
+  $('cbEdPick').innerHTML=CG_PICKS[game].map((n,i)=>`<option value="${i}">${esc(n)}</option>`).join('');
+  $('cbEdPick').value=String(Math.min(val||0,CG_PICKS[game].length-1));
+}
+function editorVis(){
+  const z=$('cbEdSize').value;
+  $('cbEdBaseW').style.display=z==='cappct'?'none':'';
+  $('cbEdCapW').style.display=z==='cappct'?'':'none';
+  $('cbEdMultW').style.display=(z==='mart'||z==='paroli')?'':'none';
+  $('cbEdParW').style.display=z==='paroli'?'':'none';
+  $('cbEdMaxW').style.display=(z==='mart'||z==='paroli')?'':'none';
+  $('cbEdPickW').style.display=$('cbEdPickMode').value==='fixed'?'':'none';
+}
+function fillEditor(v){
+  if(v.name!=null) $('cbEdName').value=v.name;
+  if(v.game!=null){$('cbEdGame').value=String(v.game);fillPickSel(v.game,v.pick)}
+  if(v.pickMode) $('cbEdPickMode').value=v.pickMode;
+  if(v.size) $('cbEdSize').value=v.size;
+  const m={base:'cbEdBase',capPct:'cbEdCap',mult:'cbEdMult',paroliN:'cbEdParN',maxBet:'cbEdMax',tpPct:'cbEdTp',slPct:'cbEdSl',maxRounds:'cbEdRounds',delaySec:'cbEdDelay',reserve:'cbEdRes'};
+  Object.entries(m).forEach(([k,id])=>{if(v[k]!=null) $(id).value=v[k]});
+  editorVis();
+}
+function openEditor(id){
+  const list=casinoList();
+  if(!list.length) throw new Error('Deploy a casino for one of your tokens in the Casino tab first');
+  const s=id?cs.strategies.find(x=>x.id===id):null;
+  ed={id:id||null};
+  $('cbEdTitle').textContent=s?'Edit casino strategy':'New casino strategy';
+  $('cbEdCasino').innerHTML=list.map(c=>{const t=tokenOf(c.token);return `<option value="${esc(c.addr)}">${esc(t.sym)} · ${esc(short(c.addr))}</option>`}).join('');
+  $('cbEdGame').innerHTML=CG_GAMES.map((n,i)=>`<option value="${i}">${esc(n)} (pays ${(CG_PAYX[i]/100).toFixed(2)}x)</option>`).join('');
+  if(s&&list.some(c=>c.addr===s.casino)) $('cbEdCasino').value=s.casino;
+  fillEditor(s?{...s}:{name:'Casino strategy '+(cs.strategies.length+1),...BP.steady});
+  openM('cbEdModal');
+}
+function saveEditor(){
+  const c=casinoOf($('cbEdCasino').value);if(!c) throw new Error('Choose a casino');
+  const t=tokenOf(c.token);if(!t) throw new Error('That casino token is not on this device');
+  const size=$('cbEdSize').value,game=+$('cbEdGame').value;
+  const s={
+    name:$('cbEdName').value.trim()||'Casino strategy',casino:c.addr,token:t.addr,game,
+    pickMode:$('cbEdPickMode').value,pick:+$('cbEdPick').value||0,size,
+    base:clean('cbEdBase')||'0',maxBet:clean('cbEdMax')||'0',
+    capPct:num('cbEdCap','Bet % of max',0.1,100),mult:num('cbEdMult','Multiplier',1.1,10),paroliN:num('cbEdParN','Wins in a row',1,20,true),
+    tpPct:num('cbEdTp','Take profit %',0,100000),slPct:num('cbEdSl','Stop loss %',0,100),
+    maxRounds:num('cbEdRounds','Rounds',0,100000,true),delaySec:num('cbEdDelay','Seconds between bets',3,3600,true),
+    reserve:clean('cbEdRes')||'0.02'
+  };
+  if(size!=='cappct'&&parseAmt(s.base,t.dec)<=0n) throw new Error('Base bet must be above 0');
+  if(parseAmt(s.maxBet,t.dec)<0n) throw new Error('Max bet is not a valid number');
+  if(parseAmt(s.reserve,18)<=0n&&s.reserve!=='0') throw new Error('Gas reserve is not a valid number');
+  if(ed.id){
+    const old=cs.strategies.find(x=>x.id===ed.id);
+    const sessionChanged=old&&(old.casino!==s.casino||old.game!==s.game||old.size!==s.size);
+    Object.assign(old,s);old.errs=0;old.nextAt=0;
+    if(sessionChanged||old.size==='mart'||old.size==='paroli') old.st.curBet=null;
+  }else{
+    cs.strategies.push({id:'c'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),enabled:false,st:emptySt(),status:'Off',...s});
+    toast('Strategy saved. Switch it on, then press Start bot.','ok');
+  }
+  saveCS();closeM('cbEdModal');renderStrats();
+}
+
+/* ---------- wiring ---------- */
+const find=id=>cs.strategies.find(s=>s.id===id);
+$('cbCreate').onclick=()=>run(()=>makeWallet(null));
+$('cbRestoreToggle').onclick=()=>$('cbRestore').classList.toggle('hidden');
+$('cbRestoreBtn').onclick=()=>run(async()=>{const k=$('cbPk').value.trim();if(!k) throw new Error('Paste the private key');await makeWallet(k)});
+$('cbUnlock').onclick=()=>run(unlock);
+$('cbPwU').addEventListener('keydown',e=>{if(e.key==='Enter') run(unlock)});
+$('cbLock').onclick=lock;
+$('cbRefresh').onclick=()=>refreshCB();
+$('cbCopy').onclick=()=>{navigator.clipboard.writeText(addrNow()||'').then(()=>toast('Address copied','ok')).catch(()=>toast('Copy failed','err'))};
+$('cbDl').onclick=downloadBackup;
+$('cbReveal').onclick=()=>{
+  if(!bw) return;
+  if(!confirm('Anyone who sees this private key can take everything in the bot wallet. Show it now?')) return;
+  $('cbKey').textContent=bw.privateKey;$('cbKeyBox').classList.remove('hidden');
+  clearTimeout(keyT);keyT=setTimeout(hideKey,30000);
+};
+$('cbKeyCopy').onclick=()=>{if(bw) navigator.clipboard.writeText(bw.privateKey).then(()=>toast('Private key copied','ok')).catch(()=>toast('Copy failed','err'))};
+$('cbDel').onclick=()=>run(async()=>deleteWallet());
+$('cbDelL').onclick=()=>run(async()=>deleteWallet());
+
+document.querySelectorAll('#cbDir button').forEach(b=>b.onclick=()=>{tr.dir=b.dataset.d;renderTransfer()});
+$('cbAsset').onchange=()=>{$('cbAmt').value='';renderTransfer()};
+numField($('cbAmt'));
+$('cbMax').onclick=()=>run(async()=>{
+  const t=trTok()||NATIVE;let b=tr.dir==='fund'?bals[K(t.addr)]:botBal(t);
+  if(b==null) throw new Error('Balance not loaded yet');
+  if(t.addr==='native'){
+    if(tr.dir==='fund'){const r=ethers.parseEther('0.005');b=b>r?b-r:0n}
+    else{const fd=await readP.getFeeData();const fee=fd.maxFeePerGas||fd.gasPrice||ethers.parseUnits('50','gwei');const r=21000n*fee*2n;b=b>r?b-r:0n}
+  }
+  $('cbAmt').value=fmtPlain(b,t.dec);
+});
+$('cbGo').onclick=()=>run(async()=>{
+  const t=trTok();if(!t) throw new Error('Choose an asset');
+  if(!store) throw new Error('Create the bot wallet first');
+  const amt=parseAmt($('cbAmt').value,t.dec);if(amt<=0n) throw new Error('Enter an amount');
+  if(tr.dir==='fund'){
+    needWallet();
+    if(t.addr==='native') await sendTx('Fund casino bot with AVAX',signer.sendTransaction({to:store.address,value:amt}));
+    else await sendTx(`Fund casino bot with ${t.sym}`,wr(t.addr,ERC20_ABI).transfer(store.address,amt));
+    refreshBalances();
+  }else{
+    if(!account) throw new Error('Connect your normal wallet first. Withdrawals go to it.');
+    await exclusive(async()=>{
+      if(t.addr==='native') await btx('Withdraw AVAX to main wallet',bw.sendTransaction({to:account,value:amt}));
+      else await btx(`Withdraw ${t.sym} to main wallet`,new ethers.Contract(t.addr,ERC20_ABI,bw).transfer(account,amt));
+    });
+    refreshBalances();
+  }
+  $('cbAmt').value='';await refreshCB();
+});
+
+$('cbEnGo').onclick=()=>run(async()=>{if(eng.on) stopEngine();else startEngine()});
+$('cbStNew').onclick=()=>run(async()=>openEditor(null));
+$('cbStList').onclick=e=>{
+  const b=e.target.closest('button[data-a]');if(!b) return;
+  const s=find(b.dataset.id);if(!s) return;
+  const a=b.dataset.a;
+  if(a==='toggle'){s.enabled=!s.enabled;s.errs=0;s.nextAt=0;s.status=s.enabled?'Ready':'Off';saveCS();renderStrats();renderPills();if(s.enabled&&!eng.on) toast('Switched on. Press Start bot to begin betting.')}
+  else if(a==='edit') run(async()=>openEditor(s.id));
+  else if(a==='dup'){const c=JSON.parse(JSON.stringify(s));c.id='c'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);c.name=s.name+' copy';c.enabled=false;c.st=emptySt();c.status='Off';cs.strategies.push(c);saveCS();renderStrats()}
+  else if(a==='del'){if(!confirm('Delete strategy "'+s.name+'"?')) return;cs.strategies=cs.strategies.filter(x=>x!==s);saveCS();renderStrats();renderPills()}
+  else if(a==='reset'){if(!confirm('Reset this strategy’s session (rounds, wins/losses, net and start bankroll)? Nothing is sent on-chain.')) return;s.st=emptySt();saveCS();renderStrats()}
+};
+$('cbEdPresets').onclick=e=>{const b=e.target.closest('[data-pr]');if(!b) return;fillEditor(BP[b.dataset.pr])};
+$('cbEdSize').onchange=editorVis;
+$('cbEdPickMode').onchange=editorVis;
+$('cbEdGame').onchange=()=>fillPickSel(+$('cbEdGame').value,0);
+['cbEdBase','cbEdCap','cbEdMult','cbEdParN','cbEdMax','cbEdTp','cbEdSl','cbEdRounds','cbEdDelay','cbEdRes'].forEach(id=>numField($(id)));
+$('cbEdSave').onclick=()=>run(async()=>saveEditor());
+
+/* manual bet */
+numField($('cbMBet'));
+$('cbMCas').onchange=renderManual;
+$('cbMGame').onchange=renderManual;
+$('cbMMax').onclick=()=>run(async()=>{
+  const c=casinoOf($('cbMCas').value);if(!c) throw new Error('Pick a casino');
+  const t=tokenOf(c.token);const cap=await rd(c.addr,CG_ABI).maxBet();
+  $('cbMBet').value=fmtPlain(cap,t.dec);
+});
+$('cbMGo').onclick=()=>run(()=>exclusive(async()=>{
+  const c=casinoOf($('cbMCas').value);if(!c) throw new Error('Pick a casino');
+  const t=tokenOf(c.token);if(!t) throw new Error('Token missing');
+  const game=+$('cbMGame').value,pick=+$('cbMPick').value;
+  const amt=parseAmt($('cbMBet').value,t.dec);if(amt<=0n) throw new Error('Enter a bet');
+  const cap=await rd(c.addr,CG_ABI).maxBet();
+  if(amt>cap) throw new Error('Bet is above the cap of '+fmt(cap,t.dec,2)+' '+t.sym);
+  const nat=await readP.getBalance(bw.address);
+  if(nat<ethers.parseEther('0.005')) throw new Error('Not enough AVAX in the bot wallet for gas');
+  const bal=await rd(t.addr,ERC20_ABI).balanceOf(bw.address);
+  if(bal<amt) throw new Error(`The bot wallet only holds ${fmt(bal,t.dec,4)} ${t.sym}`);
+  const r=await placeBet(c,t,game,amt,pick,'manual');
+  toast(r.won?`Won ${fmt(r.payout,t.dec,2)} ${t.sym}!`:'Lost: '+cgRollText(game,r.roll),r.won?'ok':'');
+  await refreshCB();
+}));
+$('cbHistClear').onclick=()=>{if(!confirm('Clear the casino bot history?')) return;cs.trades=[];saveCS();renderTrades()};
+
+/* ---------- plug into the existing tab router without editing it ---------- */
+if(!VIEWS.includes('cbot')) VIEWS.push('cbot');
+const _show=window.show;
+window.show=function(view){
+  _show(view);
+  if(view==='cbot'){renderCB();if(addrNow()) refreshCB()}
+};
+setInterval(()=>{
+  if(document.hidden||$('v-cbot').classList.contains('hidden')) return;
+  renderTransfer();
+  if(addrNow()&&!txBusy) refreshCB();
+},30000);
+window.addEventListener('beforeunload',e=>{if(eng.on){e.preventDefault();e.returnValue=''}});
+renderCB();
+if(addrNow()) refreshCB();
+if(location.hash==='#cbot') window.show('cbot');
 })();
 </script>
 </body></html>
