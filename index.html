@@ -1225,6 +1225,8 @@ async function connect(silent=false){
   try{ await connectInner(silent) }
   catch(e){
     if(!account){if($('netPill').textContent!=='No wallet')$('netPill').textContent='Not connected';$('netPill').classList.remove('live');$('connect').textContent='Connect wallet'}
+    if(e?.code===4001) throw new Error('Connection cancelled in the wallet. Click Connect wallet to try again.');
+    if(e?.code===-32002) throw new Error('A wallet request is already open. Open your wallet, finish or cancel that request, then click Connect wallet again.');
     throw e;
   }
 }
