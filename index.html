@@ -274,6 +274,30 @@ input:focus{border-color:#ff6a1a;box-shadow:0 0 0 3px rgba(255,106,26,.18)}
   #browserWalletBtn,#hBal{display:none}
   .btn{padding:8px 12px}
 }
+</style>
+<style id="bot-css">
+/* ---- Trading bot tab (additive; all selectors are bot-specific) ---- */
+.bot-gap{margin-top:16px}
+.bot-addr{word-break:break-all;text-align:right}
+.bot-warn{background:#2a1c08;border:1px solid #5a3b0a;color:var(--warn);border-radius:12px;padding:10px 12px;font-size:12px;margin-bottom:14px}
+.bot-strat{border:1px solid var(--line);background:var(--card);border-radius:16px;padding:14px 16px;margin-bottom:10px}
+.bot-strat.off{opacity:.72}
+.bot-strat .top{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.bot-strat .top b{font-size:15px}
+.bot-strat .sum{color:var(--mute);font-size:12px;margin:6px 0 2px}
+.bot-strat .posl{font-size:13px;margin:6px 0}
+.bot-strat .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.bot-strat .stat-line{font-size:12px;color:var(--mute)}
+.bot-keybox{margin-top:12px;padding:10px 12px;border:1px dashed #5a3b0a;border-radius:12px;background:#140d04}
+.bot-keybox code{display:block;word-break:break-all;font-size:12px;color:var(--warn);margin:6px 0}
+.sheet.bot-wide{max-width:600px}
+.bot-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+.bot-grid label{margin-bottom:4px}
+.bot-grid .full{grid-column:1/-1}
+@media(max-width:520px){.bot-grid{grid-template-columns:1fr}}
+.bot-presets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.bot-check{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--text);margin:0}
+.bot-check input{margin:0}
 </style></head><body>
 <div id="intro" aria-hidden="true"><div class="sqgrid"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
 <div class="bg"></div>
@@ -289,6 +313,7 @@ input:focus{border-color:#ff6a1a;box-shadow:0 0 0 3px rgba(255,106,26,.18)}
     <button data-view="casino"><i>🎲</i>Casino</button>
     <button data-view="mine"><i>⛏</i>Mining</button>
     <button data-view="lev"><i>↕</i>Long/Short</button>
+    <button data-view="bot"><i>🤖</i>Bot</button>
     <button data-view="port"><i>◎</i>Portfolio</button>
   </nav>
   <div class="navr">
@@ -571,6 +596,89 @@ input:focus{border-color:#ff6a1a;box-shadow:0 0 0 3px rgba(255,106,26,.18)}
       <thead><tr><th>Token</th><th class="r">Balance</th><th class="r">Price (AVAX)</th><th class="r">Value (AVAX)</th><th></th></tr></thead>
       <tbody id="portBody"></tbody></table></div></div>
   </section>
+  <!-- BOT -->
+  <section id="v-bot" class="view hidden">
+    <div class="pagehead"><div><h1>Trading Bot</h1><p>Automated buys, approvals and sells from its own wallet, separate from Rabby/MetaMask.</p></div>
+      <div class="row"><span class="pill" id="bwPill">No bot wallet</span><span class="pill" id="bwEng">Bot stopped</span></div></div>
+    <div class="bot-warn">Testnet only. The bot trades automatically while this tab stays open and the wallet is unlocked; closing the tab stops it. Trading bots can lose funds quickly, and the contracts are unaudited.</div>
+
+    <div class="grid2">
+      <div class="card">
+        <h2>Bot wallet</h2><p class="sub">Created here in your browser. The key is encrypted with your password and saved on this device, so it survives closing the app.</p>
+        <div id="bwNew">
+          <label>Password (8+ characters)</label><input id="bwPw1" type="password" autocomplete="new-password">
+          <label style="margin-top:10px">Confirm password</label><input id="bwPw2" type="password" autocomplete="new-password">
+          <div class="row" style="margin-top:12px"><button class="btn" id="bwCreate">Create bot wallet</button><button class="btn ghost" id="bwRestoreToggle">Restore from private key</button></div>
+          <div id="bwRestore" class="hidden" style="margin-top:12px">
+            <label>Private key (encrypted with the password above)</label><input id="bwPk" class="mono" type="password" autocomplete="off" placeholder="0x…">
+            <button class="btn sm" id="bwRestoreBtn" style="margin-top:8px">Restore wallet</button>
+          </div>
+        </div>
+        <div id="bwLocked" class="hidden">
+          <div class="kv"><span>Address</span><b class="mono bot-addr" id="bwAddrL"></b></div>
+          <div class="kv"><span>AVAX balance</span><b id="bwAvaxL"></b></div>
+          <label style="margin-top:12px">Password</label><input id="bwPwU" type="password" autocomplete="current-password">
+          <div class="row" style="margin-top:12px"><button class="btn" id="bwUnlock">Unlock</button><button class="btn ghost" id="bwDelL">Delete wallet</button></div>
+        </div>
+        <div id="bwOpen" class="hidden">
+          <div class="kv"><span>Address</span><b class="mono bot-addr" id="bwAddr"></b></div>
+          <div class="kv"><span>AVAX balance</span><b id="bwAvax"></b></div>
+          <div class="row" style="margin-top:12px">
+            <button class="btn sm ghost" id="bwCopy">Copy address</button>
+            <a class="btn sm ghost" id="bwExp" target="_blank" rel="noopener">Snowtrace ↗</a>
+            <button class="btn sm ghost" id="bwRefresh">Refresh</button>
+            <button class="btn sm" id="bwLock">Lock</button>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <button class="btn sm ghost" id="bwDl">Download encrypted backup</button>
+            <button class="btn sm ghost" id="bwReveal">Show private key</button>
+            <button class="btn sm ghost" id="bwDel">Delete wallet</button>
+          </div>
+          <div id="bwKeyBox" class="bot-keybox hidden"><span class="warn" style="font-size:12px">Anyone with this key controls the wallet. It hides itself after 30 seconds.</span><code id="bwKey"></code><button class="btn sm ghost" id="bwKeyCopy">Copy key</button></div>
+        </div>
+        <div id="bwProg" class="dim" style="font-size:12px;margin-top:10px"></div>
+      </div>
+
+      <div class="card">
+        <h2>Fund &amp; withdraw</h2><p class="sub">Move AVAX or tokens between your connected wallet and the bot wallet.</p>
+        <div class="seg" id="trDir"><button data-d="fund" class="on">Fund bot</button><button data-d="wd">Withdraw</button></div>
+        <label>Asset</label>
+        <div class="row" style="margin-bottom:12px"><button class="btn ghost" id="trAsset"></button></div>
+        <label>Amount <span id="trBal" class="dim"></span></label>
+        <div class="row"><input id="trAmt" type="text" inputmode="decimal" placeholder="0.0" style="flex:1"><button class="chip" id="trMax">Max</button></div>
+        <button class="btn big" id="trGo">Send</button>
+        <p class="dim" id="trNote" style="font-size:12px;margin:10px 0 0"></p>
+      </div>
+    </div>
+
+    <div class="card bot-gap">
+      <div class="pagehead" style="margin-bottom:12px"><div><h2>Strategies</h2><p class="sub" style="margin:2px 0 0">Each strategy has its own token and settings. Switch strategies on, then press Start bot.</p></div>
+        <div class="row"><button class="btn" id="enGo">Start bot</button><button class="btn ghost" id="stNew">+ New strategy</button></div></div>
+      <div id="stList"></div>
+    </div>
+
+    <div class="grid2 bot-gap">
+      <div class="card">
+        <h2>Bot balances</h2><p class="sub">AVAX and tokens held by the bot wallet.</p>
+        <div class="tablewrap"><table><thead><tr><th>Token</th><th class="r">Balance</th></tr></thead><tbody id="bbBody"></tbody></table></div>
+      </div>
+      <div class="card">
+        <h2>Manual trade</h2><p class="sub">One-off buy or sell using the bot wallet (needs it unlocked).</p>
+        <label>Token</label>
+        <div class="row" style="margin-bottom:12px"><button class="btn ghost" id="mtTok">Select token</button><span class="dim" id="mtBal"></span></div>
+        <label>Slippage %</label><input id="mtSlip" type="text" inputmode="decimal" value="2" style="width:100px;margin-bottom:12px">
+        <label>Buy with AVAX</label>
+        <div class="row" style="margin-bottom:14px"><input id="mtBuy" type="text" inputmode="decimal" placeholder="0.1" style="flex:1"><button class="btn" id="mtBuyBtn">Buy</button></div>
+        <label>Sell share of bot balance</label>
+        <div class="row" id="mtPct"><button class="chip" data-p="25">25%</button><button class="chip" data-p="50">50%</button><button class="chip" data-p="75">75%</button><button class="chip on" data-p="100">100%</button><button class="btn danger" id="mtSellBtn">Sell</button></div>
+      </div>
+    </div>
+
+    <div class="card bot-gap">
+      <div class="pagehead" style="margin-bottom:8px"><div><h2>Bot trade history</h2></div><button class="btn ghost sm" id="thClear">Clear</button></div>
+      <div class="tablewrap"><table><thead><tr><th>Time</th><th>Strategy</th><th>Side</th><th>Token</th><th class="r">AVAX</th><th class="r">Tokens</th><th>Reason</th><th></th></tr></thead><tbody id="thBody"></tbody></table></div>
+    </div>
+  </section>
 </main>
 
 <!-- token modal -->
@@ -635,6 +743,36 @@ input:focus{border-color:#ff6a1a;box-shadow:0 0 0 3px rgba(255,106,26,.18)}
   <div class="sheethead" style="margin:0"><h3>Activity</h3><div class="row"><button class="btn ghost sm" id="clearLog">Clear</button><button class="x" id="closeDrawer">✕</button></div></div>
   <div id="actList"></div>
 </aside>
+
+<!-- bot strategy editor -->
+<div class="modal" id="botEdModal"><div class="sheet bot-wide">
+  <div class="sheethead"><h3 id="edTitle">New strategy</h3><button class="x" data-close>✕</button></div>
+  <div class="bot-presets" id="edPresets">
+    <button class="chip" data-pr="scalp">Scalper</button><button class="chip" data-pr="swing">Swing</button><button class="chip" data-pr="dip">Dip buyer</button><button class="chip" data-pr="dca">DCA</button><button class="chip" data-pr="exit">Exit rules only</button>
+  </div>
+  <div class="bot-grid">
+    <div><label>Name</label><input id="edName" maxlength="32" placeholder="My strategy"></div>
+    <div><label>Token</label><button class="btn ghost" id="edTok" style="width:100%">Select token</button></div>
+    <div class="full"><label>Entry</label>
+      <select id="edEntry"><option value="now">Buy immediately when started</option><option value="dip">Buy on a price dip</option><option value="dca">DCA on a schedule</option><option value="none">No buying: only manage exits for tokens the bot holds</option></select></div>
+    <div id="edBuyW"><label>Buy size (AVAX)</label><input id="edBuy" type="text" inputmode="decimal"></div>
+    <div id="edMaxW"><label>Max total spend (AVAX)</label><input id="edMax" type="text" inputmode="decimal"></div>
+    <div id="edDipW"><label>Buy when price falls (%) from recent high</label><input id="edDip" type="text" inputmode="decimal"></div>
+    <div id="edDcaW"><label>DCA every (minutes)</label><input id="edDca" type="text" inputmode="decimal"></div>
+    <div><label>Take profit at +% (0 = off)</label><input id="edTp" type="text" inputmode="decimal"></div>
+    <div><label>Sell this % at take profit</label><input id="edTpSell" type="text" inputmode="decimal"></div>
+    <div><label>Stop loss at −% (0 = off)</label><input id="edSl" type="text" inputmode="decimal"></div>
+    <div><label>Trailing stop −% from peak (0 = off)</label><input id="edTrail" type="text" inputmode="decimal"></div>
+    <div><label>Slippage %</label><input id="edSlip" type="text" inputmode="decimal"></div>
+    <div><label>Skip buys above price impact %</label><input id="edImpact" type="text" inputmode="decimal"></div>
+    <div><label>Check every (seconds)</label><input id="edPoll" type="text" inputmode="decimal"></div>
+    <div><label>Cooldown between trades (min)</label><input id="edCool" type="text" inputmode="decimal"></div>
+    <div><label>Keep AVAX for gas</label><input id="edRes" type="text" inputmode="decimal"></div>
+    <div id="edRebuyW" style="display:flex;align-items:end"><label class="bot-check"><input type="checkbox" id="edRebuy"> Buy again after a full exit</label></div>
+  </div>
+  <p class="dim" style="font-size:12px;margin:12px 0 0">Stop loss and trailing stop sell the whole position. Values are measured by what the position would actually sell for, so price impact is included.</p>
+  <div class="row" style="margin-top:14px"><button class="btn" id="edSave">Save strategy</button><button class="btn ghost" data-close>Cancel</button></div>
+</div></div>
 
 <datalist id="tokList"></datalist>
 <div id="toast"></div>
@@ -3285,5 +3423,582 @@ setTimeout(()=>run(()=>connect(true)),300);
 let balBusy=false;
 setInterval(async()=>{if(!account||document.hidden||balBusy) return;balBusy=true;try{await refreshBalances()}finally{balBusy=false}},60000);
 
+</script>
+<script id="bot-module">
+/* =====================================================================
+   Trading bot module (additive). Uses its own encrypted wallet.
+   The connected Rabby/MetaMask signer is only used to FUND the bot.
+   ===================================================================== */
+(function(){
+'use strict';
+if(typeof ethers==='undefined'||typeof readP==='undefined'||typeof LFJ==='undefined'||typeof getQuote==='undefined'){
+  console.warn('Bot module: app core not found, bot tab disabled');return;
+}
+
+const WKEY='fuji-forge:botwallet:v1',SKEY='fuji-forge:bot:v1';
+const rdJ=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)||'null')||d}catch(e){return d}};
+const wrJ=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}};
+
+let store=rdJ(WKEY,null);                       // {json,address,created} (encrypted keystore)
+let bs=rdJ(SKEY,{strategies:[],trades:[]});
+bs.strategies=bs.strategies||[];bs.trades=bs.trades||[];
+const saveBS=()=>wrJ(SKEY,bs);
+
+let bw=null;                                    // unlocked wallet, memory only
+let txBusy=false,pendingLock=false,keyT=null;
+const eng={on:false,timer:null};
+const B={native:null,tok:{}};                   // bot wallet balances
+const addrNow=()=>bw?bw.address:(store&&store.address)||null;
+const botBal=t=>t.addr==='native'?B.native:(B.tok[K(t.addr)]??null);
+const prog=t=>{$('bwProg').textContent=t||''};
+const sleepUI=()=>new Promise(r=>setTimeout(r,30));
+
+/* ---------- wallet ---------- */
+async function makeWallet(pk){
+  const p1=$('bwPw1').value,p2=$('bwPw2').value;
+  if(p1.length<8) throw new Error('Use a password with at least 8 characters');
+  if(p1!==p2) throw new Error('Passwords do not match');
+  const base=pk?new ethers.Wallet(pk.trim()):new ethers.Wallet(ethers.Wallet.createRandom().privateKey);
+  prog('Encrypting wallet…');await sleepUI();
+  const json=await base.encrypt(p1,p=>prog('Encrypting wallet… '+Math.round(p*100)+'%'));
+  if(!wrJ(WKEY,{json,address:base.address,created:Date.now()})) throw new Error('Could not save to browser storage (private mode or storage full?)');
+  store=rdJ(WKEY,null);
+  bw=new ethers.Wallet(base.privateKey,readP);
+  $('bwPw1').value=$('bwPw2').value='';$('bwPk').value='';
+  prog('');
+  log('🤖 Bot wallet ready '+short(bw.address),'ok','/address/'+bw.address);
+  toast(pk?'Bot wallet restored and unlocked':'Bot wallet created. Back it up below.','ok');
+  renderBot();refreshBot();
+}
+async function unlock(){
+  if(!store) throw new Error('No bot wallet on this device');
+  const pw=$('bwPwU').value;if(!pw) throw new Error('Enter the bot wallet password');
+  prog('Decrypting…');await sleepUI();
+  try{
+    const w=await ethers.Wallet.fromEncryptedJson(store.json,pw,p=>prog('Decrypting… '+Math.round(p*100)+'%'));
+    bw=new ethers.Wallet(w.privateKey,readP);
+  }catch(e){
+    prog('');
+    throw new Error(/password/i.test(String(e&&e.message))?'Wrong password':'Could not unlock: '+(e.shortMessage||e.message));
+  }
+  $('bwPwU').value='';prog('');
+  toast('Bot wallet unlocked','ok');renderBot();refreshBot();
+}
+function doLock(){
+  bw=null;pendingLock=false;eng.on=false;clearInterval(eng.timer);hideKey();
+  renderBot();toast('Bot wallet locked');
+}
+function lock(){
+  eng.on=false;clearInterval(eng.timer);
+  if(txBusy){pendingLock=true;toast('Locking as soon as the current transaction finishes…');renderBot();return}
+  doLock();
+}
+function hideKey(){clearTimeout(keyT);$('bwKey').textContent='';$('bwKeyBox').classList.add('hidden')}
+function deleteWallet(){
+  if(txBusy) throw new Error('A bot transaction is in progress. Try again in a few seconds.');
+  const bal=B.native!=null?fmt(B.native,18,4)+' AVAX':'an unknown amount';
+  const held=state.tokens.filter(t=>(B.tok[K(t.addr)]||0n)>0n).length;
+  const t=prompt(`Delete the bot wallet from this browser?\n\nIt currently holds ${bal}${held?` and ${held} token balance(s)`:''}. Without a saved backup (encrypted file or private key) that money is gone for good.\n\nType DELETE to confirm.`);
+  if(t!=='DELETE') return;
+  eng.on=false;clearInterval(eng.timer);hideKey();
+  try{localStorage.removeItem(WKEY)}catch(e){}
+  store=null;bw=null;B.native=null;B.tok={};
+  bs.strategies.forEach(s=>{s.enabled=false});saveBS();
+  toast('Bot wallet deleted from this browser');renderBot();
+}
+function downloadBackup(){
+  if(!store) return;
+  const blob=new Blob([store.json],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='fuji-forge-bot-wallet-'+store.address.slice(2,8)+'.json';
+  document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+
+/* ---------- balances ---------- */
+let refBusy=false;
+async function refreshBot(){
+  const a=addrNow();if(!a||refBusy) return;
+  refBusy=true;
+  try{
+    try{B.native=await readP.getBalance(a)}catch(e){}
+    await mapLimit(state.tokens,2,async t=>{try{B.tok[K(t.addr)]=await rd(t.addr,ERC20_ABI).balanceOf(a)}catch(e){}});
+  }finally{refBusy=false}
+  renderBot();
+}
+
+/* ---------- bot transactions (always signed by the bot wallet) ---------- */
+async function btx(label,p){
+  const tx=await p;
+  log('🤖 '+label+' submitted…','','/tx/'+tx.hash);
+  const rc=await withTimeout(tx.wait(),180000,'Timed out waiting for '+label+' to confirm');
+  if(!rc||rc.status===0) throw new Error(label+' reverted on-chain');
+  try{pdTTL.clear()}catch(e){}
+  log('🤖 '+label+' confirmed','ok','/tx/'+tx.hash);
+  return rc;
+}
+const routerB=()=>new ethers.Contract(LFJ.router,ROUTER_ABI,bw);
+const impactOf=q=>q.virt>0n?Math.max(0,Number(q.virt-q.out)*100/Number(q.virt)):null;
+const slipMin=(out,pct)=>out*BigInt(10000-Math.round(pct*100))/10000n;
+function addTrade(x){
+  bs.trades.unshift({ts:Date.now(),...x});bs.trades=bs.trades.slice(0,100);saveBS();renderTrades();
+}
+async function ensureApproval(t,amt){
+  const c=new ethers.Contract(t.addr,ERC20_ABI,bw);
+  if((await c.allowance(bw.address,LFJ.router))>=amt) return;
+  await btx('Approve '+t.sym+' for router',c.approve(LFJ.router,ethers.MaxUint256));
+}
+async function botBuy(t,avaxWei,o){
+  const q=await getQuote('native',t.addr,avaxWei);
+  if(!q) throw new Error('No route / liquidity to buy '+t.sym);
+  const imp=impactOf(q);
+  if(o.maxImpact>0&&imp!=null&&imp>o.maxImpact) throw new Error(`Buy skipped: price impact ${imp.toFixed(1)}% is above your ${o.maxImpact}% limit`);
+  const nat=await readP.getBalance(bw.address);
+  if(nat<avaxWei+ethers.parseEther('0.005')) throw new Error('Not enough AVAX in the bot wallet for this buy plus gas');
+  const c=new ethers.Contract(t.addr,ERC20_ABI,readP);
+  const before=await c.balanceOf(bw.address);
+  let rc;
+  try{
+    rc=await btx(`Buy ${t.sym}`,routerB().swapExactNATIVEForTokens(slipMin(q.out,o.slip),q.path,bw.address,deadline(),{value:avaxWei}));
+  }catch(e){throw new Error(explainSwapError(e))}
+  const got=(await c.balanceOf(bw.address))-before;
+  addTrade({side:'buy',strategy:o.strategy,sym:t.sym,avax:avaxWei.toString(),tokens:got.toString(),dec:t.dec,reason:o.reason,hash:rc.hash});
+  return {got};
+}
+async function botSell(t,amt,o){
+  const q=await getQuote(t.addr,'native',amt);
+  if(!q) throw new Error('No route / liquidity to sell '+t.sym);
+  const imp=impactOf(q);
+  if(o.maxImpact>0&&imp!=null&&imp>o.maxImpact) throw new Error(`Sell skipped: price impact ${imp.toFixed(1)}% is above your ${o.maxImpact}% limit`);
+  await ensureApproval(t,amt);
+  const nb=await readP.getBalance(bw.address);
+  let rc;
+  try{
+    rc=await btx(`Sell ${t.sym}`,routerB().swapExactTokensForNATIVE(amt,slipMin(q.out,o.slip),q.path,bw.address,deadline()));
+  }catch(e){throw new Error(explainSwapError(e))}
+  const na=await readP.getBalance(bw.address);
+  let proceeds=na-nb+(rc.fee||0n);if(proceeds<0n) proceeds=0n;
+  addTrade({side:'sell',strategy:o.strategy,sym:t.sym,avax:proceeds.toString(),tokens:amt.toString(),dec:t.dec,reason:o.reason,hash:rc.hash});
+  return {proceeds};
+}
+async function exclusive(fn){
+  if(!bw) throw new Error('Unlock the bot wallet first');
+  if(txBusy) throw new Error('The bot is busy with another transaction. Try again in a few seconds.');
+  txBusy=true;renderPills();
+  try{return await fn()}
+  finally{txBusy=false;if(pendingLock) doLock();renderPills()}
+}
+
+/* ---------- strategy engine ---------- */
+const BP={
+  scalp:{entry:'now',buyAvax:'0.1',maxAvax:'0.3',dipPct:5,dcaMin:30,tpPct:8,tpSellPct:100,slPct:5,trailPct:0,slipPct:2,impactPct:5,pollSec:15,coolMin:2,reserve:'0.02',rebuy:true},
+  swing:{entry:'now',buyAvax:'0.2',maxAvax:'0.2',dipPct:5,dcaMin:30,tpPct:50,tpSellPct:50,slPct:20,trailPct:15,slipPct:3,impactPct:8,pollSec:30,coolMin:10,reserve:'0.02',rebuy:false},
+  dip:{entry:'dip',buyAvax:'0.1',maxAvax:'0.5',dipPct:10,dcaMin:30,tpPct:15,tpSellPct:100,slPct:25,trailPct:0,slipPct:3,impactPct:8,pollSec:20,coolMin:5,reserve:'0.02',rebuy:true},
+  dca:{entry:'dca',buyAvax:'0.05',maxAvax:'0.5',dipPct:5,dcaMin:30,tpPct:0,tpSellPct:100,slPct:0,trailPct:0,slipPct:2,impactPct:5,pollSec:30,coolMin:0,reserve:'0.02',rebuy:true},
+  exit:{entry:'none',buyAvax:'0.1',maxAvax:'0.1',dipPct:5,dcaMin:30,tpPct:25,tpSellPct:100,slPct:15,trailPct:10,slipPct:3,impactPct:8,pollSec:15,coolMin:0,reserve:'0.02',rebuy:false}
+};
+const emptyPos=()=>({tokens:'0',cost:'0',peak:'0',tpRef:'0',lastBuy:0,lastTrade:0,refHigh:0,realized:'0',exited:false});
+const dn=x=>BigInt(Math.round((100-x)*100)),up=x=>BigInt(Math.round((100+x)*100));
+const pctStr=(v,c)=>c>0n?((v>=c?'+':'')+(Number(v-c)*100/Number(c)).toFixed(1)+'%'):'—';
+
+async function buyPrice(t,wei){
+  const q=await getQuote('native',t.addr,wei);if(!q) return null;
+  const n=Number(ethers.formatUnits(q.out,t.dec));if(!(n>0)) return null;
+  return {price:Number(ethers.formatEther(wei))/n,q};
+}
+async function exitPos(s,t,tokens,cost,value,frac,reason){
+  const p=s.pos;
+  const amt=frac>=100?tokens:tokens*BigInt(Math.round(frac*100))/10000n;
+  if(amt<=0n) return;
+  const r=await botSell(t,amt,{slip:s.slipPct,maxImpact:0,strategy:s.name,reason});
+  const costPart=amt===tokens?cost:cost*amt/tokens;
+  p.realized=(BigInt(p.realized||'0')+r.proceeds-costPart).toString();
+  p.lastTrade=Date.now();
+  const rem=tokens-amt;
+  if(rem<=0n){
+    p.tokens='0';p.cost='0';p.peak='0';p.tpRef='0';p.refHigh=0;p.exited=true;s.live=null;
+    if(s.entry==='none'||(s.entry==='now'&&!s.rebuy)){s.enabled=false;s.status='Completed';log(`🤖 ${s.name}: finished (${reason})`,'ok')}
+    else s.status='Exited: '+reason;
+  }else{
+    const rv=value*rem/tokens;
+    p.tokens=rem.toString();p.cost=(cost-costPart).toString();p.tpRef=rv.toString();p.peak=rv.toString();
+    s.status='Partial exit: '+reason;
+  }
+}
+async function tickStrategy(s){
+  const t=tokenOf(s.token);
+  if(!t) throw new Error('Token is not on this device anymore. Re-import '+short(s.token));
+  const p=s.pos,now=Date.now();
+  let tokens=BigInt(p.tokens),cost=BigInt(p.cost);
+  if(tokens>0n){                                   // keep the books in line with what is really in the wallet
+    const bal=await rd(t.addr,ERC20_ABI).balanceOf(bw.address);
+    if(bal<tokens){cost=bal>0n?cost*bal/tokens:0n;tokens=bal;p.tokens=tokens.toString();p.cost=cost.toString()}
+  }
+  s.status='Watching';
+  if(tokens>0n){
+    const q=await getQuote(t.addr,'native',tokens);
+    if(!q){s.status='No exit quote (liquidity?)'}
+    else{
+      const value=q.out;
+      let peak=BigInt(p.peak||'0');if(value>peak){peak=value;p.peak=peak.toString()}
+      s.live={value:value.toString(),at:now,price:(s.live&&s.live.price)||null};
+      const ref=BigInt(p.tpRef||'0')>0n?BigInt(p.tpRef):cost;
+      let reason=null,frac=100;
+      if(s.slPct>0&&value*10000n<=cost*dn(s.slPct)) reason=`Stop loss −${s.slPct}%`;
+      else if(s.trailPct>0&&peak>cost&&value*10000n<=peak*dn(s.trailPct)) reason=`Trailing stop −${s.trailPct}% from peak`;
+      else if(s.tpPct>0&&value*10000n>=ref*up(s.tpPct)){reason=`Take profit +${s.tpPct}%`;frac=Math.min(100,+s.tpSellPct||100)}
+      if(reason){await exitPos(s,t,tokens,cost,value,frac,reason);await refreshBot();return}
+      s.status='Holding '+pctStr(value,cost);
+    }
+  }
+  if(s.entry==='none') return;
+  const buyWei=parseAmt(s.buyAvax,18),maxWei=parseAmt(s.maxAvax,18),reserve=parseAmt(s.reserve,18);
+  if(buyWei<=0n) throw new Error('Buy size is zero. Edit the strategy.');
+  if(cost+buyWei>maxWei){if(tokens===0n) s.status='Max spend reached';return}
+  if(now-(p.lastTrade||0)<(+s.coolMin||0)*60000) return;
+  let go=false,why='';
+  if(s.entry==='now'){go=tokens===0n&&(!p.exited||s.rebuy);why='Entry'}
+  else if(s.entry==='dca'){go=now-(p.lastBuy||0)>=(+s.dcaMin||1)*60000;why=`DCA every ${s.dcaMin} min`}
+  else if(s.entry==='dip'){
+    const pr=await buyPrice(t,buyWei);
+    if(!pr){s.status=(tokens>0n?s.status+' · ':'')+'No buy quote';return}
+    let hi=p.refHigh||0;if(pr.price>hi){hi=pr.price;p.refHigh=hi}
+    s.live={...(s.live||{}),price:pr.price};
+    const trig=hi*(1-s.dipPct/100);
+    go=pr.price<=trig;why=`Dip −${s.dipPct}% from ${hi.toPrecision(4)} AVAX`;
+    if(!go) s.status=(tokens>0n?s.status+' · ':'')+`waiting for ≤ ${trig.toPrecision(4)} AVAX (now ${pr.price.toPrecision(4)})`;
+  }
+  if(!go) return;
+  const nat=await readP.getBalance(bw.address);B.native=nat;
+  if(nat<buyWei+reserve){s.status='Waiting for more AVAX in the bot wallet';return}
+  let price=null;
+  if(s.entry==='dip'&&s.live&&s.live.price) price=s.live.price;
+  const r=await botBuy(t,buyWei,{slip:s.slipPct,maxImpact:s.impactPct,strategy:s.name,reason:why});
+  p.tokens=(tokens+r.got).toString();p.cost=(cost+buyWei).toString();
+  if(tokens===0n) p.peak=buyWei.toString();
+  p.tpRef='0';p.lastBuy=Date.now();p.lastTrade=p.lastBuy;p.exited=false;
+  if(price) p.refHigh=price;
+  s.status='Bought · '+why;
+  await refreshBot();
+}
+async function engTick(){
+  if(!eng.on||!bw||txBusy) return;
+  txBusy=true;renderPills();
+  try{
+    for(const s of bs.strategies){
+      if(!eng.on||!bw) break;
+      if(!s.enabled||Date.now()<(s.nextAt||0)) continue;
+      try{
+        await tickStrategy(s);
+        s.errs=0;s.nextAt=Date.now()+Math.max(5,+s.pollSec||15)*1000;
+      }catch(e){
+        const m=String(e.shortMessage||e.reason||e.message||e).slice(0,200);
+        s.errs=(s.errs||0)+1;s.status='Error: '+m;
+        s.nextAt=Date.now()+Math.max(30,+s.pollSec||15)*1000;
+        log(`🤖 ${s.name}: ${m}`,'err');
+        if(s.errs>=5){s.enabled=false;log(`🤖 ${s.name} paused after 5 errors in a row`,'err');toast(s.name+' paused after repeated errors','err')}
+      }
+      saveBS();renderStrats();
+    }
+  }finally{txBusy=false;if(pendingLock) doLock();renderPills();renderStrats()}
+}
+function startEngine(){
+  if(!bw) throw new Error('Unlock the bot wallet first');
+  if(!bs.strategies.some(s=>s.enabled)) throw new Error('Switch at least one strategy on first');
+  eng.on=true;clearInterval(eng.timer);eng.timer=setInterval(engTick,4000);
+  log('🤖 Bot started','ok');toast('Bot started','ok');renderPills();engTick();
+}
+function stopEngine(){eng.on=false;clearInterval(eng.timer);log('🤖 Bot stopped');toast('Bot stopped');renderPills();renderStrats()}
+
+/* ---------- rendering ---------- */
+function renderPills(){
+  const pw=$('bwPill'),pe=$('bwEng');
+  if(!store){pw.textContent='No bot wallet';pw.className='pill'}
+  else if(bw){pw.textContent='Unlocked · '+short(bw.address);pw.className='pill live'}
+  else{pw.textContent='Locked · '+short(store.address);pw.className='pill'}
+  const n=bs.strategies.filter(s=>s.enabled).length;
+  pe.textContent=eng.on?`Bot running · ${n} active`:'Bot stopped';
+  pe.className='pill'+(eng.on?' live':'');
+  const b=$('enGo');b.textContent=eng.on?'Stop bot':'Start bot';b.classList.toggle('danger',eng.on);
+}
+function renderWallet(){
+  $('bwNew').classList.toggle('hidden',!!store);
+  $('bwLocked').classList.toggle('hidden',!(store&&!bw));
+  $('bwOpen').classList.toggle('hidden',!bw);
+  const a=addrNow();
+  if(a){
+    $('bwAddrL').textContent=a;$('bwAddr').textContent=a;
+    const v=B.native!=null?fmt(B.native,18,4)+' AVAX':'…';
+    $('bwAvaxL').textContent=v;$('bwAvax').textContent=v;
+    $('bwExp').href=FUJI.explorer+'/address/'+a;
+  }
+}
+function trTok(){return tr.asset==='native'?NATIVE:tokenOf(tr.asset)}
+const tr={dir:'fund',asset:'native'};
+function renderTransfer(){
+  const t=trTok()||NATIVE;
+  $('trAsset').innerHTML=`${av(t,'sm')} <b>${esc(t.sym)}</b> ▾`;
+  $('trAsset').style.display='inline-flex';$('trAsset').style.gap='8px';$('trAsset').style.alignItems='center';
+  document.querySelectorAll('#trDir button').forEach(b=>b.classList.toggle('on',b.dataset.d===tr.dir));
+  const src=tr.dir==='fund'?bals[K(t.addr)]:botBal(t);
+  $('trBal').textContent=src!=null?`(${tr.dir==='fund'?'connected wallet':'bot wallet'}: ${fmt(src,t.dec,4)})`:'';
+  const go=$('trGo');go.textContent=tr.dir==='fund'?`Send ${t.sym} to bot wallet`:`Withdraw ${t.sym} to connected wallet`;
+  let note='';
+  if(!store) note='Create the bot wallet first.';
+  else if(tr.dir==='fund') note=account?`Sends from your connected wallet to ${short(store.address)}. The bot wallet needs AVAX for gas too.`:'Connect your normal wallet (top right) to fund the bot.';
+  else note=!bw?'Unlock the bot wallet to withdraw.':(account?`Sends from the bot wallet to your connected wallet ${short(account)}.`:'Connect your normal wallet to choose where withdrawals go.');
+  $('trNote').textContent=note;
+}
+function stratHTML(s){
+  const t=tokenOf(s.token),p=s.pos,tokens=BigInt(p.tokens),cost=BigInt(p.cost);
+  const sym=t?t.sym:short(s.token);
+  const et={now:'Buy immediately',dip:`Buy on ${s.dipPct}% dip`,dca:`DCA every ${s.dcaMin} min`,none:'Exit rules only'}[s.entry];
+  const sum=[et];
+  if(s.entry!=='none') sum.push(`${s.buyAvax} AVAX per buy, max ${s.maxAvax}`);
+  if(s.tpPct>0) sum.push(`TP +${s.tpPct}%`+(s.tpSellPct<100?` (sell ${s.tpSellPct}%)`:''));
+  if(s.slPct>0) sum.push(`SL −${s.slPct}%`);
+  if(s.trailPct>0) sum.push(`trail −${s.trailPct}%`);
+  sum.push(`slip ${s.slipPct}%`,`check ${s.pollSec}s`);
+  let pos;
+  if(tokens>0n){
+    const v=s.live&&s.live.value?BigInt(s.live.value):null;
+    pos=`Holding <b>${fmt(tokens,t?t.dec:18,4)} ${esc(sym)}</b> · cost ${fmt(cost,18,4)} AVAX`+(v!=null?` · worth ≈ ${fmt(v,18,4)} AVAX <b class="${v>=cost?'ok':'err'}">${pctStr(v,cost)}</b>`:'');
+  }else pos='No open position';
+  const rl=BigInt(p.realized||'0');
+  const real=rl!==0n?` · realized <b class="${rl>=0n?'ok':'err'}">${rl>0n?'+':''}${fmt(rl,18,4)} AVAX</b>`:'';
+  const adopt=tokens===0n&&t&&(B.tok[K(t.addr)]||0n)>0n?`<button class="btn sm ghost" data-a="adopt" data-id="${s.id}">Adopt holdings</button>`:'';
+  const sellAll=tokens>0n?`<button class="btn sm danger" data-a="sellall" data-id="${s.id}">Sell all now</button>`:'';
+  const live=s.enabled&&eng.on;
+  return `<div class="bot-strat ${s.enabled?'':'off'}">
+    <div class="top"><div class="row" style="gap:8px">${t?av(t,'sm'):''}<b>${esc(s.name)}</b><span class="dim">${esc(sym)}</span></div>
+      <button class="chip ${s.enabled?'on':''}" data-a="toggle" data-id="${s.id}">${s.enabled?'● On':'○ Off'}</button></div>
+    <div class="sum">${sum.map(esc).join(' · ')}</div>
+    <div class="posl">${pos}${real}</div>
+    <div class="stat-line">${live?'● ':''}${esc(s.status||(s.enabled?'Ready':'Off'))}</div>
+    <div class="acts"><button class="btn sm ghost" data-a="edit" data-id="${s.id}">Edit</button><button class="btn sm ghost" data-a="dup" data-id="${s.id}">Duplicate</button>${adopt}${sellAll}<button class="btn sm ghost" data-a="reset" data-id="${s.id}">Reset position</button><button class="btn sm ghost" data-a="del" data-id="${s.id}">Delete</button></div>
+  </div>`;
+}
+function renderStrats(){
+  $('stList').innerHTML=bs.strategies.length?bs.strategies.map(stratHTML).join(''):'<div class="empty">No strategies yet. Press “+ New strategy” and pick a preset (Scalper, Swing, Dip buyer, DCA) or set your own buy size, take profit, stop loss and trailing stop.</div>';
+}
+function renderBalances(){
+  const rows=[`<tr><td><div class="row" style="gap:8px">${av(NATIVE,'sm')}<b>AVAX</b></div></td><td class="r">${B.native!=null?fmt(B.native,18,4):'—'}</td></tr>`];
+  state.tokens.forEach(t=>{const b=B.tok[K(t.addr)];if(b&&b>0n) rows.push(`<tr><td><div class="row" style="gap:8px">${av(t,'sm')}<b>${esc(t.sym)}</b></div></td><td class="r">${fmt(b,t.dec,4)}</td></tr>`)});
+  $('bbBody').innerHTML=addrNow()?rows.join(''):'<tr><td colspan="2" class="empty">Create the bot wallet to see balances.</td></tr>';
+}
+function renderTrades(){
+  $('thBody').innerHTML=bs.trades.length?bs.trades.map(x=>{
+    const tm=new Date(x.ts).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    return `<tr><td class="dim">${esc(tm)}</td><td>${esc(x.strategy||'manual')}</td><td class="${x.side==='buy'?'ok':'err'}">${x.side==='buy'?'Buy':'Sell'}</td><td>${esc(x.sym)}</td><td class="r">${fmt(BigInt(x.avax),18,4)}</td><td class="r">${fmt(BigInt(x.tokens),x.dec||18,4)}</td><td class="dim">${esc(x.reason||'')}</td><td>${x.hash?`<a href="${FUJI.explorer}/tx/${esc(x.hash)}" target="_blank" rel="noopener">↗</a>`:''}</td></tr>`;
+  }).join(''):'<tr><td colspan="8" class="empty">No bot trades yet.</td></tr>';
+}
+function renderManual(){
+  const t=tokenOf(mt.tok);
+  $('mtTok').innerHTML=t?`${av(t,'sm')} <b>${esc(t.sym)}</b> ▾`:'Select token ▾';
+  const b=t&&botBal(t);
+  $('mtBal').textContent=t&&b!=null?'Bot holds '+fmt(b,t.dec,4)+' '+t.sym:'';
+  document.querySelectorAll('#mtPct .chip').forEach(c=>c.classList.toggle('on',+c.dataset.p===mt.pct));
+}
+const mt={tok:null,pct:100};
+function renderBot(){renderPills();renderWallet();renderTransfer();renderStrats();renderBalances();renderTrades();renderManual()}
+
+/* ---------- editor ---------- */
+let ed={id:null,token:null};
+const EDF={name:'edName',buyAvax:'edBuy',maxAvax:'edMax',dipPct:'edDip',dcaMin:'edDca',tpPct:'edTp',tpSellPct:'edTpSell',slPct:'edSl',trailPct:'edTrail',slipPct:'edSlip',impactPct:'edImpact',pollSec:'edPoll',coolMin:'edCool',reserve:'edRes'};
+function fillEditor(v){
+  Object.entries(EDF).forEach(([k,id])=>{if(v[k]!=null) $(id).value=v[k]});
+  if(v.entry) $('edEntry').value=v.entry;
+  if(v.rebuy!=null) $('edRebuy').checked=!!v.rebuy;
+  editorVis();
+}
+function editorVis(){
+  const e=$('edEntry').value;
+  $('edBuyW').style.display=$('edMaxW').style.display=e==='none'?'none':'';
+  $('edDipW').style.display=e==='dip'?'':'none';
+  $('edDcaW').style.display=e==='dca'?'':'none';
+  $('edRebuyW').style.display=e==='now'?'flex':'none';
+  const t=tokenOf(ed.token);
+  $('edTok').innerHTML=t?`${av(t,'sm')} <b>${esc(t.sym)}</b> ▾`:'Select token ▾';
+}
+function openEditor(id){
+  const s=id?bs.strategies.find(x=>x.id===id):null;
+  ed={id:id||null,token:s?s.token:null};
+  $('edTitle').textContent=s?'Edit strategy':'New strategy';
+  fillEditor(s?{...s}:{name:'Strategy '+(bs.strategies.length+1),...BP.scalp});
+  openM('botEdModal');
+}
+function num(id,label,min,max,intOnly){
+  const raw=String($(id).value).trim().replace(',','.');const v=parseFloat(raw);
+  if(!isFinite(v)||v<min||v>max) throw new Error(`${label} must be between ${min} and ${max}`);
+  return intOnly?Math.round(v):v;
+}
+function saveEditor(){
+  const t=tokenOf(ed.token);if(!t) throw new Error('Choose a token');
+  const entry=$('edEntry').value;
+  const name=$('edName').value.trim()||'Strategy';
+  const s={
+    name,token:t.addr,entry,
+    buyAvax:String($('edBuy').value).trim().replace(',','.')||'0',
+    maxAvax:String($('edMax').value).trim().replace(',','.')||'0',
+    dipPct:num('edDip','Dip %',0.1,95),dcaMin:num('edDca','DCA minutes',1,10080),
+    tpPct:num('edTp','Take profit %',0,100000),tpSellPct:num('edTpSell','Sell % at take profit',1,100),
+    slPct:num('edSl','Stop loss %',0,99),trailPct:num('edTrail','Trailing stop %',0,99),
+    slipPct:num('edSlip','Slippage %',0.1,49),impactPct:num('edImpact','Price impact %',0,100),
+    pollSec:num('edPoll','Check interval',5,3600,true),coolMin:num('edCool','Cooldown',0,10080),
+    reserve:String($('edRes').value).trim().replace(',','.')||'0.02',rebuy:$('edRebuy').checked
+  };
+  if(entry!=='none'){
+    const b=parseAmt(s.buyAvax,18),m=parseAmt(s.maxAvax,18);
+    if(b<=0n) throw new Error('Buy size must be above 0');
+    if(m<b) throw new Error('Max total spend must be at least one buy size');
+  }
+  if(entry==='none'&&s.tpPct<=0&&s.slPct<=0&&s.trailPct<=0) throw new Error('Set at least a take profit, stop loss or trailing stop');
+  if(parseAmt(s.reserve,18)<=0n&&s.reserve!=='0') throw new Error('Gas reserve is not a valid number');
+  if(ed.id){
+    const old=bs.strategies.find(x=>x.id===ed.id);
+    if(old&&BigInt(old.pos.tokens)>0n&&K(old.token)!==K(s.token)) throw new Error('Sell or reset the open position before changing the token');
+    Object.assign(old,s);old.errs=0;old.nextAt=0;
+  }else{
+    bs.strategies.push({id:'s'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),enabled:false,pos:emptyPos(),status:'Off',...s});
+    toast('Strategy saved. Switch it on, then press Start bot.','ok');
+  }
+  saveBS();closeM('botEdModal');renderStrats();
+}
+
+/* ---------- wiring ---------- */
+const find=id=>bs.strategies.find(s=>s.id===id);
+$('bwCreate').onclick=()=>run(()=>makeWallet(null));
+$('bwRestoreToggle').onclick=()=>$('bwRestore').classList.toggle('hidden');
+$('bwRestoreBtn').onclick=()=>run(async()=>{const k=$('bwPk').value.trim();if(!k) throw new Error('Paste the private key');await makeWallet(k)});
+$('bwUnlock').onclick=()=>run(unlock);
+$('bwPwU').addEventListener('keydown',e=>{if(e.key==='Enter') run(unlock)});
+$('bwLock').onclick=lock;
+$('bwRefresh').onclick=()=>refreshBot();
+$('bwCopy').onclick=()=>{navigator.clipboard.writeText(addrNow()||'').then(()=>toast('Address copied','ok')).catch(()=>toast('Copy failed','err'))};
+$('bwDl').onclick=downloadBackup;
+$('bwReveal').onclick=()=>{
+  if(!bw) return;
+  if(!confirm('Anyone who sees this private key can take everything in the bot wallet. Show it now?')) return;
+  $('bwKey').textContent=bw.privateKey;$('bwKeyBox').classList.remove('hidden');
+  clearTimeout(keyT);keyT=setTimeout(hideKey,30000);
+};
+$('bwKeyCopy').onclick=()=>{if(bw) navigator.clipboard.writeText(bw.privateKey).then(()=>toast('Private key copied','ok')).catch(()=>toast('Copy failed','err'))};
+$('bwDel').onclick=()=>run(async()=>deleteWallet());
+$('bwDelL').onclick=()=>run(async()=>deleteWallet());
+
+document.querySelectorAll('#trDir button').forEach(b=>b.onclick=()=>{tr.dir=b.dataset.d;renderTransfer()});
+$('trAsset').onclick=()=>openTokenModal(a=>{tr.asset=a;$('trAmt').value='';renderTransfer()});
+numField($('trAmt'));
+$('trMax').onclick=()=>run(async()=>{
+  const t=trTok()||NATIVE;let b=tr.dir==='fund'?bals[K(t.addr)]:botBal(t);
+  if(b==null) throw new Error('Balance not loaded yet');
+  if(t.addr==='native'){
+    if(tr.dir==='fund'){const r=ethers.parseEther('0.005');b=b>r?b-r:0n}
+    else{const fd=await readP.getFeeData();const fee=fd.maxFeePerGas||fd.gasPrice||ethers.parseUnits('50','gwei');const r=21000n*fee*2n;b=b>r?b-r:0n}
+  }
+  $('trAmt').value=fmtPlain(b,t.dec);
+});
+$('trGo').onclick=()=>run(async()=>{
+  const t=trTok();if(!t) throw new Error('Choose an asset');
+  if(!store) throw new Error('Create the bot wallet first');
+  const amt=parseAmt($('trAmt').value,t.dec);if(amt<=0n) throw new Error('Enter an amount');
+  if(tr.dir==='fund'){
+    needWallet();
+    if(t.addr==='native') await sendTx('Fund bot wallet with AVAX',signer.sendTransaction({to:store.address,value:amt}));
+    else await sendTx(`Fund bot wallet with ${t.sym}`,wr(t.addr,ERC20_ABI).transfer(store.address,amt));
+    refreshBalances();
+  }else{
+    if(!account) throw new Error('Connect your normal wallet first. Withdrawals go to it.');
+    await exclusive(async()=>{
+      if(t.addr==='native') await btx('Withdraw AVAX to main wallet',bw.sendTransaction({to:account,value:amt}));
+      else await btx(`Withdraw ${t.sym} to main wallet`,new ethers.Contract(t.addr,ERC20_ABI,bw).transfer(account,amt));
+    });
+    refreshBalances();
+  }
+  $('trAmt').value='';await refreshBot();
+});
+
+$('enGo').onclick=()=>run(async()=>{if(eng.on) stopEngine();else startEngine()});
+$('stNew').onclick=()=>openEditor(null);
+$('stList').onclick=e=>{
+  const b=e.target.closest('button[data-a]');if(!b) return;
+  const s=find(b.dataset.id);if(!s) return;
+  const a=b.dataset.a;
+  if(a==='toggle'){s.enabled=!s.enabled;s.errs=0;s.nextAt=0;s.status=s.enabled?'Ready':'Off';saveBS();renderStrats();renderPills();if(s.enabled&&!eng.on) toast('Switched on. Press Start bot to begin trading.')}
+  else if(a==='edit') openEditor(s.id);
+  else if(a==='dup'){const c=JSON.parse(JSON.stringify(s));c.id='s'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);c.name=s.name+' copy';c.enabled=false;c.pos=emptyPos();c.status='Off';c.live=null;bs.strategies.push(c);saveBS();renderStrats()}
+  else if(a==='del'){
+    if(BigInt(s.pos.tokens)>0n&&!confirm('This strategy still tracks an open position (the tokens stay in the bot wallet). Delete it anyway?')) return;
+    if(!confirm('Delete strategy "'+s.name+'"?')) return;
+    bs.strategies=bs.strategies.filter(x=>x!==s);saveBS();renderStrats();renderPills();
+  }
+  else if(a==='reset'){
+    if(!confirm('Forget this strategy’s open position and P&L? Tokens stay in the bot wallet; nothing is sold.')) return;
+    s.pos=emptyPos();s.live=null;saveBS();renderStrats();
+  }
+  else if(a==='adopt') run(async()=>{
+    const t=tokenOf(s.token);if(!t) throw new Error('Token missing');
+    const a0=addrNow();const bal=await rd(t.addr,ERC20_ABI).balanceOf(a0);
+    if(bal<=0n) throw new Error('The bot wallet holds none of this token');
+    const q=await getQuote(t.addr,'native',bal);if(!q) throw new Error('No sell quote for the current holdings');
+    s.pos={...emptyPos(),tokens:bal.toString(),cost:q.out.toString(),peak:q.out.toString()};
+    saveBS();renderStrats();toast('Holdings adopted. Profit and loss now count from the current value.','ok');
+  });
+  else if(a==='sellall') run(()=>exclusive(async()=>{
+    const t=tokenOf(s.token);if(!t) throw new Error('Token missing');
+    if(!confirm('Sell the whole position of '+t.sym+' from the bot wallet now?')) return;
+    const bal=await rd(t.addr,ERC20_ABI).balanceOf(bw.address);
+    let tokens=BigInt(s.pos.tokens);if(bal<tokens) tokens=bal;
+    if(tokens<=0n) throw new Error('Nothing to sell');
+    let cost=BigInt(s.pos.cost);if(tokens<BigInt(s.pos.tokens)) cost=cost*tokens/BigInt(s.pos.tokens);
+    const q=await getQuote(t.addr,'native',tokens);if(!q) throw new Error('No sell quote');
+    await exitPos(s,t,tokens,cost,q.out,100,'Manual sell all');
+    s.enabled=false;s.status='Stopped after manual sell';saveBS();await refreshBot();
+  }));
+};
+
+$('edPresets').onclick=e=>{const b=e.target.closest('[data-pr]');if(!b) return;fillEditor(BP[b.dataset.pr])};
+$('edEntry').onchange=editorVis;
+$('edTok').onclick=()=>openTokenModal(a=>{ed.token=a;editorVis()},{noNative:true});
+['edBuy','edMax','edDip','edDca','edTp','edTpSell','edSl','edTrail','edSlip','edImpact','edPoll','edCool','edRes'].forEach(id=>numField($(id)));
+$('edSave').onclick=()=>run(async()=>saveEditor());
+
+$('mtTok').onclick=()=>openTokenModal(a=>{mt.tok=a;renderManual()},{noNative:true});
+numField($('mtBuy'));numField($('mtSlip'));
+document.querySelectorAll('#mtPct .chip').forEach(c=>c.onclick=()=>{mt.pct=+c.dataset.p;renderManual()});
+$('mtBuyBtn').onclick=()=>run(()=>exclusive(async()=>{
+  const t=tokenOf(mt.tok);if(!t) throw new Error('Select a token');
+  const amt=parseAmt($('mtBuy').value,18);if(amt<=0n) throw new Error('Enter an AVAX amount');
+  const slip=parseFloat($('mtSlip').value)||2;if(slip<0.1||slip>49) throw new Error('Slippage must be between 0.1 and 49');
+  await botBuy(t,amt,{slip,maxImpact:20,strategy:'manual',reason:'Manual buy'});
+  $('mtBuy').value='';await refreshBot();
+}));
+$('mtSellBtn').onclick=()=>run(()=>exclusive(async()=>{
+  const t=tokenOf(mt.tok);if(!t) throw new Error('Select a token');
+  const slip=parseFloat($('mtSlip').value)||2;if(slip<0.1||slip>49) throw new Error('Slippage must be between 0.1 and 49');
+  const bal=await rd(t.addr,ERC20_ABI).balanceOf(bw.address);
+  const amt=mt.pct>=100?bal:bal*BigInt(mt.pct)/100n;
+  if(amt<=0n) throw new Error('The bot wallet holds none of this token');
+  await botSell(t,amt,{slip,maxImpact:0,strategy:'manual',reason:'Manual sell '+mt.pct+'%'});
+  await refreshBot();
+}));
+$('thClear').onclick=()=>{if(!confirm('Clear the bot trade history?')) return;bs.trades=[];saveBS();renderTrades()};
+
+/* ---------- plug into the existing tab router without editing it ---------- */
+if(!VIEWS.includes('bot')) VIEWS.push('bot');
+const _show=window.show;
+window.show=function(view){
+  _show(view);
+  if(view==='bot'){renderBot();if(addrNow()) refreshBot()}
+};
+setInterval(()=>{
+  if(document.hidden||$('v-bot').classList.contains('hidden')) return;
+  renderTransfer();
+  if(addrNow()&&!txBusy) refreshBot();
+},30000);
+window.addEventListener('beforeunload',e=>{if(eng.on){e.preventDefault();e.returnValue=''}});
+renderBot();
+if(addrNow()) refreshBot();
+if(location.hash==='#bot') window.show('bot');
+})();
 </script>
 </body></html>
