@@ -418,6 +418,21 @@ header.nav #connect::after{content:"";position:absolute;inset:0;background:linea
 @media(prefers-reduced-motion:reduce){.aur i,.gridmv i,.dots b,header.nav::after,header.nav .logo::after,header.nav #connect::after{animation:none!important}.dots{display:none}}
 </style>
 <style id="wallet-css">#bwModal{z-index:80}.js-bw-addr{word-break:break-all}.bot-check input{width:auto}</style>
+<style id="chest-css">
+.sk-stage{position:relative;border-radius:16px;overflow:hidden;background:#fff;border:1px solid var(--line2);user-select:none;-webkit-user-select:none}
+#skCanvas{display:block;width:100%;background:#fff;touch-action:none;cursor:grab}
+#skCanvas:active{cursor:grabbing}
+.sk-hint,.sk-coord{position:absolute;top:10px;font-size:12px;color:#000;opacity:.65;pointer-events:none;font-weight:600}
+.sk-hint{left:14px}.sk-coord{right:14px;font-variant-numeric:tabular-nums}
+.sk-act{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);background:#000;color:#fff;border:0;border-radius:999px;padding:13px 26px;font:700 15px/1 Inter,system-ui,sans-serif;cursor:pointer;box-shadow:0 8px 24px #0004;white-space:nowrap}
+.sk-act:disabled{opacity:.75;cursor:default}
+.sk-act.info{background:#fff;color:#000;border:2px solid #000;box-shadow:none}
+.sk-row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}
+.sk-row:last-child{border-bottom:0}
+.sk-row b{font-weight:600}
+.sk-t1{color:#9ca3af}.sk-t2{color:#60a5fa}.sk-t3{color:#c084fc}.sk-t4{color:#fbbf24}
+@media(max-width:700px){.sk-hint{display:none}}
+</style>
 </head><body>
 <div id="intro" aria-hidden="true"><div class="sqgrid"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
 <div class="bg"><div class="aur"><i class="o1"></i><i class="o2"></i><i class="o3"></i><i class="o4"></i></div><div class="gridmv"><i></i></div><div class="dots"><b style="left:44%;width:2px;height:2px;--t:17s;--dx:-51px;animation-delay:-26s"></b><b style="left:71%;width:2px;height:2px;--t:34s;--dx:-53px;animation-delay:-29s"></b><b style="left:67%;width:2px;height:2px;--t:18s;--dx:-5px;animation-delay:-13s"></b><b style="left:11%;width:2px;height:2px;--t:33s;--dx:-6px;animation-delay:-1s"></b><b style="left:75%;width:2px;height:2px;--t:34s;--dx:-53px;animation-delay:-18s"></b><b style="left:77%;width:2px;height:2px;--t:23s;--dx:-55px;animation-delay:-17s"></b><b style="left:20%;width:2px;height:2px;--t:20s;--dx:9px;animation-delay:-3s"></b><b style="left:76%;width:2px;height:3px;--t:21s;--dx:-47px;animation-delay:-18s"></b><b style="left:76%;width:3px;height:2px;--t:27s;--dx:-48px;animation-delay:-17s"></b><b style="left:94%;width:2px;height:3px;--t:17s;--dx:19px;animation-delay:-6s"></b><b style="left:66%;width:3px;height:3px;--t:29s;--dx:39px;animation-delay:-10s"></b><b style="left:62%;width:3px;height:2px;--t:27s;--dx:-22px;animation-delay:-7s"></b><b style="left:26%;width:3px;height:2px;--t:18s;--dx:13px;animation-delay:-9s"></b><b style="left:70%;width:2px;height:2px;--t:30s;--dx:-24px;animation-delay:-19s"></b><b style="left:12%;width:2px;height:3px;--t:29s;--dx:-39px;animation-delay:-24s"></b><b style="left:46%;width:2px;height:2px;--t:29s;--dx:-55px;animation-delay:-30s"></b><b style="left:88%;width:2px;height:3px;--t:34s;--dx:41px;animation-delay:-28s"></b><b style="left:43%;width:2px;height:3px;--t:27s;--dx:16px;animation-delay:-15s"></b></div></div>
@@ -437,6 +452,7 @@ header.nav #connect::after{content:"";position:absolute;inset:0;background:linea
     <button data-view="lev" title="Long/Short"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 20V5m0 0L4 9m4-4 4 4M16 4v15m0 0-4-4m4 4 4-4"/></svg><span class="lb">Long/Short</span></button>
     <button data-view="bot" title="Bot"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="8" width="14" height="11" rx="3"/><path d="M12 8V4M9 13h.01M15 13h.01M9.5 16.5h5"/></svg><span class="lb">Bot</span></button>
     <button data-view="cbot" title="Casino Bot"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="6" width="16" height="12" rx="3"/><path d="M9 6v12M15 6v12"/></svg><span class="lb">Casino Bot</span></button>
+    <button data-view="chest" title="Chests"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="11" width="16" height="8" rx="2"/><path d="M4 14h16M6 11c0-3.2 2.2-5.5 6-5.5s6 2.3 6 5.5M12 14v2.5"/></svg><span class="lb">Chests</span></button>
     <button data-view="port" title="Portfolio"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v9h9"/><path d="M20.5 15A9 9 0 1 1 9 3.5"/></svg><span class="lb">Portfolio</span></button>
   </nav>
   <div class="navr">
@@ -588,6 +604,11 @@ header.nav #connect::after{content:"";position:absolute;inset:0;background:linea
       <div><label>Min pool depth (AVAX)</label><input id="adLsDepth" type="text" value="1"></div>
       <div><label>Max exposure (% of house)</label><input id="adLsExp" type="text" value="50"></div>
       <div class="full"><label>Fund long/short house (tokens)</label><input id="adLsFund" type="text" value="0"></div>
+      <div class="full"><label class="chk"><input type="checkbox" id="adChest"> Stickman chest world (open-world game, creator-funded chests)</label></div>
+      <div><label>Fund chest pot (tokens)</label><input id="adChestFund" type="text" value="0"></div>
+      <div><label>World radius (chunks)</label><input id="adChestRadius" type="text" value="20"></div>
+      <div><label>Chest density (% of chunks)</label><input id="adChestDensity" type="text" value="30"></div>
+      <div><label>Chest refill time (minutes)</label><input id="adChestRespawn" type="text" value="60"></div>
     </div>
     <div class="full" style="margin-top:12px"><label class="chk"><input type="checkbox" id="adFactory"> Create token and add-ons with the launch factory (one transaction)</label></div>
     <div class="row" style="margin-top:8px"><button class="btn ghost sm" id="facDeploy">Deploy launch factory (once)</button><span class="dim" id="facStatus" style="font-size:12px"></span></div>
@@ -969,6 +990,58 @@ header.nav #connect::after{content:"";position:absolute;inset:0;background:linea
       <p class="dim" id="wlNote" style="font-size:12px;margin:10px 0 0"></p>
     </div>
   </section>
+  <section id="v-chest" class="view hidden">
+    <div class="pagehead"><div><h1>Chests</h1><p>An open-world stickman game on a token's chest pot. Walk the white world and open chests: every open is a transaction that sends you a random share of the pot, funded by the creator.</p></div></div>
+    <div class="card">
+      <div class="row" style="gap:12px;align-items:flex-end;flex-wrap:wrap">
+        <div style="flex:1;min-width:220px"><label>World</label><select id="skWorld"></select></div>
+        <div style="flex:1;min-width:240px"><label>Join a world by address</label><div class="row" style="gap:8px"><input id="skJoin" class="mono" placeholder="0x… chest world" style="flex:1"><button class="btn ghost sm" id="skJoinBtn">Enter</button></div></div>
+        <button class="btn ghost sm" id="skCopy">Copy invite link</button>
+      </div>
+      <div class="grid4" id="skStats" style="margin:14px 0"></div>
+      <div id="skEmpty"></div>
+      <div id="skGame" class="hidden">
+        <div class="sk-stage" id="skStage">
+          <canvas id="skCanvas"></canvas>
+          <div class="sk-hint" id="skHintTop">WASD / arrows or drag to walk · Shift to run · E to open</div>
+          <div class="sk-coord" id="skCoord"></div>
+          <button class="sk-act hidden" id="skAct"></button>
+        </div>
+        <div class="dim" style="font-size:12px;margin-top:8px">Chest positions come from the world's on-chain seed, so everyone sees the same map. Each open is one transaction from your browser wallet and needs a little Fuji AVAX for gas.</div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px" id="skFeedCard">
+      <h3 style="margin:0 0 8px;font-size:14px">Recent finds</h3>
+      <div id="skFeed" class="dim">Pick a world to see what people are finding.</div>
+    </div>
+    <div class="card hidden" style="margin-top:16px" id="skAdmin">
+      <h3 style="margin:0 0 8px;font-size:14px">Fund the pot</h3>
+      <div class="row" style="gap:8px;flex-wrap:wrap"><input id="skFundAmt" type="text" inputmode="decimal" placeholder="Amount in tokens" style="flex:1;min-width:180px"><button class="btn sm" id="skFundBtn">Fund pot</button><button class="btn ghost sm" id="skWdBtn">Withdraw (creator)</button></div>
+      <div class="dim" style="font-size:12px;margin-top:6px">Anyone can add tokens to the pot. Withdraw uses the same amount field and is for the creator only.</div>
+      <details style="margin-top:14px"><summary class="dim">Creator rules</summary>
+        <div class="fields" style="margin-top:10px">
+          <div><label>Chest refill time (minutes)</label><input id="skRuleRespawn" type="text" inputmode="numeric"></div>
+          <div><label>Wait between opens per player (seconds)</label><input id="skRuleCool" type="text" inputmode="numeric"></div>
+          <div class="full"><label>Max reward per chest (tokens, 0 = no limit)</label><input id="skRuleMax" type="text" inputmode="decimal"></div>
+        </div>
+        <div class="row" style="margin-top:10px"><button class="btn ghost sm" id="skRuleBtn">Update rules (creator)</button></div>
+      </details>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <h3 style="margin:0 0 8px;font-size:14px">Create a chest world for a token</h3>
+      <div class="fields">
+        <div class="full"><label>Token</label><select id="skTok"></select></div>
+        <div><label>World radius (chunks each way)</label><input id="skRadius" type="text" inputmode="numeric" value="20"></div>
+        <div><label>Chest density (% of chunks)</label><input id="skDensity" type="text" inputmode="numeric" value="30"></div>
+        <div><label>Chest refill time (minutes)</label><input id="skRespawn" type="text" inputmode="numeric" value="60"></div>
+        <div><label>Wait between opens per player (seconds)</label><input id="skCool" type="text" inputmode="numeric" value="5"></div>
+        <div class="full"><label>Fund the pot now (tokens)</label><input id="skFund" type="text" inputmode="decimal" value="0"></div>
+      </div>
+      <div class="row" style="margin-top:12px;gap:12px;align-items:center;flex-wrap:wrap"><button class="btn" id="skDeploy">Create chest world</button><span class="dim" id="skEst" style="font-size:12px"></span></div>
+      <div class="dim" style="font-size:12px;margin-top:8px">You can also tick "Stickman chest world" in the Launch tab add-ons to create it together with a new token. Each chest pays a random share of the pot: common 0.05–0.15%, rare 0.15–0.4%, epic 0.4–1%, legendary 1–3%.</div>
+    </div>
+  </section>
+
 </main>
 
 <!-- token modal -->
@@ -1309,6 +1382,120 @@ contract StakingV2 {
 }
 `;
 
+const CHEST_SRC=String.raw`// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+interface IERC20CW {
+  function transfer(address to, uint256 amt) external returns (bool);
+  function transferFrom(address from, address to, uint256 amt) external returns (bool);
+  function balanceOf(address who) external view returns (uint256);
+}
+
+/// Open-world chest hunt. The world is a grid of chunks; a chunk holds a chest when
+/// keccak(seed, cx, cy) % 100 < density. Every chest pays a random share of the pot
+/// (the token balance held here), then refills after respawn seconds.
+contract ChestWorld {
+  IERC20CW public immutable token;
+  bytes32 public immutable seed;
+  int32 public immutable radius;
+  uint8 public immutable density;
+  address public owner;
+  uint32 public respawn;
+  uint32 public playerCooldown;
+  uint256 public maxReward;
+  uint256 public totalOpened;
+  uint256 public totalPaid;
+  mapping(bytes32 => uint64) private _ready;
+  mapping(address => uint64) public lastOpen;
+  mapping(address => uint256) public claimed;
+  mapping(address => uint256) public opens;
+
+  event Opened(address indexed player, int32 cx, int32 cy, uint8 tier, uint256 amount);
+  event Funded(address indexed from, uint256 amount);
+
+  modifier onlyOwner() { require(msg.sender == owner, "not owner"); _; }
+
+  constructor(address token_, int32 radius_, uint8 density_, uint32 respawn_, uint32 cooldown_) {
+    require(token_ != address(0), "token");
+    require(radius_ >= 1 && radius_ <= 200, "radius");
+    require(density_ >= 1 && density_ <= 100, "density");
+    token = IERC20CW(token_);
+    radius = radius_;
+    density = density_;
+    respawn = respawn_;
+    playerCooldown = cooldown_;
+    owner = msg.sender;
+    seed = keccak256(abi.encode(address(this), block.chainid, block.timestamp, msg.sender));
+  }
+
+  function pot() public view returns (uint256) { return token.balanceOf(address(this)); }
+
+  function exists(int32 cx, int32 cy) public view returns (bool) {
+    if (cx < -radius || cx > radius || cy < -radius || cy > radius) return false;
+    return uint256(keccak256(abi.encodePacked(seed, cx, cy))) % 100 < density;
+  }
+
+  function readyAt(int32 cx, int32 cy) public view returns (uint64) {
+    return _ready[keccak256(abi.encodePacked(cx, cy))];
+  }
+
+  function readyBatch(int32[] calldata cx, int32[] calldata cy) external view returns (uint64[] memory out) {
+    require(cx.length == cy.length, "len");
+    out = new uint64[](cx.length);
+    for (uint256 i = 0; i < cx.length; i++) out[i] = _ready[keccak256(abi.encodePacked(cx[i], cy[i]))];
+  }
+
+  function _range(uint256 roll) private pure returns (uint8 tier, uint256 lo, uint256 hi) {
+    // reward = pot * ppm / 1e6
+    if (roll < 6000) return (0, 500, 1500);
+    if (roll < 8800) return (1, 1500, 4000);
+    if (roll < 9800) return (2, 4000, 10000);
+    return (3, 10000, 30000);
+  }
+
+  function open(int32 cx, int32 cy) external {
+    require(msg.sender == tx.origin, "wallets only");
+    require(exists(cx, cy), "no chest");
+    bytes32 k = keccak256(abi.encodePacked(cx, cy));
+    require(block.timestamp >= _ready[k], "chest not ready");
+    require(block.timestamp >= uint256(lastOpen[msg.sender]) + playerCooldown, "slow down");
+    uint256 p = pot();
+    require(p > 0, "empty world");
+
+    uint256 r = uint256(keccak256(abi.encode(blockhash(block.number - 1), block.prevrandao, msg.sender, cx, cy, totalOpened, block.timestamp)));
+    (uint8 tier, uint256 lo, uint256 hi) = _range(r % 10000);
+    uint256 ppm = lo + ((hi - lo) * ((r >> 64) % 1000)) / 1000;
+    uint256 amt = (p * ppm) / 1e6;
+    if (maxReward > 0 && amt > maxReward) amt = maxReward;
+    require(amt > 0, "dust");
+
+    _ready[k] = uint64(block.timestamp + respawn);
+    lastOpen[msg.sender] = uint64(block.timestamp);
+    totalOpened += 1;
+    totalPaid += amt;
+    claimed[msg.sender] += amt;
+    opens[msg.sender] += 1;
+    require(token.transfer(msg.sender, amt), "payout failed");
+    emit Opened(msg.sender, cx, cy, tier, amt);
+  }
+
+  function fund(uint256 amt) external {
+    require(token.transferFrom(msg.sender, address(this), amt), "fund failed");
+    emit Funded(msg.sender, amt);
+  }
+
+  function withdraw(uint256 amt) external onlyOwner {
+    require(token.transfer(msg.sender, amt), "withdraw failed");
+  }
+
+  function setRules(uint32 respawn_, uint32 cooldown_, uint256 maxReward_) external onlyOwner {
+    respawn = respawn_; playerCooldown = cooldown_; maxReward = maxReward_;
+  }
+
+  function transferOwnership(address to) external onlyOwner { require(to != address(0), "zero"); owner = to; }
+}
+`;
+
 /* ---------- compiler runs in a Web Worker (sync wasm compile is only allowed off the main thread) ---------- */
 const WORKER_SRC=`
 let compileFn=null;
@@ -1335,11 +1522,11 @@ async function compile(){
   if(compiled) return compiled;
   log('Loading Solidity compiler (first run only)…');
   await getCompiler();
-  const input={language:'Solidity',sources:{'Token.sol':{content:TOKEN_SRC},'Staking.sol':{content:STAKING_SRC},'StakingV2.sol':{content:STAKING2_SRC},'Casino.sol':{content:CASINO_SRC},'Miners.sol':{content:MINERS_SRC},'LongShort.sol':{content:LONGSHORT_SRC},'Factory.sol':{content:FACTORY_SRC}},settings:{evmVersion:'shanghai',outputSelection:{'*':{'*':['abi','evm.bytecode.object']}}}};
+  const input={language:'Solidity',sources:{'Token.sol':{content:TOKEN_SRC},'Staking.sol':{content:STAKING_SRC},'StakingV2.sol':{content:STAKING2_SRC},'Casino.sol':{content:CASINO_SRC},'Miners.sol':{content:MINERS_SRC},'LongShort.sol':{content:LONGSHORT_SRC},'Factory.sol':{content:FACTORY_SRC},'ChestWorld.sol':{content:CHEST_SRC}},settings:{evmVersion:'shanghai',outputSelection:{'*':{'*':['abi','evm.bytecode.object']}}}};
   const out=JSON.parse(await new Promise((res,rej)=>{const id=++reqId;pending.set(id,{res,rej});worker.postMessage({id,input:JSON.stringify(input)})}));
   const errs=(out.errors||[]).filter(e=>e.severity==='error');
   if(errs.length) throw new Error(errs[0].formattedMessage);
-  return compiled={token:out.contracts['Token.sol'].Token,staking:out.contracts['Staking.sol'].Staking,staking2:out.contracts['StakingV2.sol'].StakingV2,casino:out.contracts['Casino.sol'].Casino,miners:out.contracts['Miners.sol'].Miners,longshort:out.contracts['LongShort.sol'].LongShort,factory:out.contracts['Factory.sol'].LaunchFactory,tokenImpl:out.contracts['Factory.sol'].TokenImpl,casinoImpl:out.contracts['Factory.sol'].CasinoImpl,minersImpl:out.contracts['Factory.sol'].MinersImpl};
+  return compiled={token:out.contracts['Token.sol'].Token,staking:out.contracts['Staking.sol'].Staking,staking2:out.contracts['StakingV2.sol'].StakingV2,casino:out.contracts['Casino.sol'].Casino,miners:out.contracts['Miners.sol'].Miners,longshort:out.contracts['LongShort.sol'].LongShort,factory:out.contracts['Factory.sol'].LaunchFactory,tokenImpl:out.contracts['Factory.sol'].TokenImpl,casinoImpl:out.contracts['Factory.sol'].CasinoImpl,minersImpl:out.contracts['Factory.sol'].MinersImpl,chest:out.contracts['ChestWorld.sol'].ChestWorld};
 }
 
 /* ---------- state (persisted in localStorage; migrates from v2) ---------- */
@@ -2536,7 +2723,7 @@ async function lockLP(t){
 function renderLaunches(){
   const L=state.launches||[];
   const link=(a,t)=>`<a href="${FUJI.explorer}/address/${a}" target="_blank">${t}</a>`;
-  $('plHistory').innerHTML=L.length?L.map(l=>`<div class="kv"><span>${av(tokenOf(l.token)||{addr:l.token,sym:l.sym},'sm')} ${esc(l.name)} (${esc(l.sym)}) · ${esc(l.time)}</span><span>${l.token?link(l.token,'token'):''}${l.pair?' · '+link(l.pair,'pool'):''}${l.pool?' · '+link(l.pool,'staking'):''}${l.casino?' · '+link(l.casino,'casino'):''}${l.miners?' · '+link(l.miners,'miners'):''}${l.ls?' · '+link(l.ls,'long/short'):''}${l.locked?' · <span class="ok">LP locked</span>':''}${l.renounced?' · <span class="warn">ownership renounced</span>':''}</span></div>`).join(''):'<div class="dim">No launches yet.</div>';
+  $('plHistory').innerHTML=L.length?L.map(l=>`<div class="kv"><span>${av(tokenOf(l.token)||{addr:l.token,sym:l.sym},'sm')} ${esc(l.name)} (${esc(l.sym)}) · ${esc(l.time)}</span><span>${l.token?link(l.token,'token'):''}${l.pair?' · '+link(l.pair,'pool'):''}${l.pool?' · '+link(l.pool,'staking'):''}${l.casino?' · '+link(l.casino,'casino'):''}${l.miners?' · '+link(l.miners,'miners'):''}${l.ls?' · '+link(l.ls,'long/short'):''}${l.chest?' · '+link(l.chest,'chest world'):''}${l.locked?' · <span class="ok">LP locked</span>':''}${l.renounced?' · <span class="warn">ownership renounced</span>':''}</span></div>`).join(''):'<div class="dim">No launches yet.</div>';
 }
 const FACTORY_SRC=String.raw`// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
@@ -2891,6 +3078,7 @@ function addOnsNums(){
   const d=18;
   return {
     factory:$('adFactory').checked,
+    chest:$('adChest').checked,chestFund:parseAmt($('adChestFund').value||'0',d),chestRadius:parseInt($('adChestRadius').value)||0,chestDensity:parseInt($('adChestDensity').value)||0,chestRespawn:Math.round((parseFloat(String($('adChestRespawn').value).replace(',','.'))||0)*60),
     casino:$('adCasino').checked,miners:$('adMiners').checked,ls:$('adLs').checked,
     casinoBps:Math.round(parseFloat($('adCasinoBps').value||'0')*100),
     casinoFund:parseAmt($('adCasinoFund').value||'0',d),
@@ -2930,6 +3118,19 @@ async function deployLsRaw(tokAddr,pair,minDepth,maxBps){
   state.markets.unshift({addr,token:tokAddr,pair,owner:account,time:new Date().toLocaleDateString()});
   save();return addr;
 }
+const CW_ABI=['function token() view returns (address)','function owner() view returns (address)','function seed() view returns (bytes32)','function radius() view returns (int32)','function density() view returns (uint8)','function respawn() view returns (uint32)','function playerCooldown() view returns (uint32)','function maxReward() view returns (uint256)','function pot() view returns (uint256)','function totalOpened() view returns (uint256)','function totalPaid() view returns (uint256)','function claimed(address) view returns (uint256)','function opens(address) view returns (uint256)','function lastOpen(address) view returns (uint64)','function exists(int32,int32) view returns (bool)','function readyAt(int32,int32) view returns (uint64)','function readyBatch(int32[] cx,int32[] cy) view returns (uint64[])','function open(int32 cx,int32 cy)','function fund(uint256 amt)','function withdraw(uint256 amt)','function setRules(uint32 respawn,uint32 cooldown,uint256 maxReward)','function transferOwnership(address to)','event Opened(address indexed player,int32 cx,int32 cy,uint8 tier,uint256 amount)','event Funded(address indexed from,uint256 amount)'];
+async function deployChestRaw(tokAddr,radius,density,respawnSec,cooldownSec){
+  const c=await compile();log('Deploying chest world…');
+  const addr=await deploy(c.chest,[tokAddr,radius,density,respawnSec,cooldownSec]);
+  log('Chest world deployed at '+addr,'ok','/address/'+addr);
+  state.worlds=state.worlds||[];
+  state.worlds.unshift({addr,token:tokAddr,owner:account,time:new Date().toLocaleDateString()});
+  save();return addr;
+}
+async function fundChestRaw(tokAddr,addr,amt){
+  await ensureAllowance(tokAddr,addr,amt);
+  await sendTx('Fund chest pot',wr(addr,CW_ABI).fund(amt));
+}
 async function fundRaw(tokAddr,addr,amt,label,abi){
   await ensureAllowance(tokAddr,addr,ethers.MaxUint256);
   await sendTx(label,wr(addr,abi).fund(amt));
@@ -2952,13 +3153,15 @@ async function runLaunch(){
   if(ad.miners&&!(ad.minMax>0n&&ad.minMax<=500n)) throw new Error('Max miners must be between 1 and 500');
   if(ad.ls&&!n.on) throw new Error('The long/short market needs the LFJ pool: tick Seed LFJ pool');
   if(ad.ls&&!(ad.lsBps>0&&ad.lsBps<=8000)) throw new Error('Long/short max exposure must be between 0.01% and 80%');
-  const extra=ad.casinoFund+ad.minFund+ad.lsFund;
+  if(ad.chest&&!(ad.chestRadius>=1&&ad.chestRadius<=200)) throw new Error('Chest world radius must be between 1 and 200 chunks');
+  if(ad.chest&&!(ad.chestDensity>=1&&ad.chestDensity<=100)) throw new Error('Chest density must be between 1 and 100%');
+  const extra=ad.casinoFund+ad.minFund+ad.lsFund+(ad.chest?ad.chestFund:0n);
   if(n.lpW+n.rwW+extra>sup*10n**18n) throw new Error('Pool, rewards and house funding together exceed the total supply');
-  const addonCount=[ad.casino,ad.miners,ad.ls].filter(Boolean).length;
+  const addonCount=[ad.casino,ad.miners,ad.ls,ad.chest].filter(Boolean).length;
   const need=n.avaxW+parseAmt('0.3',18)+parseAmt(String(0.1*addonCount),18);
   if((bals.native||0n)<need) throw new Error('Not enough AVAX: needs about '+fmt(need,18,2)+' including gas');
 
-  const ctx={token:null,pair:null,pool:null,locked:false,renounced:false,casino:null,miners:null,ls:null};
+  const ctx={token:null,pair:null,pool:null,locked:false,renounced:false,casino:null,miners:null,ls:null,chest:null};
   const plan=[ad.factory
     ?{label:'Create token + add-ons (factory)',run:async()=>{const r=await deployViaFactoryRaw(name,sym,sup,cap,ad,window.pendingImg);ctx.token=r.token;ctx.casino=r.casino;ctx.miners=r.miners}}
     :{label:'Deploy token',run:async()=>{ctx.token=await deployTokenRaw(name,sym,sup,cap)}}];
@@ -2972,6 +3175,8 @@ async function runLaunch(){
   if(ad.miners&&ad.minFund>0n) plan.push({label:'Fund miner reward pool',run:async()=>{await fundRaw(ctx.token,ctx.miners,ad.minFund,'Fund miner rewards',MN_ABI)}});
   if(ad.ls) plan.push({label:'Deploy long/short market',run:async()=>{if(!ctx.pair) throw new Error('no LFJ pair was created');ctx.ls=await deployLsRaw(ctx.token,ctx.pair,ad.lsDepth,ad.lsBps)}});
   if(ad.ls&&ad.lsFund>0n) plan.push({label:'Fund long/short house',run:async()=>{await fundRaw(ctx.token,ctx.ls,ad.lsFund,'Fund long/short house',LS_ABI)}});
+  if(ad.chest) plan.push({label:'Deploy stickman chest world',run:async()=>{ctx.chest=await deployChestRaw(ctx.token,ad.chestRadius,ad.chestDensity,ad.chestRespawn,5)}});
+  if(ad.chest&&ad.chestFund>0n) plan.push({label:'Fund chest pot',run:async()=>{await fundChestRaw(ctx.token,ctx.chest,ad.chestFund)}});
   if(renounce) plan.push({label:'Renounce ownership',run:async()=>{await sendTx('Renounce ownership',wr(ctx.token,TOKEN2_ABI).renounceOwnership());ctx.renounced=true}});
 
   const status=plan.map(()=>'todo');
@@ -2989,9 +3194,9 @@ async function runLaunch(){
   }
   if(ctx.token){
     state.launches=state.launches||[];
-    state.launches.unshift({name,sym,time:new Date().toLocaleString(),token:ctx.token,pair:ctx.pair,pool:ctx.pool,locked:ctx.locked,renounced:ctx.renounced,casino:ctx.casino,miners:ctx.miners,ls:ctx.ls});
+    state.launches.unshift({name,sym,time:new Date().toLocaleString(),token:ctx.token,pair:ctx.pair,pool:ctx.pool,locked:ctx.locked,renounced:ctx.renounced,casino:ctx.casino,miners:ctx.miners,ls:ctx.ls,chest:ctx.chest});
     save();renderLaunches();renderPoolCards();renderPort();
-    $('tradeTok').value=ctx.token;
+    if($('tradeTok')) $('tradeTok').value=ctx.token;
   }
   refreshBalances();
   if(failure){
@@ -5206,6 +5411,501 @@ store=window.BWstore||null;bw=window.BWS||null;
 renderCB();
 if(addrNow()) refreshCB();
 if(location.hash==='#cbot') window.show('cbot');
+})();
+</script>
+<script id="chest-module">
+/* =====================================================================
+   Stickman chest world (additive module). Black stickman, white world.
+   Chest positions come from the on-chain seed; every open is a real
+   transaction that pays a random share of the creator-funded pot.
+   Contract code, ABI and deploy helpers live in the core script.
+   ===================================================================== */
+(function(){
+'use strict';
+if(typeof ethers==='undefined'||typeof readP==='undefined'||typeof state==='undefined'||typeof VIEWS==='undefined'||typeof CW_ABI==='undefined'||typeof deployChestRaw==='undefined'){
+  console.warn('Chest module: app core not found, tab disabled');return;
+}
+const CH=700,SPEED=235,TIERS=['Common','Rare','Epic','Legendary'];
+const IFACE=new ethers.Interface(CW_ABI);
+const cv=$('skCanvas'),g=cv.getContext('2d');
+const nowS=()=>Date.now()/1000;
+const posKey=a=>'fuji-forge:chest-pos:'+String(a).toLowerCase();
+let W=null,G=null,raf=0,last=0,cache=new Map(),statBusy=false,statsBusy=false,feedBusy=false,feedBlock=0,feed=[],pendingJoin=null,entering=null;
+let cw=900,chh=560,dpr=1;
+
+/* ---------- helpers ---------- */
+function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function chunk(cx,cy){
+  const key=(cx+4096)*8192+(cy+4096);
+  let c=cache.get(key);if(c) return c;
+  if(cache.size>6000) cache.clear();
+  const inW=cx>=-W.radius&&cx<=W.radius&&cy>=-W.radius&&cy<=W.radius;
+  const h=BigInt(ethers.solidityPackedKeccak256(['bytes32','int32','int32'],[W.seed,cx,cy]));
+  const has=inW&&(h%100n)<BigInt(W.density);
+  c={cx,cy,inW,has,h,x:cx*CH+90+Number((h>>8n)%520n),y:cy*CH+90+Number((h>>40n)%520n),ready:0,known:false,decor:null};
+  cache.set(key,c);return c;
+}
+function decorOf(c){
+  if(c.decor) return c.decor;
+  const out=[];
+  if(c.inW){
+    const r=mulberry(Number(c.h&0xffffffffn)^0x9e3779b9),n=6+Math.floor(r()*7);
+    for(let i=0;i<n;i++){
+      const x=c.cx*CH+30+r()*(CH-60),y=c.cy*CH+30+r()*(CH-60),t=r(),s=.8+r()*.6,v=r();
+      if(c.has&&Math.hypot(x-c.x,y-c.y)<90) continue;
+      out.push({x,y,s,v,k:t<.42?'tree':t<.62?'rock':t<.8?'bush':'grass'});
+    }
+  }
+  return c.decor=out;
+}
+const bounds=()=>({x0:-W.radius*CH,y0:-W.radius*CH,x1:(W.radius+1)*CH-1,y1:(W.radius+1)*CH-1});
+const fmtT=s=>{s=Math.max(0,Math.ceil(s));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return h?`${h}h ${String(m).padStart(2,'0')}m`:m?`${m}m ${String(x).padStart(2,'0')}s`:`${x}s`};
+const friendly=e=>{
+  const m=String(e&&(e.reason||e.shortMessage||e.message)||e);
+  if(/chest not ready/i.test(m)) return 'That chest is still refilling. Try another one.';
+  if(/slow down/i.test(m)) return 'Slow down: wait a few seconds between opens.';
+  if(/empty world/i.test(m)) return 'The chest pot is empty. The creator needs to fund it.';
+  if(/no chest/i.test(m)) return 'There is no chest there.';
+  if(/insufficient funds|gas required exceeds/i.test(m)) return 'Not enough Fuji AVAX for gas. Fund your wallet and try again.';
+  return m;
+};
+
+/* ---------- world ---------- */
+function newGame(addr){
+  let p=null;try{p=JSON.parse(localStorage.getItem(posKey(addr))||'null')}catch(e){}
+  const b=bounds();
+  const x=p&&isFinite(p.x)?Math.min(b.x1,Math.max(b.x0,p.x)):CH/2,y=p&&isFinite(p.y)?Math.min(b.y1,Math.max(b.y0,p.y)):CH/2;
+  return {x,y,camX:x,camY:y,face:1,step:0,t:0,keys:{},joy:null,busy:null,near:null,target:null,fx:[],txt:[],
+    pcx:null,pcy:null,needStatus:true,statAt:0,nearAt:0,saveAt:0,mine:{claimed:0n,opens:0n,last:0},actKey:''};
+}
+async function enterWorld(addr){
+  addr=ethers.getAddress(String(addr).trim());
+  if((await readP.getCode(addr))==='0x') throw new Error('No contract at that address on Fuji');
+  const k=rd(addr,CW_ABI);
+  const [token,owner,seed,radius,density,respawn,cooldown,maxReward]=await Promise.all([k.token(),k.owner(),k.seed(),k.radius(),k.density(),k.respawn(),k.playerCooldown(),k.maxReward()]);
+  let tok=tokenOf(token);if(!tok) tok=await importToken(token);
+  W={addr,token,owner,seed,radius:Number(radius),density:Number(density),respawn:Number(respawn),cooldown:Number(cooldown),maxReward,tok,dec:tok.dec||18,sym:tok.sym};
+  state.worlds=state.worlds||[];
+  const ex=state.worlds.find(w=>K(w.addr)===K(addr));
+  if(!ex){state.worlds.unshift({addr,token,owner,time:new Date().toLocaleDateString()});save()}
+  cache=new Map();G=newGame(addr);feed=[];feedBlock=0;
+  $('skGame').classList.remove('hidden');$('skEmpty').innerHTML='';
+  resize();fillRules();renderWorldSelect();
+  $('skAdmin').classList.remove('hidden');
+  $('skFeed').innerHTML='<span class="dim">Loading recent finds…</span>';
+  refreshStats();pollFeed(true);kick();
+}
+function renderWorldSelect(){
+  const sel=$('skWorld'),ws=(state.worlds||[]);
+  sel.innerHTML=ws.length?ws.map(w=>{const t=tokenOf(w.token);return `<option value="${w.addr}">${esc(t?t.sym:'Token')} world · ${short(w.addr)}</option>`}).join(''):'<option value="">No worlds yet</option>';
+  if(W) sel.value=W.addr;
+}
+function fillRules(){
+  if(!W) return;
+  $('skRuleRespawn').value=String(Math.round(W.respawn/60*100)/100);
+  $('skRuleCool').value=String(W.cooldown);
+  $('skRuleMax').value=W.maxReward>0n?fmtPlain(W.maxReward,W.dec,6):'0';
+}
+async function renderChest(){
+  const sel=$('skTok'),keep=sel.value;
+  sel.innerHTML=state.tokens.length?state.tokens.map(t=>`<option value="${t.addr}">${esc(t.sym)} · ${esc(t.name)}</option>`).join(''):'<option value="">Launch or import a token first</option>';
+  if(keep&&state.tokens.some(t=>t.addr===keep)) sel.value=keep;
+  updateEst();renderWorldSelect();
+  if(pendingJoin){const a=pendingJoin;pendingJoin=null;await enterWorld(a);return}
+  const ws=state.worlds||[];
+  if(!W&&ws.length){await enterWorld(ws[0].addr);return}
+  if(!W){
+    $('skGame').classList.add('hidden');$('skAdmin').classList.add('hidden');
+    $('skStats').innerHTML='';
+    $('skEmpty').innerHTML='<div class="empty" style="padding:50px 20px"><div style="font-size:34px">🧰</div><p>No chest world yet. Create one for a token below, or paste a world address above to join someone else\'s.</p></div>';
+  }else{kick();refreshStats()}
+}
+function updateEst(){
+  const r=Math.max(1,parseInt($('skRadius').value)||0),d=Math.min(100,Math.max(0,parseInt($('skDensity').value)||0));
+  $('skEst').textContent=`About ${Math.round((2*r+1)**2*d/100).toLocaleString()} chests across a ${(2*r+1)}×${(2*r+1)} chunk world`;
+}
+
+/* ---------- stats, status, feed ---------- */
+async function refreshStats(){
+  if(!W||statsBusy) return;statsBusy=true;
+  try{
+    const k=rd(W.addr,CW_ABI),w=W;
+    const [pot,opened]=await Promise.all([k.pot(),k.totalOpened()]);
+    let mine=G.mine;
+    if(account){const [c,o,l]=await Promise.all([k.claimed(account),k.opens(account),k.lastOpen(account)]);mine={claimed:c,opens:o,last:Number(l)}}
+    if(w!==W) return;
+    G.mine=mine;
+    const st=(l,v,s)=>`<div class="stat"><span>${esc(l)}</span><b>${esc(v)}</b>${s?`<small class="dim" style="display:block;margin-top:2px">${esc(s)}</small>`:''}</div>`;
+    const est=Math.round((2*W.radius+1)**2*W.density/100);
+    $('skStats').innerHTML=st('Chest pot',fmt(pot,W.dec,2)+' '+W.sym,'funded by the creator')+st('Chests opened',Number(opened).toLocaleString(),'by everyone')+st('You found',fmt(mine.claimed,W.dec,2)+' '+W.sym,Number(mine.opens).toLocaleString()+' chests opened')+st('World',`~${est.toLocaleString()} chests`,`refill ${fmtT(W.respawn)} · ${W.cooldown}s between opens`);
+  }catch(e){}finally{statsBusy=false}
+}
+async function refreshStatus(){
+  if(!W||!G||statBusy) return;statBusy=true;
+  try{
+    const pcx=Math.floor(G.x/CH),pcy=Math.floor(G.y/CH),list=[];
+    for(let dx=-3;dx<=3;dx++)for(let dy=-3;dy<=3;dy++){const c=chunk(pcx+dx,pcy+dy);if(c.has) list.push(c)}
+    if(!list.length) return;
+    const w=W,res=await rd(W.addr,CW_ABI).readyBatch(list.map(c=>c.cx),list.map(c=>c.cy));
+    if(w!==W) return;
+    list.forEach((c,i)=>{if(!(G.busy&&G.busy.c===c)){c.ready=Number(res[i]);c.known=true}});
+    G.statAt=performance.now();
+  }catch(e){}finally{statBusy=false}
+}
+function addFeed(rows){
+  const sym=W.sym,dec=W.dec;
+  rows.forEach(r=>{if(!feed.some(f=>f.id===r.id)) feed.push(r)});
+  feed.sort((a,b)=>b.bn-a.bn||b.li-a.li);feed=feed.slice(0,14);
+  $('skFeed').innerHTML=feed.length?feed.map(f=>`<div class="sk-row"><span>${K(f.who)===K(account)?'<b>You</b>':short(f.who)} opened chest ${f.cx}, ${f.cy}</span><span class="sk-t${f.tier+1}"><b>${esc(fmt(f.amt,dec,2))} ${esc(sym)}</b> · ${TIERS[f.tier]}</span></div>`).join(''):'<span class="dim">No chests opened yet. Be the first.</span>';
+}
+async function pollFeed(first){
+  if(!W||feedBusy) return;feedBusy=true;
+  try{
+    const w=W,latest=await readP.getBlockNumber();
+    const from=feedBlock?feedBlock+1:Math.max(0,latest-1900);
+    if(from<=latest){
+      const logs=await readP.getLogs({address:w.addr,topics:[IFACE.getEvent('Opened').topicHash],fromBlock:from,toBlock:latest});
+      if(w!==W) return;
+      addFeed(logs.map(l=>{const p=IFACE.parseLog(l);return {id:l.transactionHash+':'+l.index,bn:l.blockNumber,li:l.index,who:p.args.player,cx:Number(p.args.cx),cy:Number(p.args.cy),tier:Number(p.args.tier),amt:p.args.amount}}));
+    }
+    feedBlock=latest;
+    if(first&&!feed.length) addFeed([]);
+  }catch(e){if(first&&W) $('skFeed').innerHTML='<span class="dim">Could not load recent finds right now.</span>'}
+  finally{feedBusy=false}
+}
+
+/* ---------- opening a chest (one transaction per open) ---------- */
+async function openChest(c){
+  if(!W||!G||G.busy) return;
+  needWallet();
+  const t=nowS();
+  if(c.known&&c.ready>t) throw new Error('That chest is still refilling ('+fmtT(c.ready-t)+')');
+  const wait=G.mine.last+W.cooldown-t;
+  if(wait>0) throw new Error('Slow down: wait '+fmtT(wait)+' between opens.');
+  G.busy={c,t0:performance.now()};setAct();
+  try{
+    const k=wr(W.addr,CW_ABI);
+    try{await k.open.staticCall(c.cx,c.cy)}
+    catch(e){
+      if(/not ready/i.test(String(e.reason||e.shortMessage||e.message))) refreshStatus();
+      throw new Error(friendly(e));
+    }
+    const tx=await k.open(c.cx,c.cy,{gasLimit:350000});
+    log(`Opening chest ${c.cx}, ${c.cy}…`,'','/tx/'+tx.hash);
+    const rc=await tx.wait();
+    if(!rc||rc.status!==1) throw new Error('The open transaction failed');
+    let ev=null;
+    for(const l of rc.logs){if(K(l.address)!==K(W.addr)) continue;try{const p=IFACE.parseLog(l);if(p&&p.name==='Opened'){ev=p;break}}catch(e){}}
+    if(!ev) throw new Error('Opened, but the reward event was not found. Check your wallet balance.');
+    const amt=ev.args.amount,tier=Number(ev.args.tier);
+    let ts=nowS();try{const b=await readP.getBlock(rc.blockNumber);if(b) ts=b.timestamp}catch(e){}
+    c.ready=ts+W.respawn;c.known=true;G.mine.last=ts;
+    G.mine.claimed+=amt;G.mine.opens+=1n;
+    burst(c.x,c.y-20,tier);
+    G.txt.push({x:c.x,y:c.y-60,t:0,life:3.2,main:`+${fmt(amt,W.dec,2)} ${W.sym}`,sub:TIERS[tier]+' chest',tier});
+    log(`Chest ${c.cx}, ${c.cy}: found ${fmt(amt,W.dec,4)} ${W.sym} (${TIERS[tier]})`,'ok','/tx/'+tx.hash);
+    toast(`${TIERS[tier]} chest: +${fmt(amt,W.dec,2)} ${W.sym}`,'ok');
+    refreshStats();pollFeed(false);refreshBalances();
+  }catch(e){throw new Error(friendly(e))}
+  finally{G.busy=null;setAct()}
+}
+function burst(x,y,tier){
+  const n=14+tier*8;
+  for(let i=0;i<n;i++){const a=i/n*Math.PI*2+Math.random()*.3,v=90+Math.random()*130+tier*30;G.fx.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-40,t:0,life:.7+Math.random()*.5,len:6+Math.random()*10})}
+}
+
+/* ---------- action button ---------- */
+function setAct(){
+  const b=$('skAct');if(!G||!W){b.classList.add('hidden');return}
+  let key='',label='',info=false,dis=false;
+  if(G.busy){key='busy';label='Opening chest…';dis=true}
+  else if(G.near){
+    const c=G.near,t=nowS();
+    if(c.known&&c.ready>t){label='Refilling · '+fmtT(c.ready-t);info=true;dis=true;key='c'+label}
+    else{const w=G.mine.last+W.cooldown-t;if(w>0){label='Wait '+fmtT(w);info=true;dis=true;key='w'+label}else{label='Open chest (E)';key='open'}}
+  }
+  if(key===G.actKey) return;G.actKey=key;
+  if(!key){b.classList.add('hidden');return}
+  b.classList.remove('hidden');b.textContent=label;b.disabled=dis;b.classList.toggle('info',info);
+}
+function primary(){
+  if(!G||!W||G.busy) return;
+  if(!G.near){toast('Walk up to a chest first');return}
+  run(()=>openChest(G.near));
+}
+$('skAct').onclick=primary;
+
+/* ---------- game loop ---------- */
+function kick(){if(!raf&&W&&G){last=performance.now();raf=requestAnimationFrame(frame)}}
+function frame(ts){
+  raf=0;
+  if(!W||!G||document.hidden||$('v-chest').classList.contains('hidden')) return;
+  const dt=Math.min(.05,(ts-last)/1000||.016);last=ts;
+  update(dt);draw();
+  raf=requestAnimationFrame(frame);
+}
+function update(dt){
+  G.t+=dt;
+  const k=G.keys;let ix=(k.d||k.ArrowRight?1:0)-(k.a||k.ArrowLeft?1:0),iy=(k.s||k.ArrowDown?1:0)-(k.w||k.ArrowUp?1:0);
+  if(G.joy){ix+=G.joy.vx;iy+=G.joy.vy}
+  let len=Math.hypot(ix,iy);if(len>1){ix/=len;iy/=len;len=1}
+  const sp=G.busy?0:SPEED*(k.Shift?1.6:1)*(G.joy&&G.joy.mag>.9?1.35:1);
+  if(len>.05&&sp>0){
+    const b=bounds();
+    G.x=Math.min(b.x1,Math.max(b.x0,G.x+ix*sp*dt));G.y=Math.min(b.y1,Math.max(b.y0,G.y+iy*sp*dt));
+    G.step+=sp*len*dt*.055;if(Math.abs(ix)>.25) G.face=ix>0?1:-1;G.moving=true;
+  }else G.moving=false;
+  const f=Math.min(1,dt*7);G.camX+=(G.x-G.camX)*f;G.camY+=(G.y-G.camY)*f;
+  const pcx=Math.floor(G.x/CH),pcy=Math.floor(G.y/CH);
+  if(pcx!==G.pcx||pcy!==G.pcy){G.pcx=pcx;G.pcy=pcy;G.needStatus=true}
+  const now=performance.now();
+  if((G.needStatus||now-G.statAt>25000)&&!statBusy){G.needStatus=false;G.statAt=now;refreshStatus()}
+  if(now-G.nearAt>300){G.nearAt=now;findNear()}
+  if(now-G.saveAt>3000){G.saveAt=now;try{localStorage.setItem(posKey(W.addr),JSON.stringify({x:Math.round(G.x),y:Math.round(G.y)}))}catch(e){}}
+  setAct();
+  $('skCoord').textContent=`chunk ${pcx}, ${pcy}`;
+  G.fx=G.fx.filter(p=>{p.t+=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=260*dt;return p.t<p.life});
+  G.txt=G.txt.filter(t=>{t.t+=dt;return t.t<t.life});
+}
+function findNear(){
+  const pcx=Math.floor(G.x/CH),pcy=Math.floor(G.y/CH),t=nowS();
+  let best=null,bd=1e9,any=null,ad=1e9;
+  for(let dx=-5;dx<=5;dx++)for(let dy=-5;dy<=5;dy++){
+    const c=chunk(pcx+dx,pcy+dy);if(!c.has) continue;
+    const d=Math.hypot(c.x-G.x,c.y-G.y);
+    if(d<ad){ad=d;any=c}
+    if(!(c.known&&c.ready>t)&&d<bd){bd=d;best=c}
+  }
+  G.near=any&&ad<=110?any:null;G.target=best;G.targetD=bd;
+}
+
+/* ---------- drawing ---------- */
+function resize(){
+  const st=$('skStage');if(!st) return;
+  const w=Math.max(280,st.clientWidth||900);
+  cw=w;chh=Math.round(Math.min(620,Math.max(360,Math.min(window.innerHeight*.66,w*.68))));
+  dpr=Math.min(2,window.devicePixelRatio||1);
+  cv.width=Math.round(cw*dpr);cv.height=Math.round(chh*dpr);cv.style.height=chh+'px';
+}
+window.addEventListener('resize',()=>{if(W) resize()});
+function rr(x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath()}
+function outlined(text,x,y,size,weight,align){
+  g.font=`${weight||700} ${size}px Inter,system-ui,sans-serif`;g.textAlign=align||'center';
+  g.lineWidth=5;g.strokeStyle='#fff';g.lineJoin='round';g.strokeText(text,x,y);g.fillStyle='#000';g.fillText(text,x,y);
+}
+function drawDecor(d){
+  g.save();g.translate(d.x,d.y);g.scale(d.s,d.s);g.lineWidth=3/d.s;g.lineCap='round';g.lineJoin='round';g.strokeStyle='#000';g.fillStyle='#fff';
+  if(d.k==='tree'){
+    g.beginPath();g.moveTo(0,0);g.lineTo(0,-40);g.stroke();
+    g.beginPath();g.arc(0,-62,26,0,Math.PI*2);g.fill();g.stroke();
+    g.beginPath();g.arc(-8,-66,9,Math.PI*.9,Math.PI*1.7);g.stroke();
+    g.beginPath();g.moveTo(0,-40);g.lineTo(-10,-50);g.moveTo(0,-40);g.lineTo(10,-52);g.stroke();
+  }else if(d.k==='rock'){
+    g.beginPath();g.moveTo(-20,0);g.lineTo(-13,-15);g.lineTo(3,-20);g.lineTo(19,-8);g.lineTo(17,0);g.closePath();g.fill();g.stroke();
+    g.beginPath();g.moveTo(-5,-17);g.lineTo(0,-8);g.lineTo(9,-9);g.stroke();
+  }else if(d.k==='bush'){
+    g.beginPath();g.arc(-13,-9,10,Math.PI,0);g.arc(0,-13,12,Math.PI,0);g.arc(13,-9,10,Math.PI,0);g.lineTo(23,0);g.lineTo(-23,0);g.closePath();g.fill();g.stroke();
+  }else{
+    g.beginPath();g.moveTo(-7,0);g.lineTo(-10,-11);g.moveTo(0,0);g.lineTo(0,-15);g.moveTo(7,0);g.lineTo(10,-11);g.stroke();
+  }
+  g.restore();
+}
+function drawChest(c){
+  const t=nowS(),cool=c.known&&c.ready>t,pend=G.busy&&G.busy.c===c,open=cool||pend;
+  g.save();g.translate(c.x,c.y);
+  if(pend) g.translate(Math.sin(G.t*70)*2.2,0);
+  g.fillStyle='rgba(0,0,0,.08)';g.beginPath();g.ellipse(0,3,32,8,0,0,Math.PI*2);g.fill();
+  g.lineWidth=3;g.lineCap='round';g.lineJoin='round';g.strokeStyle='#000';
+  if(pend){ // rays
+    g.lineWidth=2.5;for(let i=0;i<9;i++){const a=-Math.PI*(.1+.8*i/8),r0=36+Math.sin(G.t*14+i)*4;g.beginPath();g.moveTo(Math.cos(a)*r0,-24+Math.sin(a)*r0);g.lineTo(Math.cos(a)*(r0+16),-24+Math.sin(a)*(r0+16));g.stroke()}
+    g.lineWidth=3;
+  }
+  g.fillStyle=cool?'#ededed':'#fff';rr(-26,-27,52,27,4);g.fill();g.stroke();
+  g.beginPath();g.moveTo(-26,-15);g.lineTo(26,-15);g.stroke();
+  if(!open){
+    g.fillStyle='#fff';g.beginPath();g.moveTo(-26,-27);g.quadraticCurveTo(-26,-46,0,-46);g.quadraticCurveTo(26,-46,26,-27);g.closePath();g.fill();g.stroke();
+    g.fillStyle='#000';rr(-5,-36,10,13,2);g.fill();
+  }else{
+    g.save();g.translate(-26,-27);g.rotate(-1.15);
+    g.fillStyle=cool?'#ededed':'#fff';g.beginPath();g.moveTo(0,0);g.quadraticCurveTo(-4,-22,22,-24);g.quadraticCurveTo(48,-22,52,0);g.closePath();g.fill();g.stroke();
+    g.restore();
+    g.fillStyle='#000';g.beginPath();g.ellipse(0,-24,18,4,0,0,Math.PI*2);g.globalAlpha=.12;g.fill();g.globalAlpha=1;
+  }
+  g.restore();
+  if(cool){outlined(fmtT(c.ready-t),c.x,c.y-56,12,600);}
+  else if(!pend){ // bobbing marker on ready chests
+    const by=c.y-62+Math.sin(G.t*4+c.cx)*4;g.save();g.fillStyle='#000';g.beginPath();g.moveTo(c.x,by+9);g.lineTo(c.x-7,by-3);g.lineTo(c.x+7,by-3);g.closePath();g.fill();g.restore();
+  }
+}
+function drawPlayer(){
+  const x=G.x,y=G.y,moving=G.moving&&!G.busy,s=Math.sin(G.step),bob=moving?Math.abs(Math.cos(G.step))*3:Math.sin(G.t*2.2)*1;
+  const busy=!!G.busy,up=busy?(Math.sin(G.t*30)*.15):0;
+  g.save();g.translate(x,y);
+  g.fillStyle='rgba(0,0,0,.10)';g.beginPath();g.ellipse(0,2,17,5,0,0,Math.PI*2);g.fill();
+  g.strokeStyle='#000';g.fillStyle='#000';g.lineWidth=4;g.lineCap='round';g.lineJoin='round';
+  const lean=G.face*(moving?3:1),hipY=-30-bob*.3,neckY=-54-bob,legL=27;
+  const sp=moving?.08:.24,a1=sp+(moving?s*.75:0),a2=-sp-(moving?s*.75:0);
+  // legs
+  g.beginPath();g.moveTo(0,hipY);g.lineTo(Math.sin(a1)*legL,hipY+Math.cos(a1)*legL*.98);g.moveTo(0,hipY);g.lineTo(Math.sin(a2)*legL,hipY+Math.cos(a2)*legL*.98);g.stroke();
+  // torso
+  g.beginPath();g.moveTo(0,hipY);g.lineTo(lean,neckY);g.stroke();
+  // arms
+  const sh=neckY+6;
+  g.beginPath();
+  if(busy){const w=Math.sin(G.t*18)*.25;g.moveTo(lean,sh);g.lineTo(lean-16,sh-20+w*10);g.moveTo(lean,sh);g.lineTo(lean+16,sh-20-w*10)}
+  else{const sw=moving?-s*.8:Math.sin(G.t*2)*.05,base=moving?.2:.5,b1=base+sw,b2=-base-sw;g.moveTo(lean,sh);g.lineTo(lean+Math.sin(b1)*21,sh+Math.cos(b1)*21);g.moveTo(lean,sh);g.lineTo(lean+Math.sin(b2)*21,sh+Math.cos(b2)*21)}
+  g.stroke();
+  // head (solid black)
+  g.beginPath();g.arc(lean+G.face*1.5,neckY-11,11,0,Math.PI*2);g.fill();
+  g.restore();
+}
+function draw(){
+  g.setTransform(dpr,0,0,dpr,0,0);
+  g.fillStyle='#fff';g.fillRect(0,0,cw,chh);
+  const ox=cw/2-G.camX,oy=chh/2-G.camY,vx0=G.camX-cw/2,vy0=G.camY-chh/2;
+  g.save();g.translate(ox,oy);
+  // ground dots for a sense of motion
+  g.fillStyle='#d9d9d9';
+  const gs=64,sx=Math.floor(vx0/gs)*gs,sy=Math.floor(vy0/gs)*gs;
+  for(let x=sx;x<vx0+cw+gs;x+=gs)for(let y=sy;y<vy0+chh+gs;y+=gs){g.fillRect(x,y,3,3)}
+  // edge of the world
+  const b=bounds(),E=b.x1+1;
+  g.strokeStyle='#000';g.lineWidth=6;g.setLineDash([22,14]);g.strokeRect(b.x0,b.y0,E-b.x0,E-b.y0);g.setLineDash([]);
+  // collect and depth-sort
+  const items=[],c0x=Math.floor(vx0/CH)-1,c1x=Math.floor((vx0+cw)/CH)+1,c0y=Math.floor(vy0/CH)-1,c1y=Math.floor((vy0+chh)/CH)+2;
+  for(let cx=c0x;cx<=c1x;cx++)for(let cy=c0y;cy<=c1y;cy++){
+    const c=chunk(cx,cy);
+    decorOf(c).forEach(d=>{if(d.x>vx0-80&&d.x<vx0+cw+80&&d.y>vy0-40&&d.y<vy0+chh+160) items.push({y:d.y,d})});
+    if(c.has&&c.x>vx0-80&&c.x<vx0+cw+80&&c.y>vy0-40&&c.y<vy0+chh+120) items.push({y:c.y,c});
+  }
+  items.push({y:G.y,p:1});
+  items.sort((a,b)=>a.y-b.y);
+  for(const it of items){if(it.d) drawDecor(it.d);else if(it.c) drawChest(it.c);else drawPlayer()}
+  // effects
+  g.lineCap='round';
+  for(const p of G.fx){const a=1-p.t/p.life;g.globalAlpha=Math.max(0,a);g.strokeStyle='#000';g.lineWidth=3;const m=Math.hypot(p.vx,p.vy)||1;g.beginPath();g.moveTo(p.x,p.y);g.lineTo(p.x-p.vx/m*p.len,p.y-p.vy/m*p.len);g.stroke()}
+  g.globalAlpha=1;
+  for(const t of G.txt){const k=t.t/t.life,a=k<.8?1:1-(k-.8)/.2;g.globalAlpha=Math.max(0,a);const yy=t.y-k*46;outlined(t.main,t.x,yy,22+t.tier*2,800);outlined(t.sub,t.x,yy+20,12,600)}
+  g.globalAlpha=1;
+  g.restore();
+  // HUD: compass to the nearest ready chest
+  const T=G.target;
+  if(T){
+    const sx2=T.x-G.camX,sy2=T.y-G.camY;
+    if(Math.abs(sx2)>cw/2-30||Math.abs(sy2)>chh/2-40){
+      const ang=Math.atan2(T.y-G.y,T.x-G.x),R=Math.min(cw,chh)*.5-34,px=cw/2+Math.cos(ang)*Math.min(R*1.6,cw/2-34),py=chh/2+Math.sin(ang)*R;
+      g.save();g.translate(px,py);g.rotate(ang);g.fillStyle='#000';g.beginPath();g.moveTo(14,0);g.lineTo(-9,-10);g.lineTo(-9,10);g.closePath();g.fill();g.restore();
+      outlined(Math.round(G.targetD/20)+' m',px,py+(py<chh/2?28:-18),12,700);
+    }
+  }
+  if(G.joy){ // joystick ring
+    g.save();g.strokeStyle='rgba(0,0,0,.25)';g.lineWidth=2;g.beginPath();g.arc(G.joy.ox,G.joy.oy,46,0,Math.PI*2);g.stroke();
+    g.fillStyle='rgba(0,0,0,.45)';g.beginPath();g.arc(G.joy.ox+G.joy.vx*40,G.joy.oy+G.joy.vy*40,16,0,Math.PI*2);g.fill();g.restore();
+  }
+}
+
+/* ---------- input ---------- */
+const typing=()=>{const a=document.activeElement;return a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)};
+const active=()=>W&&G&&!$('v-chest').classList.contains('hidden');
+window.addEventListener('keydown',e=>{
+  if(!active()||typing()||e.ctrlKey||e.metaKey||e.altKey) return;
+  const k=e.key.length===1?e.key.toLowerCase():e.key;
+  if(['w','a','s','d','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Shift'].includes(k)){G.keys[k]=true;if(k!=='Shift') e.preventDefault()}
+  else if(k==='e'||k===' '||k==='Enter'){e.preventDefault();if(!e.repeat) primary()}
+});
+window.addEventListener('keyup',e=>{if(!G) return;const k=e.key.length===1?e.key.toLowerCase():e.key;delete G.keys[k]});
+window.addEventListener('blur',()=>{if(G) G.keys={}});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden) kick()});
+cv.addEventListener('pointerdown',e=>{
+  if(!G) return;try{cv.setPointerCapture(e.pointerId)}catch(_){}
+  const r=cv.getBoundingClientRect(),x=(e.clientX-r.left)*cw/r.width,y=(e.clientY-r.top)*chh/r.height;
+  G.joy={id:e.pointerId,ox:x,oy:y,vx:0,vy:0,mag:0,t0:performance.now(),moved:0};
+});
+cv.addEventListener('pointermove',e=>{
+  const j=G&&G.joy;if(!j||j.id!==e.pointerId) return;
+  const r=cv.getBoundingClientRect(),x=(e.clientX-r.left)*cw/r.width,y=(e.clientY-r.top)*chh/r.height;
+  const dx=x-j.ox,dy=y-j.oy,m=Math.hypot(dx,dy);j.moved=Math.max(j.moved,m);
+  if(m<6){j.vx=j.vy=j.mag=0;return}
+  const k=Math.min(1,m/46);j.mag=k;j.vx=dx/m*k;j.vy=dy/m*k;
+});
+const endPtr=e=>{
+  const j=G&&G.joy;if(!j||j.id!==e.pointerId) return;
+  if(j.moved<9&&performance.now()-j.t0<320){ // tap on a chest
+    const wx=j.ox-cw/2+G.camX,wy=j.oy-chh/2+G.camY,c=chunk(Math.floor(wx/CH),Math.floor(wy/CH));
+    if(c.has&&Math.hypot(c.x-wx,c.y-(wy+20))<60){if(G.near===c) primary();else toast('Walk closer to that chest first')}
+  }
+  G.joy=null;
+};
+cv.addEventListener('pointerup',endPtr);cv.addEventListener('pointercancel',endPtr);
+
+/* ---------- funding, rules, create, join ---------- */
+const isOwner=()=>W&&account&&K(W.owner)===K(account);
+$('skFundBtn').onclick=()=>run(async()=>{
+  needWallet();if(!W) throw new Error('Pick a world first');
+  const amt=parseAmt($('skFundAmt').value,W.dec);if(amt<=0n) throw new Error('Enter an amount of tokens');
+  if(((bals[K(W.token)])??amt)<amt) throw new Error('You do not hold that many '+W.sym);
+  await ensureAllowance(W.token,W.addr,amt);
+  await sendTx('Fund chest pot',wr(W.addr,CW_ABI).fund(amt));
+  $('skFundAmt').value='';refreshStats();refreshBalances();
+});
+$('skWdBtn').onclick=()=>run(async()=>{
+  needWallet();if(!W) throw new Error('Pick a world first');
+  if(!isOwner()) throw new Error('Only the creator of this world can withdraw');
+  const amt=parseAmt($('skFundAmt').value,W.dec);if(amt<=0n) throw new Error('Enter an amount in the field');
+  await sendTx('Withdraw from chest pot',wr(W.addr,CW_ABI).withdraw(amt));
+  $('skFundAmt').value='';refreshStats();refreshBalances();
+});
+$('skRuleBtn').onclick=()=>run(async()=>{
+  needWallet();if(!W) throw new Error('Pick a world first');
+  if(!isOwner()) throw new Error('Only the creator of this world can change the rules');
+  const rm=parseFloat($('skRuleRespawn').value.replace(',','.')),cd=parseInt($('skRuleCool').value),mx=parseAmt($('skRuleMax').value||'0',W.dec);
+  if(!(rm>=0&&rm<=525600)) throw new Error('Refill time must be between 0 and 525600 minutes');
+  if(!(cd>=0&&cd<=86400)) throw new Error('Wait between opens must be between 0 and 86400 seconds');
+  await sendTx('Update chest rules',wr(W.addr,CW_ABI).setRules(Math.round(rm*60),cd,mx));
+  W.respawn=Math.round(rm*60);W.cooldown=cd;W.maxReward=mx;refreshStats();
+});
+['skRadius','skDensity','skRespawn','skCool'].forEach(id=>$(id).addEventListener('input',()=>{$(id).value=$(id).value.replace(/\D/g,'');updateEst()}));
+numField($('skFund'));numField($('skFundAmt'));
+$('skDeploy').onclick=()=>run(async()=>{
+  needWallet();
+  const tok=tokenOf($('skTok').value);if(!tok) throw new Error('Pick a token (launch or import one first)');
+  const radius=parseInt($('skRadius').value),dens=parseInt($('skDensity').value),resp=parseFloat($('skRespawn').value),cool=parseInt($('skCool').value||'0');
+  if(!(radius>=1&&radius<=200)) throw new Error('World radius must be between 1 and 200 chunks');
+  if(!(dens>=1&&dens<=100)) throw new Error('Chest density must be between 1 and 100%');
+  if(!(resp>=0)) throw new Error('Enter a refill time in minutes');
+  if(!(cool>=0&&cool<=3600)) throw new Error('Wait between opens must be 0 to 3600 seconds');
+  const fund=parseAmt($('skFund').value||'0',tok.dec||18);
+  const addr=await deployChestRaw(tok.addr,radius,dens,Math.round(resp*60),cool);
+  if(fund>0n) await fundChestRaw(tok.addr,addr,fund);
+  toast('Chest world created','ok');
+  await enterWorld(addr);refreshBalances();
+});
+$('skJoinBtn').onclick=()=>run(async()=>{
+  const a=$('skJoin').value.trim();if(!isAddr(a)) throw new Error('Paste a valid chest world address');
+  await enterWorld(a);$('skJoin').value='';
+});
+$('skWorld').onchange=()=>{const v=$('skWorld').value;if(v) run(()=>enterWorld(v))};
+$('skCopy').onclick=()=>{
+  if(!W){toast('Pick a world first');return}
+  const u=location.origin+location.pathname+'?world='+W.addr+'#chest';
+  (navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).then(()=>toast('Invite link copied','ok'),()=>prompt('Copy this link',u));
+};
+
+/* ---------- plug into the existing tab router without editing it ---------- */
+if(!VIEWS.includes('chest')) VIEWS.push('chest');
+const _show=window.show;
+window.show=function(view){
+  _show(view);
+  if(view==='chest') run(async()=>{await renderChest();resize();kick()});
+};
+setInterval(()=>{if(document.hidden||!W||$('v-chest').classList.contains('hidden')) return;refreshStats();pollFeed(false)},12000);
+window.addEventListener('bw:change',()=>{if(W&&G) refreshStats()});
+try{
+  const q=new URLSearchParams(location.search).get('world');
+  if(q&&ethers.isAddress(q)){pendingJoin=q}
+}catch(e){}
+updateEst();
+if(location.hash==='#chest'||pendingJoin) window.show('chest');
 })();
 </script>
 <script id="glass-ui-js">
