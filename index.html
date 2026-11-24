@@ -417,6 +417,7 @@ header.nav #connect::after{content:"";position:absolute;inset:0;background:linea
 @media(max-width:420px){header.nav .brand b{display:none}}
 @media(prefers-reduced-motion:reduce){.aur i,.gridmv i,.dots b,header.nav::after,header.nav .logo::after,header.nav #connect::after{animation:none!important}.dots{display:none}}
 </style>
+<style id="wallet-css">#bwModal{z-index:80}.js-bw-addr{word-break:break-all}.bot-check input{width:auto}</style>
 </head><body>
 <div id="intro" aria-hidden="true"><div class="sqgrid"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
 <div class="bg"><div class="aur"><i class="o1"></i><i class="o2"></i><i class="o3"></i><i class="o4"></i></div><div class="gridmv"><i></i></div><div class="dots"><b style="left:44%;width:2px;height:2px;--t:17s;--dx:-51px;animation-delay:-26s"></b><b style="left:71%;width:2px;height:2px;--t:34s;--dx:-53px;animation-delay:-29s"></b><b style="left:67%;width:2px;height:2px;--t:18s;--dx:-5px;animation-delay:-13s"></b><b style="left:11%;width:2px;height:2px;--t:33s;--dx:-6px;animation-delay:-1s"></b><b style="left:75%;width:2px;height:2px;--t:34s;--dx:-53px;animation-delay:-18s"></b><b style="left:77%;width:2px;height:2px;--t:23s;--dx:-55px;animation-delay:-17s"></b><b style="left:20%;width:2px;height:2px;--t:20s;--dx:9px;animation-delay:-3s"></b><b style="left:76%;width:2px;height:3px;--t:21s;--dx:-47px;animation-delay:-18s"></b><b style="left:76%;width:3px;height:2px;--t:27s;--dx:-48px;animation-delay:-17s"></b><b style="left:94%;width:2px;height:3px;--t:17s;--dx:19px;animation-delay:-6s"></b><b style="left:66%;width:3px;height:3px;--t:29s;--dx:39px;animation-delay:-10s"></b><b style="left:62%;width:3px;height:2px;--t:27s;--dx:-22px;animation-delay:-7s"></b><b style="left:26%;width:3px;height:2px;--t:18s;--dx:13px;animation-delay:-9s"></b><b style="left:70%;width:2px;height:2px;--t:30s;--dx:-24px;animation-delay:-19s"></b><b style="left:12%;width:2px;height:3px;--t:29s;--dx:-39px;animation-delay:-24s"></b><b style="left:46%;width:2px;height:2px;--t:29s;--dx:-55px;animation-delay:-30s"></b><b style="left:88%;width:2px;height:3px;--t:34s;--dx:41px;animation-delay:-28s"></b><b style="left:43%;width:2px;height:3px;--t:27s;--dx:16px;animation-delay:-15s"></b></div></div>
@@ -425,6 +426,7 @@ header.nav #connect::after{content:"";position:absolute;inset:0;background:linea
   <a class="brand" href="#swap"><div class="logo">F</div><b>Fuji Forge</b><span class="testnet">Fuji</span></a>
   <nav class="tabs" id="tabs">
     <span class="tabglow" id="tabGlow"></span>
+    <button data-view="wallet" title="Wallet"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18M16 14.5h2"/></svg><span class="lb">Wallet</span></button>
     <button data-view="swap" title="Swap"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h11l-3-3M17 17H6l3 3"/></svg><span class="lb">Swap</span></button>
     <button data-view="dex" title="DEX"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.2-4.2"/></svg><span class="lb">DEX</span></button>
     <button data-view="pools" title="Pools"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3s6 6.2 6 10.5a6 6 0 0 1-12 0C6 9.2 12 3 12 3z"/></svg><span class="lb">Pools</span></button>
@@ -441,7 +443,7 @@ header.nav #connect::after{content:"";position:absolute;inset:0;background:linea
     <button class="pillbtn" id="actBtn" title="Activity"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></button>
     <span class="pill" id="netPill">Not connected</span>
     <span class="pill" id="hBal"></span>
-    <button class="btn" id="connect">Connect wallet</button>
+    <button class="btn" id="connect">Create wallet</button>
     <button class="pillbtn" id="setBtn" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
   </div>
 </header>
@@ -449,6 +451,8 @@ header.nav #connect::after{content:"";position:absolute;inset:0;background:linea
   <button id="acCopy">Copy address</button>
   <a id="acExp" target="_blank">View on Snowtrace ↗</a>
   <button id="acRef">Refresh balances</button>
+  <button id="acWallet">Wallet &amp; transfers</button>
+  <button id="acLock">Lock wallet</button>
 </div>
 <div class="banner hidden" id="banner">Swaps and pools use the LFJ Liquidity Book router. <button class="btn sm" id="bannerBtn">Set router</button></div>
 
@@ -470,7 +474,7 @@ header.nav #connect::after{content:"";position:absolute;inset:0;background:linea
           <div class="boxfoot"><span id="swRate"></span><span></span></div>
         </div>
         <div class="details hidden" id="swDetails"></div>
-        <button class="btn big" id="swBtn">Connect wallet</button>
+        <button class="btn big" id="swBtn">Unlock wallet</button>
       </div>
       <div class="card" id="market"></div>
     </div>
@@ -719,10 +723,16 @@ header.nav #connect::after{content:"";position:absolute;inset:0;background:linea
   </section>
   <!-- BOT -->
   <section id="v-bot" class="view hidden">
-    <div class="pagehead"><div><h1>Trading Bot</h1><p>Automated buys, approvals and sells from its own wallet, separate from Rabby/MetaMask.</p></div>
+    <div class="pagehead"><div><h1>Trading Bot</h1><p>Automated buys, approvals and sells from your browser wallet.</p></div>
       <div class="row"><span class="pill" id="bwPill">No bot wallet</span><span class="pill" id="bwEng">Bot stopped</span></div></div>
     <div class="bot-warn">Testnet only. The bot trades automatically while this tab stays open and the wallet is unlocked; closing the tab stops it. Trading bots can lose funds quickly, and the contracts are unaudited.</div>
 
+    <div class="card" style="margin-bottom:16px">
+      <div class="row" style="justify-content:space-between;gap:12px;flex-wrap:wrap"><div><h2>Browser wallet</h2><p class="sub" style="margin:2px 0 0">The trading bot signs from your one browser wallet, the same wallet used everywhere in the app. Fund it from the Wallet tab.</p></div><button class="btn ghost sm" data-go="wallet">Open Wallet</button></div>
+      <div class="kv"><span>Address</span><b class="mono bot-addr js-bw-addr"></b></div>
+      <div class="kv"><span>AVAX balance</span><b class="js-bw-avax"></b></div>
+    </div>
+    <div class="hidden" aria-hidden="true">
     <div class="grid2">
       <div class="card">
         <h2>Bot wallet</h2><p class="sub">Created here in your browser. The key is encrypted with your password and saved on this device, so it survives closing the app.</p>
@@ -772,6 +782,8 @@ header.nav #connect::after{content:"";position:absolute;inset:0;background:linea
       </div>
     </div>
 
+    </div>
+
     <div class="card bot-gap">
       <div class="pagehead" style="margin-bottom:12px"><div><h2>Strategies</h2><p class="sub" style="margin:2px 0 0">Each strategy has its own token and settings. Switch strategies on, then press Start bot.</p></div>
         <div class="row"><button class="btn" id="enGo">Start bot</button><button class="btn ghost" id="stNew">+ New strategy</button></div></div>
@@ -802,10 +814,16 @@ header.nav #connect::after{content:"";position:absolute;inset:0;background:linea
   </section>
 
   <section id="v-cbot" class="view hidden">
-    <div class="pagehead"><div><h1>Casino Bot</h1><p>Plays the house games (coin flip, single die, two dice) automatically from its own wallet, using the same setup as the Trading Bot.</p></div>
+    <div class="pagehead"><div><h1>Casino Bot</h1><p>Plays the house games (coin flip, single die, two dice) automatically from your browser wallet, using the same setup as the Trading Bot.</p></div>
       <div class="row"><span class="pill" id="cbPill">No bot wallet</span><span class="pill" id="cbEng">Bot stopped</span></div></div>
     <div class="bot-warn">Testnet only. The bot bets automatically while this tab stays open and the wallet is unlocked; closing the tab stops it. Every game has a house edge (about 1% on coin flip, 4–5% on the dice games), so no betting pattern beats it over time. Use test funds only.</div>
 
+    <div class="card" style="margin-bottom:16px">
+      <div class="row" style="justify-content:space-between;gap:12px;flex-wrap:wrap"><div><h2>Browser wallet</h2><p class="sub" style="margin:2px 0 0">The casino bot signs from your one browser wallet, the same wallet used everywhere in the app. Fund it from the Wallet tab.</p></div><button class="btn ghost sm" data-go="wallet">Open Wallet</button></div>
+      <div class="kv"><span>Address</span><b class="mono bot-addr js-bw-addr"></b></div>
+      <div class="kv"><span>AVAX balance</span><b class="js-bw-avax"></b></div>
+    </div>
+    <div class="hidden" aria-hidden="true">
     <div class="grid2">
       <div class="card">
         <h2>Casino bot wallet</h2><p class="sub">Separate from the Trading Bot wallet. Created in your browser, encrypted with your password and saved on this device.</p>
@@ -855,6 +873,8 @@ header.nav #connect::after{content:"";position:absolute;inset:0;background:linea
       </div>
     </div>
 
+    </div>
+
     <div class="card bot-gap">
       <div class="pagehead" style="margin-bottom:12px"><div><h2>Strategies</h2><p class="sub" style="margin:2px 0 0">Each strategy bets on one token's casino. Switch strategies on, then press Start bot.</p></div>
         <div class="row"><button class="btn" id="cbEnGo">Start bot</button><button class="btn ghost" id="cbStNew">+ New strategy</button></div></div>
@@ -879,6 +899,71 @@ header.nav #connect::after{content:"";position:absolute;inset:0;background:linea
     <div class="card bot-gap">
       <div class="pagehead" style="margin-bottom:8px"><div><h2>Casino bot history</h2></div><button class="btn ghost sm" id="cbHistClear">Clear</button></div>
       <div class="tablewrap"><table><thead><tr><th>Time</th><th>Strategy</th><th>Game</th><th class="r">Bet</th><th>Result</th><th class="r">Payout</th><th></th></tr></thead><tbody id="cbHistBody"></tbody></table></div>
+    </div>
+  </section>
+
+  <section id="v-wallet" class="view hidden">
+    <div class="pagehead"><div><h1>Wallet</h1><p>One browser wallet signs every action in the app: swaps, pools, launches, casino, mining, leverage and both bots. Your MetaMask/Rabby wallet is only used to move funds in and out.</p></div>
+      <div class="row"><span class="pill" id="wlPill">No wallet</span></div></div>
+    <div class="bot-warn">Testnet only. The key is encrypted with your password and saved in this browser. Clearing site data deletes it, so download the encrypted backup and keep it somewhere safe. Never use this wallet for real funds.</div>
+
+    <div class="grid2">
+      <div class="card">
+        <h2>Browser wallet</h2><p class="sub">Created here, encrypted with your password and kept on this device. This is the wallet the whole app uses.</p>
+        <div id="wlNew">
+          <label>Password (8+ characters)</label><input id="wlPw1" type="password" autocomplete="new-password">
+          <label style="margin-top:10px">Confirm password</label><input id="wlPw2" type="password" autocomplete="new-password">
+          <div class="row" style="margin-top:12px"><button class="btn" id="wlCreate">Create wallet</button><button class="btn ghost" id="wlRestoreToggle">Restore / import</button></div>
+          <div id="wlRestore" class="hidden" style="margin-top:12px">
+            <label>Private key (encrypted with the password above)</label><input id="wlPk" class="mono" type="password" autocomplete="off" placeholder="0x…">
+            <div class="row" style="margin-top:8px"><button class="btn sm" id="wlRestoreBtn">Restore from key</button><label class="btn sm ghost" style="margin:0;cursor:pointer">Import encrypted backup<input id="wlFile" type="file" accept="application/json,.json" style="display:none"></label></div>
+            <div id="wlLegacy" style="margin-top:10px"></div>
+          </div>
+        </div>
+        <div id="wlLocked" class="hidden">
+          <div class="kv"><span>Address</span><b class="mono bot-addr" id="wlAddrL"></b></div>
+          <label style="margin-top:12px">Password</label><input id="wlPwU" type="password" autocomplete="current-password">
+          <div class="row" style="margin-top:12px"><button class="btn" id="wlUnlock">Unlock</button><button class="btn ghost" id="wlDelL">Delete wallet</button></div>
+        </div>
+        <div id="wlOpen" class="hidden">
+          <div class="kv"><span>Address</span><b class="mono bot-addr" id="wlAddr"></b></div>
+          <div class="kv"><span>AVAX balance</span><b id="wlAvax"></b></div>
+          <div class="row" style="margin-top:12px">
+            <button class="btn sm ghost" id="wlCopy">Copy address</button>
+            <a class="btn sm ghost" id="wlExp" target="_blank" rel="noopener">Snowtrace ↗</a>
+            <button class="btn sm ghost" id="wlRefresh">Refresh</button>
+            <button class="btn sm" id="wlLock">Lock</button>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <button class="btn sm ghost" id="wlDl">Download encrypted backup</button>
+            <button class="btn sm ghost" id="wlReveal">Show private key</button>
+            <button class="btn sm ghost" id="wlDel">Delete wallet</button>
+          </div>
+          <label class="bot-check" style="margin-top:12px"><input type="checkbox" id="wlKeep"> Keep unlocked while this tab is open (survives reloads, cleared when the tab closes)</label>
+          <div id="wlKeyBox" class="bot-keybox hidden"><span class="warn" style="font-size:12px">Anyone with this key controls the wallet. It hides itself after 30 seconds.</span><code id="wlKey"></code><button class="btn sm ghost" id="wlKeyCopy">Copy key</button></div>
+        </div>
+        <div id="wlProg" class="dim" style="font-size:12px;margin-top:10px"></div>
+      </div>
+
+      <div class="card">
+        <h2>Linked wallet</h2><p class="sub">Your MetaMask, Rabby or Core wallet. It never signs app actions. It is only used to send funds to, or receive funds from, the browser wallet.</p>
+        <div class="kv"><span>Status</span><b id="wlXStatus">Not linked</b></div>
+        <div class="kv"><span>Address</span><b class="mono bot-addr" id="wlXAddr">—</b></div>
+        <div class="kv"><span>AVAX balance</span><b id="wlXAvax">—</b></div>
+        <div class="row" style="margin-top:12px"><button class="btn" id="wlXBtn">Link wallet</button></div>
+      </div>
+    </div>
+
+    <div class="card bot-gap">
+      <h2>Transfer</h2><p class="sub">Fund the browser wallet from your linked wallet, or send funds back.</p>
+      <div class="seg" id="wlDir"><button data-d="fund" class="on">Fund browser wallet</button><button data-d="wd">Withdraw to linked wallet</button></div>
+      <div class="grid2">
+        <div><label>Asset</label><select id="wlAsset"></select></div>
+        <div><label>Amount <span id="wlBal" class="dim"></span></label>
+          <div class="row"><input id="wlAmt" type="text" inputmode="decimal" placeholder="0.0" style="flex:1"><button class="chip" id="wlMax">Max</button></div></div>
+      </div>
+      <button class="btn big" id="wlGo">Send</button>
+      <p class="dim" id="wlNote" style="font-size:12px;margin:10px 0 0"></p>
     </div>
   </section>
 </main>
@@ -1003,6 +1088,15 @@ header.nav #connect::after{content:"";position:absolute;inset:0;background:linea
   </div>
   <p class="dim" style="font-size:12px;margin:12px 0 0">Start bankroll is the bot wallet's token balance when the strategy places its first bet. If the next martingale/paroli bet would go above your max bet, the streak resets to the base bet; bets are always capped at the house max.</p>
   <div class="row" style="margin-top:14px"><button class="btn" id="cbEdSave">Save strategy</button><button class="btn ghost" data-close>Cancel</button></div>
+</div></div>
+
+<!-- quick unlock prompt for the browser wallet -->
+<div class="modal" id="bwModal"><div class="sheet" style="max-width:400px">
+  <div class="sheethead"><h3>Unlock browser wallet</h3><button class="x" data-close>✕</button></div>
+  <div class="kv"><span>Address</span><b class="mono" id="bwqAddr"></b></div>
+  <label style="margin-top:12px">Password</label><input id="bwqPw" type="password" autocomplete="current-password">
+  <div class="row" style="margin-top:14px"><button class="btn" id="bwqGo">Unlock</button><button class="btn ghost" data-go="wallet" data-close>Open Wallet tab</button></div>
+  <div id="bwqProg" class="dim" style="font-size:12px;margin-top:10px"></div>
 </div></div>
 
 <datalist id="tokList"></datalist>
@@ -1330,7 +1424,7 @@ async function run(fn){
     log(m,'err');toast(m.length>140?m.slice(0,140)+'…':m,'err');
   }
 }
-function needWallet(){if(!signer) throw new Error('Connect your wallet first')}
+function needWallet(){if(!signer){try{window.bwPrompt&&window.bwPrompt()}catch(e){}throw new Error('Create or unlock your browser wallet first')}}
 
 /* ---------- chain access ---------- */
 let provider=null,signer=null,account=null,rawProv=null,bound=false;
@@ -1425,7 +1519,7 @@ async function refreshBalances(){
   for(const f of [renderHeader,renderPort,updateSwapUI,()=>{if($('tokModal').classList.contains('open')) renderTokList()}]){try{f()}catch(e){console.warn('render',e)}}
 }
 async function watchAsset(t){
-  if(!rawProv) throw new Error('Connect your wallet first');
+  if(!rawProv) throw new Error('Link your external wallet first (Wallet tab)');
   await rawProv.request({method:'wallet_watchAsset',params:{type:'ERC20',options:{address:t.addr,symbol:String(t.sym).slice(0,11),decimals:t.dec}}});
 }
 async function revoke(a){
@@ -1464,12 +1558,13 @@ function walletMissingMsg(){
     ?'Wallets do not inject into file:// pages. Serve the app locally (python3 -m http.server 8000) and open http://localhost:8000'
     :'No wallet extension detected. Install MetaMask, Rabby or Core, allow this site, then refresh the page.';
 }
+/* ---------- linked (extension) wallet: only used to move funds in and out of the browser wallet ---------- */
+let xProvider=null,xSigner=null,xAccount=null,xBound=false;
 async function connect(silent=false){
   try{ await connectInner(silent) }
   catch(e){
-    if(!account){if($('netPill').textContent!=='No wallet')$('netPill').textContent='Not connected';$('netPill').classList.remove('live');$('connect').textContent='Connect wallet'}
-    if(e?.code===4001) throw new Error('Connection cancelled in the wallet. Click Connect wallet to try again.');
-    if(e?.code===-32002) throw new Error('A wallet request is already open. Open your wallet, finish or cancel that request, then click Connect wallet again.');
+    if(e?.code===4001) throw new Error('Linking cancelled in the wallet. Press Link wallet to try again.');
+    if(e?.code===-32002) throw new Error('A wallet request is already open. Open your wallet, finish or cancel that request, then try again.');
     throw e;
   }
 }
@@ -1477,32 +1572,29 @@ async function connectInner(silent){
   const raw=await findProvider(silent?300:2000);
   if(!raw){
     if(silent) return;
-    $('netPill').textContent='No wallet';
     throw new Error(walletMissingMsg());
   }
   if(silent){const acc=await raw.request({method:'eth_accounts'});if(!acc.length) return}
-  else{ $('netPill').textContent='Connecting…'; await raw.request({method:'eth_requestAccounts'}) }
+  else await raw.request({method:'eth_requestAccounts'});
   await ensureFuji(raw);
   rawProv=raw;
   const fujiNet=ethers.Network.from(FUJI.chainId);
-  provider=new ethers.BrowserProvider(raw,fujiNet,{staticNetwork:fujiNet});
-  signer=await provider.getSigner();
-  account=await signer.getAddress();
-  $('connect').textContent=short(account);
-  $('netPill').textContent='Fuji · 43113';$('netPill').classList.add('live');
-  $('acExp').href=FUJI.explorer+'/address/'+account;
-  if(!bound){bound=true;raw.on?.('accountsChanged',()=>location.reload());raw.on?.('chainChanged',()=>location.reload())}
-  if(!silent) log('Connected '+account,'ok');
-  try{await refreshBalances()}catch(e){console.warn('balances',e)}
-  try{loadPools().catch(e=>console.warn('pools',e))}catch(e){console.warn('pools',e)}
-  try{if(cur) loadPool(cur.addr).catch(()=>{})}catch(e){}
+  xProvider=new ethers.BrowserProvider(raw,fujiNet,{staticNetwork:fujiNet});
+  xSigner=await xProvider.getSigner();
+  xAccount=await xSigner.getAddress();
+  if(!xBound){
+    xBound=true;
+    raw.on?.('accountsChanged',async()=>{
+      try{
+        const a=await raw.request({method:'eth_accounts'});
+        if(!a.length){xSigner=null;xAccount=null;window.onExtLinked&&window.onExtLinked();return}
+        await connectInner(true);
+      }catch(e){}
+    });
+  }
+  if(!silent) log('Linked wallet '+xAccount,'ok');
+  window.onExtLinked&&window.onExtLinked();
 }
-$('connect').onclick=()=>{
-  if(account){$('acct').classList.toggle('hidden');return}
-  run(()=>connect(false));
-};
-$('acCopy').onclick=()=>{navigator.clipboard?.writeText(account);toast('Address copied','ok');$('acct').classList.add('hidden')};
-$('acRef').onclick=()=>{run(refreshBalances);$('acct').classList.add('hidden')};
 document.addEventListener('click',e=>{if(!e.target.closest('#acct')&&!e.target.closest('#connect')) $('acct').classList.add('hidden')});
 function renderHeader(){
   $('hBal').textContent=bals.native!=null?fmt(bals.native,18,3)+' AVAX':'';
@@ -1586,7 +1678,7 @@ function updateSwapUI(){
     $('swDetails').classList.remove('hidden');
   }else{$('swRate').textContent='';$('swDetails').classList.add('hidden')}
   let label,dis=true,act=null;
-  if(!account){label='Connect wallet';dis=false;act='connect'}
+  if(!account){label=window.bwLabel?window.bwLabel():'Unlock wallet';dis=false;act='connect'}
   else if(!state.verified){label='Set up router';dis=false;act='settings'}
   else if(!f||!t){label='Select a token'}
   else if(!(inAmt>0n)){label='Enter an amount'}
@@ -1645,7 +1737,7 @@ async function doSwap(){
   }finally{sw.busy=false;updateSwapUI()}
 }
 $('swBtn').onclick=()=>run(async()=>{
-  if(swAction==='connect') return connect(false);
+  if(swAction==='connect') return window.bwPrompt();
   if(swAction==='settings'){openSettings();return}
   if(swAction==='swap') await doSwap();
 });
@@ -2004,7 +2096,7 @@ function renderLq(){
       info=`<div class="kv"><span>You receive</span><b>${fmt(e.tk,t.dec,4)} ${esc(t.sym)}</b></div><div class="kv"><span></span><b>${fmt(e.av,18,4)} AVAX</b></div><div class="kv"><span>Bins with your liquidity</span><b>${pd.pos.length}</b></div>`;
     }
   }
-  if(!account) btn='Connect wallet';
+  if(!account) btn=window.bwLabel?window.bwLabel():'Unlock wallet';
   $('lqInfo').innerHTML=info;$('lqInfo').classList.toggle('hidden',!info);
   $('lqBtn').textContent=btn;$('lqBtn').disabled=!!dis;
 }
@@ -2067,7 +2159,7 @@ async function lqRemove(t){
   await sendTx(`Remove liquidity ${t.sym}/AVAX`,routerW().removeLiquidityNATIVE(t.addr,pd.binStep,e.tk*keep/10000n,e.av*keep/10000n,ids,amts,account,deadline()));
 }
 $('lqBtn').onclick=()=>run(async()=>{
-  if(!account){await connect(false);return}
+  if(!account){window.bwPrompt();return}
   needWallet();
   const t=tokenOf(lq.tok);
   if(lq.mode==='add') await lqAdd(t);else await lqRemove(t);
@@ -3670,10 +3762,328 @@ let balBusy=false;
 setInterval(async()=>{if(!account||document.hidden||balBusy) return;balBusy=true;try{await refreshBalances()}finally{balBusy=false}},60000);
 
 </script>
+<script id="wallet-module">
+/* =====================================================================
+   Browser wallet module. ONE in-browser wallet signs every action in the
+   app (swaps, pools, launches, casino, mining, leverage, both bots).
+   The extension wallet (MetaMask/Rabby/Core) is only used to move funds
+   in and out of it.
+   It publishes the app-wide `signer` and `account` globals.
+   ===================================================================== */
+(function(){
+'use strict';
+if(typeof ethers==='undefined'||typeof readP==='undefined'||typeof VIEWS==='undefined'||typeof bals==='undefined'){
+  console.warn('Wallet module: app core not found');return;
+}
+const WK='fuji-forge:wallet:v1',SS='fuji-forge:wallet:session';
+const LEGACY=[['Trading Bot wallet','fuji-forge:botwallet:v1'],['Casino Bot wallet','fuji-forge:casinobotwallet:v1']];
+const rdJ=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)||'null')||d}catch(e){return d}};
+const wrJ=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}};
+const sleepUI=()=>new Promise(r=>setTimeout(r,30));
+
+let store=rdJ(WK,null),wallet=null,keyT=null;
+const X={bal:{}};                       // linked wallet balances
+
+/* Serialises sends so the manual actions and the bots never reuse a nonce. */
+class QSigner extends ethers.AbstractSigner{
+  constructor(w){super(w.provider);this.w=w;this.address=w.address;this.q=Promise.resolve()}
+  async getAddress(){return this.address}
+  connect(p){return new QSigner(this.w.connect(p))}
+  signTransaction(t){return this.w.signTransaction(t)}
+  signMessage(m){return this.w.signMessage(m)}
+  signTypedData(d,t,v){return this.w.signTypedData(d,t,v)}
+  sendTransaction(tx){
+    /* Extension wallets pad gas estimates; a bare wallet must too, or games whose gas use depends on the
+       random roll (casino win vs lose) can run out of gas. 30% headroom, capped below the block limit. */
+    const go=async()=>{
+      const t=Object.assign({},tx);
+      if(t.gasLimit==null){
+        const est=await this.w.estimateGas(t);
+        const padded=est*130n/100n+20000n;
+        t.gasLimit=padded>12000000n?(est>12000000n?est:12000000n):padded;
+      }
+      return this.w.sendTransaction(t);
+    };
+    const p=this.q.then(go,go);
+    this.q=p.then(()=>{},()=>{});
+    return p;
+  }
+}
+let q=null;
+function publish(){window.BWstore=store;window.BWS=q;window.BWW=wallet}
+function resetCaches(){
+  for(const k of Object.keys(bals)) delete bals[k];
+  try{pdTTL.clear()}catch(e){}
+  try{for(const k of Object.keys(pdCache)) delete pdCache[k]}catch(e){}
+}
+function redraw(){
+  try{renderHeader()}catch(e){}
+  try{renderPort()}catch(e){}
+  try{renderPools()}catch(e){}
+  try{updateSwapUI()}catch(e){}
+}
+function changed(){
+  publish();
+  window.dispatchEvent(new Event('bw:change'));
+  render();redraw();
+  if(account){
+    $('acExp').href=FUJI.explorer+'/address/'+account;
+    run(refreshBalances);
+    try{loadPools().catch(()=>{})}catch(e){}
+  }
+}
+function activate(w){
+  wallet=w;q=new QSigner(w);
+  signer=q;account=w.address;
+  resetCaches();changed();
+}
+function deactivate(){
+  wallet=null;q=null;signer=null;account=null;
+  resetCaches();
+  try{sessionStorage.removeItem(SS)}catch(e){}
+  changed();
+}
+
+/* ---------- create / unlock / lock ---------- */
+const prog=t=>{$('wlProg').textContent=t||'';$('bwqProg').textContent=t||''};
+async function make(pk){
+  const p1=$('wlPw1').value,p2=$('wlPw2').value;
+  if(p1.length<8) throw new Error('Use a password with at least 8 characters');
+  if(p1!==p2) throw new Error('Passwords do not match');
+  const base=pk?new ethers.Wallet(pk.trim()):new ethers.Wallet(ethers.Wallet.createRandom().privateKey);
+  prog('Encrypting wallet…');await sleepUI();
+  const json=await base.encrypt(p1,pr=>prog('Encrypting wallet… '+Math.round(pr*100)+'%'));
+  if(!wrJ(WK,{json,address:base.address,created:Date.now()})) throw new Error('Could not save to browser storage (private mode or storage full?)');
+  store=rdJ(WK,null);
+  $('wlPw1').value=$('wlPw2').value='';$('wlPk').value='';prog('');
+  activate(new ethers.Wallet(base.privateKey,readP));
+  log('Browser wallet ready '+short(base.address),'ok','/address/'+base.address);
+  toast(pk?'Wallet restored and unlocked':'Wallet created. Download the backup below.','ok');
+}
+async function unlock(pwId){
+  if(!store) throw new Error('No browser wallet on this device');
+  const pw=$(pwId).value;if(!pw) throw new Error('Enter the wallet password');
+  prog('Decrypting…');await sleepUI();
+  let w;
+  try{w=await ethers.Wallet.fromEncryptedJson(store.json,pw,pr=>prog('Decrypting… '+Math.round(pr*100)+'%'))}
+  catch(e){prog('');throw new Error(/password/i.test(String(e&&e.message))?'Wrong password':'Could not unlock: '+(e.shortMessage||e.message))}
+  $(pwId).value='';prog('');
+  closeM('bwModal');
+  activate(new ethers.Wallet(w.privateKey,readP));
+  toast('Wallet unlocked','ok');
+}
+function lock(){hideKey();deactivate();toast('Wallet locked')}
+function hideKey(){clearTimeout(keyT);$('wlKey').textContent='';$('wlKeyBox').classList.add('hidden')}
+function deleteWallet(){
+  const bal=bals.native!=null?fmt(bals.native,18,4)+' AVAX':'an unknown amount';
+  const t=prompt(`Delete the browser wallet from this device?\n\nIt currently holds ${bal} plus any tokens. Without a saved backup (encrypted file or private key) that money is gone for good.\n\nType DELETE to confirm.`);
+  if(t!=='DELETE') return;
+  hideKey();
+  try{localStorage.removeItem(WK)}catch(e){}
+  store=null;deactivate();
+  toast('Wallet deleted from this device');
+}
+function downloadBackup(){
+  if(!store) return;
+  const blob=new Blob([store.json],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='fuji-forge-wallet-'+store.address.slice(2,8)+'.json';
+  document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+function adopt(json,address){
+  if(!wrJ(WK,{json,address,created:Date.now()})) throw new Error('Could not save to browser storage');
+  store=rdJ(WK,null);publish();render();
+  toast('Wallet added. Enter its password to unlock.','ok');
+}
+function legacyList(){
+  const out=[];
+  for(const [label,key] of LEGACY){
+    const s=rdJ(key,null);
+    if(s&&s.json&&s.address&&(!store||s.address.toLowerCase()!==store.address.toLowerCase())) out.push({label,s});
+  }
+  return out;
+}
+
+/* ---------- header + page rendering ---------- */
+window.bwLabel=()=>!store?'Create wallet':'Unlock wallet';
+window.bwPrompt=function(){
+  if(wallet) return;
+  if(!store){toast('Create your browser wallet first');window.show('wallet');return}
+  $('bwqAddr').textContent=short(store.address);
+  openM('bwModal');setTimeout(()=>$('bwqPw').focus(),60);
+};
+const avaxTxt=()=>bals.native!=null?fmt(bals.native,18,4)+' AVAX':'…';
+function render(){
+  const btn=$('connect'),np=$('netPill');
+  btn.textContent=!store?'Create wallet':!wallet?'Unlock wallet':short(wallet.address);
+  np.textContent=wallet?'Fuji · browser wallet':store?'Wallet locked':'No wallet';
+  np.classList.toggle('live',!!wallet);
+  const wp=$('wlPill');
+  if(wp){wp.textContent=wallet?'Unlocked · '+short(wallet.address):store?'Locked · '+short(store.address):'No wallet';wp.className='pill'+(wallet?' live':'')}
+  $('wlNew').classList.toggle('hidden',!!store);
+  $('wlLocked').classList.toggle('hidden',!(store&&!wallet));
+  $('wlOpen').classList.toggle('hidden',!wallet);
+  if(store){$('wlAddrL').textContent=store.address;$('wlAddr').textContent=store.address;$('wlExp').href=FUJI.explorer+'/address/'+store.address}
+  $('wlAvax').textContent=avaxTxt();
+  document.querySelectorAll('.js-bw-addr').forEach(e=>{e.textContent=store?store.address:'No wallet yet. Create one in the Wallet tab.'});
+  document.querySelectorAll('.js-bw-avax').forEach(e=>{e.textContent=wallet?avaxTxt():'—'});
+  $('wlKeep').checked=!!(function(){try{return sessionStorage.getItem(SS)}catch(e){return null}})();
+  // linked wallet
+  $('wlXStatus').textContent=xAccount?'Linked':'Not linked';
+  $('wlXStatus').className=xAccount?'ok':'dim';
+  $('wlXAddr').textContent=xAccount||'—';
+  $('wlXAvax').textContent=xAccount&&X.bal.native!=null?fmt(X.bal.native,18,4)+' AVAX':'—';
+  $('wlXBtn').textContent=xAccount?'Refresh linked balance':'Link wallet';
+  // legacy / import helper
+  const lg=legacyList();
+  $('wlLegacy').innerHTML=lg.length?lg.map((l,i)=>`<div class="kv"><span>${esc(l.label)} · ${esc(short(l.s.address))}</span><button class="btn sm ghost" data-legacy="${i}">Use as browser wallet</button></div>`).join('')+'<p class="dim" style="font-size:12px;margin:6px 0 0">Keeps its original password. The bots now use the browser wallet, so adopt the one that holds your funds.</p>':'';
+  renderTransfer();
+}
+const tr={dir:'fund'};
+function assetTok(){const v=$('wlAsset').value;return v==='native'?NATIVE:tokenOf(v)}
+function renderAssets(){
+  const sel=$('wlAsset'),keep=sel.value||'native';
+  const ids=['native',...state.tokens.map(t=>K(t.addr))];
+  sel.innerHTML=ids.map(id=>{const t=id==='native'?NATIVE:tokenOf(id);return t?`<option value="${esc(id)}">${esc(t.sym)}${id==='native'?'':' · '+esc(t.name)}</option>`:''}).join('');
+  sel.value=ids.includes(keep)?keep:'native';
+}
+function renderTransfer(){
+  renderAssets();
+  const t=assetTok()||NATIVE;
+  document.querySelectorAll('#wlDir button').forEach(b=>b.classList.toggle('on',b.dataset.d===tr.dir));
+  const src=tr.dir==='fund'?X.bal[K(t.addr)]:bals[K(t.addr)];
+  $('wlBal').textContent=src!=null?`(${tr.dir==='fund'?'linked wallet':'browser wallet'}: ${fmt(src,t.dec,4)})`:'';
+  $('wlGo').textContent=tr.dir==='fund'?`Send ${t.sym} to browser wallet`:`Withdraw ${t.sym} to linked wallet`;
+  let n='';
+  if(!store) n='Create the browser wallet first.';
+  else if(tr.dir==='fund') n=xAccount?`Sends from your linked wallet ${short(xAccount)} to ${short(store.address)}. Send some AVAX too: every action in the app pays gas from the browser wallet.`:'Link your MetaMask / Rabby wallet first, then send funds across.';
+  else n=!wallet?'Unlock the browser wallet to withdraw.':(xAccount?`Sends from the browser wallet to your linked wallet ${short(xAccount)}.`:'Link your wallet to choose where withdrawals go.');
+  $('wlNote').textContent=n;
+}
+async function refreshX(){
+  if(!xAccount){render();return}
+  try{X.bal.native=await readP.getBalance(xAccount)}catch(e){}
+  const t=assetTok();
+  if(t&&t.addr!=='native') try{X.bal[K(t.addr)]=await rd(t.addr,ERC20_ABI).balanceOf(xAccount)}catch(e){}
+  render();
+}
+window.onExtLinked=()=>{refreshX()};
+
+async function doTransfer(){
+  if(!store) throw new Error('Create the browser wallet first');
+  const t=assetTok();if(!t) throw new Error('Choose an asset');
+  const amt=parseAmt($('wlAmt').value,t.dec);if(amt<=0n) throw new Error('Enter an amount');
+  if(tr.dir==='fund'){
+    if(!xSigner) await connect(false);
+    await connect(true);                     // re-checks the account and switches the wallet to Fuji
+    if(!xSigner) throw new Error('Link your wallet first');
+    if(t.addr==='native') await sendTx('Fund browser wallet with AVAX',xSigner.sendTransaction({to:store.address,value:amt}));
+    else await sendTx(`Fund browser wallet with ${t.sym}`,new ethers.Contract(t.addr,ERC20_ABI,xSigner).transfer(store.address,amt));
+  }else{
+    if(!wallet) throw new Error('Unlock the browser wallet first');
+    if(!xAccount) await connect(false);
+    if(!xAccount) throw new Error('Link your wallet first. Withdrawals go to it.');
+    if(t.addr==='native') await sendTx('Withdraw AVAX to linked wallet',signer.sendTransaction({to:xAccount,value:amt}));
+    else await sendTx(`Withdraw ${t.sym} to linked wallet`,new ethers.Contract(t.addr,ERC20_ABI,signer).transfer(xAccount,amt));
+  }
+  $('wlAmt').value='';
+  await Promise.allSettled([refreshBalances(),refreshX()]);
+}
+
+/* ---------- wiring ---------- */
+$('wlCreate').onclick=()=>run(()=>make(null));
+$('wlRestoreToggle').onclick=()=>$('wlRestore').classList.toggle('hidden');
+$('wlRestoreBtn').onclick=()=>run(async()=>{const k=$('wlPk').value.trim();if(!k) throw new Error('Paste the private key');await make(k)});
+$('wlFile').onchange=e=>run(async()=>{
+  const f=e.target.files&&e.target.files[0];e.target.value='';if(!f) return;
+  const text=await f.text();let j;
+  try{j=JSON.parse(text)}catch(x){throw new Error('That file is not a wallet backup')}
+  if(!j||!j.address||!(j.crypto||j.Crypto)) throw new Error('That file is not an encrypted wallet backup');
+  adopt(text,ethers.getAddress('0x'+String(j.address).replace(/^0x/,'')));
+});
+$('wlLegacy').onclick=e=>{
+  const b=e.target.closest('[data-legacy]');if(!b) return;
+  const l=legacyList()[+b.dataset.legacy];if(!l) return;
+  run(async()=>adopt(l.s.json,l.s.address));
+};
+$('wlUnlock').onclick=()=>run(()=>unlock('wlPwU'));
+$('wlPwU').addEventListener('keydown',e=>{if(e.key==='Enter') run(()=>unlock('wlPwU'))});
+$('bwqGo').onclick=()=>run(()=>unlock('bwqPw'));
+$('bwqPw').addEventListener('keydown',e=>{if(e.key==='Enter') run(()=>unlock('bwqPw'))});
+$('wlLock').onclick=lock;
+$('wlRefresh').onclick=()=>run(async()=>{await refreshBalances();render()});
+$('wlCopy').onclick=()=>{navigator.clipboard.writeText(store?store.address:'').then(()=>toast('Address copied','ok')).catch(()=>toast('Copy failed','err'))};
+$('wlDl').onclick=downloadBackup;
+$('wlReveal').onclick=()=>{
+  if(!wallet) return;
+  if(!confirm('Anyone who sees this private key can take everything in the wallet. Show it now?')) return;
+  $('wlKey').textContent=wallet.privateKey;$('wlKeyBox').classList.remove('hidden');
+  clearTimeout(keyT);keyT=setTimeout(hideKey,30000);
+};
+$('wlKeyCopy').onclick=()=>{if(wallet) navigator.clipboard.writeText(wallet.privateKey).then(()=>toast('Private key copied','ok')).catch(()=>toast('Copy failed','err'))};
+$('wlDel').onclick=()=>run(async()=>deleteWallet());
+$('wlDelL').onclick=()=>run(async()=>deleteWallet());
+$('wlKeep').onchange=e=>{
+  try{
+    if(e.target.checked&&wallet) sessionStorage.setItem(SS,wallet.privateKey);
+    else sessionStorage.removeItem(SS);
+  }catch(x){}
+  if(e.target.checked&&!wallet) e.target.checked=false;
+};
+
+$('wlXBtn').onclick=()=>run(async()=>{if(xAccount) await refreshX();else await connect(false)});
+document.querySelectorAll('#wlDir button').forEach(b=>b.onclick=()=>{tr.dir=b.dataset.d;refreshX();renderTransfer()});
+$('wlAsset').onchange=()=>{$('wlAmt').value='';refreshX();renderTransfer()};
+numField($('wlAmt'));
+$('wlMax').onclick=()=>run(async()=>{
+  const t=assetTok()||NATIVE;let b=tr.dir==='fund'?X.bal[K(t.addr)]:bals[K(t.addr)];
+  if(b==null) throw new Error('Balance not loaded yet');
+  if(t.addr==='native'){
+    const r=tr.dir==='fund'?ethers.parseEther('0.01'):ethers.parseEther('0.01');
+    b=b>r?b-r:0n;
+  }
+  $('wlAmt').value=fmtPlain(b,t.dec);
+});
+$('wlGo').onclick=()=>run(doTransfer);
+
+/* header button + account menu */
+$('connect').onclick=()=>{
+  if(!store){window.show('wallet');return}
+  if(!wallet){window.bwPrompt();return}
+  $('acct').classList.toggle('hidden');
+};
+$('acCopy').onclick=()=>{navigator.clipboard?.writeText(account||'');toast('Address copied','ok');$('acct').classList.add('hidden')};
+$('acRef').onclick=()=>{run(refreshBalances);$('acct').classList.add('hidden')};
+$('acLock').onclick=()=>{$('acct').classList.add('hidden');lock()};
+$('acWallet').onclick=()=>{$('acct').classList.add('hidden');window.show('wallet')};
+document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g) window.show(g.dataset.go)});
+
+/* tab routing */
+if(!VIEWS.includes('wallet')) VIEWS.push('wallet');
+const _show=window.show;
+window.show=function(view){
+  _show(view);
+  if(view==='wallet'){render();refreshX()}
+};
+window.addEventListener('beforeunload',()=>{hideKey()});
+
+/* restore a tab-session unlock, if the user asked for it */
+try{
+  const sk=sessionStorage.getItem(SS);
+  if(sk&&store){
+    const w=new ethers.Wallet(sk,readP);
+    if(w.address.toLowerCase()===store.address.toLowerCase()) activate(w);
+    else sessionStorage.removeItem(SS);
+  }
+}catch(e){try{sessionStorage.removeItem(SS)}catch(x){}}
+publish();render();
+if(location.hash==='#wallet') window.show('wallet');
+})();
+</script>
 <script id="bot-module">
 /* =====================================================================
    Trading bot module (additive). Uses its own encrypted wallet.
-   The connected Rabby/MetaMask signer is only used to FUND the bot.
+   The bot now signs from the shared browser wallet (see the Wallet tab).
    ===================================================================== */
 (function(){
 'use strict';
@@ -3827,7 +4237,7 @@ async function botSell(t,amt,o){
   return {proceeds};
 }
 async function exclusive(fn){
-  if(!bw) throw new Error('Unlock the bot wallet first');
+  if(!bw) throw new Error('Unlock your browser wallet first (Wallet tab)');
   if(txBusy) throw new Error('The bot is busy with another transaction. Try again in a few seconds.');
   txBusy=true;renderPills();
   try{return await fn()}
@@ -3948,7 +4358,7 @@ async function engTick(){
   }finally{txBusy=false;if(pendingLock) doLock();renderPills();renderStrats()}
 }
 function startEngine(){
-  if(!bw) throw new Error('Unlock the bot wallet first');
+  if(!bw) throw new Error('Unlock your browser wallet first (Wallet tab)');
   if(!bs.strategies.some(s=>s.enabled)) throw new Error('Switch at least one strategy on first');
   eng.on=true;clearInterval(eng.timer);eng.timer=setInterval(engTick,4000);
   log('🤖 Bot started','ok');toast('Bot started','ok');renderPills();engTick();
@@ -4242,6 +4652,14 @@ setInterval(()=>{
   if(addrNow()&&!txBusy) refreshBot();
 },30000);
 window.addEventListener('beforeunload',e=>{if(eng.on){e.preventDefault();e.returnValue=''}});
+/* the bot signs from the shared browser wallet */
+function syncShared(){
+  store=window.BWstore||null;bw=window.BWS||null;
+  if(!bw){eng.on=false;clearInterval(eng.timer);B.native=null;B.tok={}}
+  renderBot();if(addrNow()) refreshBot();
+}
+window.addEventListener('bw:change',syncShared);
+store=window.BWstore||null;bw=window.BWS||null;
 renderBot();
 if(addrNow()) refreshBot();
 if(location.hash==='#bot') window.show('bot');
@@ -4251,7 +4669,7 @@ if(location.hash==='#bot') window.show('bot');
 /* =====================================================================
    Casino bot module (additive). Same mechanics as the trading bot:
    its own encrypted wallet, strategies, start/stop engine, fund/withdraw.
-   The connected Rabby/MetaMask signer is only used to FUND the bot.
+   The bot now signs from the shared browser wallet (see the Wallet tab).
    Nothing here touches the connect-wallet code.
    ===================================================================== */
 (function(){
@@ -4363,7 +4781,7 @@ async function btx(label,p){
   return rc;
 }
 async function exclusive(fn){
-  if(!bw) throw new Error('Unlock the bot wallet first');
+  if(!bw) throw new Error('Unlock your browser wallet first (Wallet tab)');
   if(txBusy) throw new Error('The bot is busy with another transaction. Try again in a few seconds.');
   txBusy=true;renderPills();
   try{return await fn()}
@@ -4473,7 +4891,7 @@ async function engTick(){
   }finally{txBusy=false;if(pendingLock) doLock();renderPills();renderStrats()}
 }
 function startEngine(){
-  if(!bw) throw new Error('Unlock the bot wallet first');
+  if(!bw) throw new Error('Unlock your browser wallet first (Wallet tab)');
   if(!cs.strategies.some(s=>s.enabled)) throw new Error('Switch at least one strategy on first');
   eng.on=true;clearInterval(eng.timer);eng.timer=setInterval(engTick,3000);
   log('🎰 Casino bot started','ok');toast('Casino bot started','ok');renderPills();engTick();
@@ -4751,6 +5169,14 @@ setInterval(()=>{
   if(addrNow()&&!txBusy) refreshCB();
 },30000);
 window.addEventListener('beforeunload',e=>{if(eng.on){e.preventDefault();e.returnValue=''}});
+/* the casino bot signs from the shared browser wallet */
+function syncShared(){
+  store=window.BWstore||null;bw=window.BWS||null;
+  if(!bw){eng.on=false;clearInterval(eng.timer);B.native=null;B.tok={}}
+  renderCB();if(addrNow()) refreshCB();
+}
+window.addEventListener('bw:change',syncShared);
+store=window.BWstore||null;bw=window.BWS||null;
 renderCB();
 if(addrNow()) refreshCB();
 if(location.hash==='#cbot') window.show('cbot');
