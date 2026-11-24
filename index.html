@@ -417,7 +417,88 @@ header.nav #connect::after{content:"";position:absolute;inset:0;background:linea
 @media(max-width:420px){header.nav .brand b{display:none}}
 @media(prefers-reduced-motion:reduce){.aur i,.gridmv i,.dots b,header.nav::after,header.nav .logo::after,header.nav #connect::after{animation:none!important}.dots{display:none}}
 </style>
+<style id="tx-css">
+/* ---------- global transaction tray ---------- */
+#txTray{position:fixed;right:18px;bottom:18px;z-index:9999;display:flex;flex-direction:column-reverse;gap:10px;width:min(372px,calc(100vw - 24px));pointer-events:none}
+.txc{position:relative;display:grid;grid-template-columns:44px 1fr auto;gap:2px 12px;align-items:center;padding:12px 12px 14px 12px;border-radius:18px;overflow:hidden;pointer-events:auto;color:#f3f3f5;
+  background:linear-gradient(135deg,rgba(34,34,40,.82),rgba(14,14,18,.78));-webkit-backdrop-filter:blur(22px) saturate(170%);backdrop-filter:blur(22px) saturate(170%);
+  border:1px solid rgba(255,255,255,.16);box-shadow:0 18px 50px -12px rgba(0,0,0,.75),inset 0 1px 0 rgba(255,255,255,.18);
+  animation:txin .55s cubic-bezier(.2,1.2,.3,1) both;transition:opacity .35s,transform .35s,max-height .4s .1s,padding .4s .1s,margin .4s .1s;max-height:140px}
+.txc.leaving{opacity:0;transform:translateX(40px) scale(.96);max-height:0;padding-top:0;padding-bottom:0;margin-top:-10px}
+@keyframes txin{from{opacity:0;transform:translateX(60px) scale(.92)}to{opacity:1;transform:none}}
+.txc::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:.9;background:radial-gradient(120% 90% at 0% 0%,rgba(255,138,40,.22),transparent 60%);transition:background .5s}
+.txc.ok::before{background:radial-gradient(120% 90% at 0% 0%,rgba(52,211,153,.28),transparent 60%)}
+.txc.err::before{background:radial-gradient(120% 90% at 0% 0%,rgba(248,113,113,.3),transparent 60%)}
+.txc.err{animation:txin .55s cubic-bezier(.2,1.2,.3,1) both,txshake .5s .55s}
+@keyframes txshake{20%{transform:translateX(-6px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(2px)}}
+.txi{position:relative;width:44px;height:44px;grid-row:1/3}
+.txi svg{position:absolute;inset:0;width:44px;height:44px;overflow:visible}
+.txi .trk{fill:none;stroke:rgba(255,255,255,.12);stroke-width:3}
+.txi .arc{fill:none;stroke:#ff9a3d;stroke-width:3;stroke-linecap:round;stroke-dasharray:30 100;filter:drop-shadow(0 0 5px rgba(255,138,40,.8));transform-origin:20px 20px;animation:txspin 1s linear infinite}
+.txc.sent .arc{animation-duration:.75s}
+@keyframes txspin{to{transform:rotate(360deg)}}
+.txi .core{fill:#ff9a3d;opacity:.9;transform-origin:20px 20px;animation:txpulse 1.2s ease-in-out infinite}
+@keyframes txpulse{50%{transform:scale(1.5);opacity:.35}}
+.txi .ck,.txi .xx{opacity:0;transform:scale(.4);transform-origin:20px 20px;transition:opacity .25s,transform .45s cubic-bezier(.2,1.6,.3,1)}
+.txi .ck circle{fill:rgba(52,211,153,.18);stroke:#34d399;stroke-width:2.5}
+.txi .ck path{fill:none;stroke:#34d399;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:30;stroke-dashoffset:30}
+.txi .xx circle{fill:rgba(248,113,113,.18);stroke:#f87171;stroke-width:2.5}
+.txi .xx path{fill:none;stroke:#f87171;stroke-width:3.4;stroke-linecap:round}
+.txc.ok .spin,.txc.err .spin{opacity:0;transform:scale(.6);transition:all .25s}
+.txc.ok .ck{opacity:1;transform:scale(1)}.txc.ok .ck path{animation:txtick .5s .15s ease-out forwards}
+.txc.err .xx{opacity:1;transform:scale(1)}
+@keyframes txtick{to{stroke-dashoffset:0}}
+.txc.ok .txi::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid #34d399;animation:txripple .9s ease-out forwards;pointer-events:none}
+@keyframes txripple{from{opacity:.9;transform:scale(.7)}to{opacity:0;transform:scale(1.9)}}
+.txb{min-width:0;position:relative}
+.txt{font-weight:700;font-size:14px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.txs{font-size:12px;color:rgba(255,255,255,.62);line-height:1.35;margin-top:2px;word-break:break-word}
+.txc.err .txs{color:#fca5a5}
+.txs .dots::after{content:"";animation:txdots 1.2s steps(4) infinite}
+@keyframes txdots{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}}
+.txr{position:relative;display:flex;align-items:center;gap:4px}
+.txl,.txx{width:28px;height:28px;display:grid;place-items:center;border-radius:9px;color:rgba(255,255,255,.7);background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);font-size:13px;text-decoration:none;cursor:pointer;padding:0}
+.txl:hover,.txx:hover{background:rgba(255,255,255,.16);color:#fff}
+.txl.hidden{display:none}
+.txst{grid-column:2/4;display:flex;gap:5px;margin-top:8px}
+.txst b{flex:1;height:4px;border-radius:3px;background:rgba(255,255,255,.12);position:relative;overflow:hidden}
+.txst b::after{content:"";position:absolute;inset:0;transform:scaleX(0);transform-origin:left;background:linear-gradient(90deg,#ff9a3d,#ffcf9a);transition:transform .5s cubic-bezier(.2,.9,.2,1)}
+.txst b.on::after{transform:scaleX(1)}
+.txst b.run::after{transform:scaleX(1);background:linear-gradient(90deg,transparent,#ffb36b,transparent);background-size:200% 100%;animation:txshim 1.1s linear infinite}
+.txc.ok .txst b::after{background:linear-gradient(90deg,#34d399,#86efac);transform:scaleX(1);animation:none}
+.txc.err .txst b.on::after,.txc.err .txst b.run::after{background:#f87171;animation:none;transform:scaleX(1)}
+@keyframes txshim{from{background-position:200% 0}to{background-position:-200% 0}}
+.txmore{pointer-events:auto;align-self:flex-end;font-size:12px;padding:4px 10px;border-radius:999px;color:#ddd;background:rgba(20,20,24,.8);border:1px solid rgba(255,255,255,.14)}
+/* thin glowing bar under the very top of the page while anything is pending */
+#txBar{position:fixed;left:0;right:0;top:0;height:3px;z-index:9998;opacity:0;transition:opacity .3s;pointer-events:none;background:linear-gradient(90deg,transparent,#ff9a3d,#ffe0bd,#ff9a3d,transparent);background-size:60% 100%;background-repeat:no-repeat;box-shadow:0 0 14px rgba(255,138,40,.8)}
+#txBar.on{opacity:1;animation:txbar 1.3s ease-in-out infinite}
+@keyframes txbar{from{background-position:-60% 0}to{background-position:160% 0}}
+#actBtn{position:relative}
+.txbadge{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#ff7a1a;color:#190a03;font:800 11px/18px Inter,system-ui,sans-serif;text-align:center;box-shadow:0 0 0 3px rgba(255,122,26,.25),0 0 14px rgba(255,122,26,.8);animation:txpulse2 1.2s ease-in-out infinite}
+.txbadge.hidden{display:none}
+@keyframes txpulse2{50%{box-shadow:0 0 0 7px rgba(255,122,26,0),0 0 14px rgba(255,122,26,.8)}}
+@media(max-width:860px){#txTray{right:auto;left:50%;transform:translateX(-50%);bottom:auto;top:76px;flex-direction:column;width:min(420px,calc(100vw - 20px))}}
+@media(prefers-reduced-motion:reduce){.txc,.txi .arc,.txi .core,#txBar{animation:none!important}}
+</style>
 <style id="wallet-css">#bwModal{z-index:80}.js-bw-addr{word-break:break-all}.bot-check input{width:auto}</style>
+<style id="chat-css">
+#v-chat .rooms{display:flex;flex-direction:column;gap:6px;max-height:520px;overflow:auto}
+#v-chat .room{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:#eee;cursor:pointer;text-align:left;font:inherit}
+#v-chat .room:hover{background:rgba(255,255,255,.08)}
+#v-chat .room.on{border-color:rgba(255,160,64,.5);background:rgba(255,138,40,.1)}
+#v-chat .room small{display:block;color:rgba(255,255,255,.5);font-size:11px}
+.chlist{height:460px;overflow:auto;display:flex;flex-direction:column;gap:8px;padding:8px 4px;scroll-behavior:smooth}
+.chm{max-width:82%;padding:9px 12px;border-radius:16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);animation:chin .35s ease-out both}
+.chm.me{align-self:flex-end;background:rgba(255,138,40,.16);border-color:rgba(255,160,64,.35)}
+.chm .hd{display:flex;gap:6px;align-items:center;font-size:11px;color:rgba(255,255,255,.55);margin-bottom:3px;flex-wrap:wrap}
+.chm .hd b{color:#ffd3a8;font-weight:700}
+.chm .ok{color:#34d399}.chm .bad{color:#f87171}
+.chm .tx{font-size:14px;line-height:1.4;word-break:break-word;white-space:pre-wrap}
+.chm.pend{opacity:.6}
+@keyframes chin{from{opacity:0;transform:translateY(8px) scale(.97)}to{opacity:1;transform:none}}
+.chcomp{margin-top:10px;border-top:1px solid rgba(255,255,255,.08);padding-top:10px}
+.chcomp input{width:100%}
+</style>
 </head><body>
 <div id="intro" aria-hidden="true"><div class="sqgrid"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
 <div class="bg"><div class="aur"><i class="o1"></i><i class="o2"></i><i class="o3"></i><i class="o4"></i></div><div class="gridmv"><i></i></div><div class="dots"><b style="left:44%;width:2px;height:2px;--t:17s;--dx:-51px;animation-delay:-26s"></b><b style="left:71%;width:2px;height:2px;--t:34s;--dx:-53px;animation-delay:-29s"></b><b style="left:67%;width:2px;height:2px;--t:18s;--dx:-5px;animation-delay:-13s"></b><b style="left:11%;width:2px;height:2px;--t:33s;--dx:-6px;animation-delay:-1s"></b><b style="left:75%;width:2px;height:2px;--t:34s;--dx:-53px;animation-delay:-18s"></b><b style="left:77%;width:2px;height:2px;--t:23s;--dx:-55px;animation-delay:-17s"></b><b style="left:20%;width:2px;height:2px;--t:20s;--dx:9px;animation-delay:-3s"></b><b style="left:76%;width:2px;height:3px;--t:21s;--dx:-47px;animation-delay:-18s"></b><b style="left:76%;width:3px;height:2px;--t:27s;--dx:-48px;animation-delay:-17s"></b><b style="left:94%;width:2px;height:3px;--t:17s;--dx:19px;animation-delay:-6s"></b><b style="left:66%;width:3px;height:3px;--t:29s;--dx:39px;animation-delay:-10s"></b><b style="left:62%;width:3px;height:2px;--t:27s;--dx:-22px;animation-delay:-7s"></b><b style="left:26%;width:3px;height:2px;--t:18s;--dx:13px;animation-delay:-9s"></b><b style="left:70%;width:2px;height:2px;--t:30s;--dx:-24px;animation-delay:-19s"></b><b style="left:12%;width:2px;height:3px;--t:29s;--dx:-39px;animation-delay:-24s"></b><b style="left:46%;width:2px;height:2px;--t:29s;--dx:-55px;animation-delay:-30s"></b><b style="left:88%;width:2px;height:3px;--t:34s;--dx:41px;animation-delay:-28s"></b><b style="left:43%;width:2px;height:3px;--t:27s;--dx:16px;animation-delay:-15s"></b></div></div>
@@ -426,6 +507,7 @@ header.nav #connect::after{content:"";position:absolute;inset:0;background:linea
   <a class="brand" href="#swap"><div class="logo">F</div><b>Fuji Forge</b><span class="testnet">Fuji</span></a>
   <nav class="tabs" id="tabs">
     <span class="tabglow" id="tabGlow"></span>
+    <button data-view="chat" title="Chat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span class="lb">Chat</span></button>
     <button data-view="wallet" title="Wallet"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18M16 14.5h2"/></svg><span class="lb">Wallet</span></button>
     <button data-view="swap" title="Swap"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h11l-3-3M17 17H6l3 3"/></svg><span class="lb">Swap</span></button>
     <button data-view="dex" title="DEX"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.2-4.2"/></svg><span class="lb">DEX</span></button>
@@ -442,6 +524,7 @@ header.nav #connect::after{content:"";position:absolute;inset:0;background:linea
   <div class="navr">
     <button class="pillbtn" id="actBtn" title="Activity"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></button>
     <span class="pill" id="netPill">No wallet</span>
+    <span class="pill" id="usdPill" title="AVAX price from mainnet markets (used for testnet values too)">AVAX…</span>
     <span class="pill" id="hBal"></span>
     <button class="btn" id="connect">Create wallet</button>
     <button class="pillbtn" id="setBtn" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
@@ -969,6 +1052,33 @@ header.nav #connect::after{content:"";position:absolute;inset:0;background:linea
       <p class="dim" id="wlNote" style="font-size:12px;margin:10px 0 0"></p>
     </div>
   </section>
+
+  <section id="v-chat" class="view hidden">
+    <div class="pagehead"><div><h1>Token chat</h1><p>Every token has its own room. Messages are signed by the author's browser wallet, and the signature is checked on every device.</p></div>
+      <div class="row"><span class="pill" id="chBackend">Local only</span></div></div>
+    <div class="grid2">
+      <div class="card"><h2>Rooms</h2><p class="sub">One room per token you launched.</p><div id="chRooms"></div></div>
+      <div class="card">
+        <div class="row" style="justify-content:space-between;margin-bottom:6px"><h2 id="chTitle">Choose a token</h2><span class="dim" id="chCount" style="font-size:12px"></span></div>
+        <div id="chList" class="chlist"></div>
+        <div class="chcomp">
+          <div class="row" style="gap:8px;margin-bottom:8px"><input id="chName" maxlength="20" placeholder="Display name (optional)" style="flex:1"></div>
+          <div class="row" style="gap:8px"><input id="chBody" maxlength="280" placeholder="Write a message…" style="flex:1"><button class="btn" id="chSend">Send</button></div>
+          <p class="dim" id="chNote" style="font-size:12px;margin:6px 0 0"></p>
+        </div>
+      </div>
+    </div>
+    <div class="card bot-gap">
+      <h2>Chat backend</h2>
+      <p class="sub">Chat is stored on this device until you connect a backend. To share it with everyone, create a free Supabase project and paste its URL and anon key here.</p>
+      <div class="grid2">
+        <div><label>Supabase project URL</label><input id="chUrl" placeholder="https://xxxx.supabase.co"></div>
+        <div><label>Anon (public) key</label><input id="chKey" class="mono" placeholder="eyJ…"></div>
+      </div>
+      <div class="row" style="margin-top:10px"><button class="btn sm" id="chSave">Save backend</button><button class="btn sm ghost" id="chOff">Use local only</button></div>
+      <details style="margin-top:12px"><summary class="dim">Create the chat table (run once in the Supabase SQL editor)</summary><pre class="mono" id="chSqlBox" style="white-space:pre-wrap;font-size:12px;margin:8px 0 0"></pre></details>
+    </div>
+  </section>
 </main>
 
 <!-- token modal -->
@@ -981,7 +1091,7 @@ header.nav #connect::after{content:"";position:absolute;inset:0;background:linea
 <!-- liquidity modal -->
 <div class="modal" id="lqModal"><div class="sheet">
   <div class="sheethead"><h3 id="lqTitle">Liquidity</h3><button class="x" data-close>✕</button></div>
-  <div class="seg" id="lqTabs"><button data-m="add" class="on">Add</button><button data-m="remove">Remove</button></div>
+  <div class="seg" id="lqTabs"><button data-m="add" class="on">Add</button><button data-m="remove">Remove</button><button data-m="lock">Lock</button></div>
   <div id="lqAdd">
     <div class="box"><div class="boxtop"><span>Token</span><span id="lqTokBal"></span></div>
       <div class="boxmain"><input id="lqTokAmt" class="amt" type="text" inputmode="decimal" placeholder="0.0"><button class="tokbtn" id="lqTokBtn"></button></div></div>
@@ -994,6 +1104,7 @@ header.nav #connect::after{content:"";position:absolute;inset:0;background:linea
     <input type="range" id="lqRange" min="1" max="100" value="50">
     <div class="row" style="justify-content:center;margin-top:10px"><button class="chip" data-p="25">25%</button><button class="chip" data-p="50">50%</button><button class="chip" data-p="75">75%</button><button class="chip" data-p="100">Max</button></div>
   </div>
+  <div id="lqLock" class="hidden"><p class="dim" style="font-size:13px;margin:6px 0 10px">Locking sends all of your LP for this pool to the burn address. The liquidity stays in the pool for good, nobody can ever withdraw it, and this cannot be undone.</p></div>
   <div class="details" id="lqInfo"></div>
   <button class="btn big" id="lqBtn">Supply</button>
 </div></div>
@@ -1458,6 +1569,7 @@ class GatedProvider extends ethers.JsonRpcProvider{
   }
 }
 const readP=new GatedProvider(localStorage.getItem('fuji-forge:rpc-url')||FUJI.rpc[0],FUJI.chainId);
+readP.pollingInterval=900; // faster receipt detection (default is 4s)
 const wallets=[];
 window.addEventListener('eip6963:announceProvider',e=>{if(!wallets.some(w=>w.info.uuid===e.detail.info.uuid)) wallets.push(e.detail)});
 const rd=(addr,abi)=>new ethers.Contract(addr,abi,readP);
@@ -1477,12 +1589,14 @@ async function ensureAllowance(tokAddr,spender,amt){
   await sendTx('Approve',tk.approve(spender,amt));
 }
 async function sendTx(label,txPromise){
-  const tx=await txPromise;
+  const rsv=window.TX&&TX.reserve(label);
+  let tx;
+  try{tx=await txPromise}finally{if(rsv) TX.release(rsv)}
+  if(window.TX) TX.adopt(tx,label);
   log(label+' submitted…','','/tx/'+tx.hash);
   await tx.wait();
   pdTTL.clear();
   log(label+' confirmed','ok');
-  toast(label+' confirmed','ok');
   return tx;
 }
 
@@ -1584,6 +1698,7 @@ async function connectInner(silent,forced){
   rawProv=raw;
   const fujiNet=ethers.Network.from(FUJI.chainId);
   xProvider=new ethers.BrowserProvider(raw,fujiNet,{staticNetwork:fujiNet});
+  xProvider.pollingInterval=900;
   xSigner=await xProvider.getSigner();
   xAccount=await xSigner.getAddress();
   if(!xBound){
@@ -2070,14 +2185,14 @@ function lqExpected(pd,pct){
 }
 function renderLq(){
   const t=tokenOf(lq.tok);if(!t) return;
-  const pd=lq.pd,add=lq.mode==='add';
-  $('lqTitle').textContent=add?'Add liquidity':'Remove liquidity';
+  const pd=lq.pd,add=lq.mode==='add',lockM=lq.mode==='lock';
+  $('lqTitle').textContent=add?'Add liquidity':lockM?'Lock liquidity':'Remove liquidity';
   document.querySelectorAll('#lqTabs button').forEach(b=>b.classList.toggle('on',b.dataset.m===lq.mode));
-  $('lqAdd').classList.toggle('hidden',!add);$('lqRem').classList.toggle('hidden',add);
+  $('lqAdd').classList.toggle('hidden',!add);$('lqRem').classList.toggle('hidden',add||lockM);$('lqLock').classList.toggle('hidden',!lockM);
   $('lqTokBtn').innerHTML=`${av(t,'sm')}<b>${esc(t.sym)}</b> ▾`;
   $('lqTokBal').textContent=bals[K(t.addr)]!=null?'Balance: '+fmt(bals[K(t.addr)],t.dec,4):'';
   $('lqAvBal').textContent=bals.native!=null?'Balance: '+fmt(bals.native,18,4):'';
-  let btn=add?'Supply':'Remove',dis=false,info='';
+  let btn=add?'Supply':lockM?'Lock LP forever':'Remove',dis=false,info='';
   if(add){
     const tw=parseAmt($('lqTokAmt').value,t.dec),aw=parseAmt($('lqAvaxAmt').value,18);
     if(pd?.pair){
@@ -2091,6 +2206,9 @@ function renderLq(){
       else if(tw>(bals[K(t.addr)]||0n)){btn='Insufficient '+t.sym;dis=true}
       else if(aw>(bals.native||0n)){btn='Insufficient AVAX';dis=true}
     }
+  }else if(lockM){
+    if(!hasPos(pd)){info='<div class="dim">You have no LP in this pool to lock.</div>';dis=!!account}
+    else{const e=lqExpected(pd,100n);info=`<div class="kv"><span>Locks liquidity worth</span><b>${fmt(e.tk,t.dec,4)} ${esc(t.sym)} + ${fmt(e.av,18,4)} AVAX</b></div><div class="kv"><span>Bins locked</span><b>${pd.pos.length}</b></div>`}
   }else{
     const pct=BigInt($('lqRange').value);
     $('lqPct').textContent=pct+'%';
@@ -2166,7 +2284,11 @@ $('lqBtn').onclick=()=>run(async()=>{
   if(!account){window.bwPrompt();return}
   needWallet();
   const t=tokenOf(lq.tok);
-  if(lq.mode==='add') await lqAdd(t);else await lqRemove(t);
+  if(lq.mode==='add') await lqAdd(t);
+  else if(lq.mode==='lock'){
+    if(!confirm('Lock all your '+t.sym+'/AVAX liquidity forever? It is sent to the burn address and can never be withdrawn.')) return;
+    await lockLP(t);toast('Liquidity locked','ok');
+  }else await lqRemove(t);
   await refreshBalances();await refreshLqPd();loadPools();loadMarketFor(true);
 });
 
@@ -2239,7 +2361,10 @@ $('impBtn').onclick=()=>run(async()=>{
 /* ---------- launch ---------- */
 async function deploy(c,args){
   const f=new ethers.ContractFactory(c.abi,'0x'+c.evm.bytecode.object,signer);
-  const k=await f.deploy(...args);
+  const nm=new Set((c.abi||[]).map(x=>x.name));
+  const kind=nm.has('chestPos')?'Stickman world':nm.has('play')?'Casino':nm.has('mintMany')?'Miner NFTs':nm.has('previewPnl')?'Long/short market':(nm.has('compound')||nm.has('aprBps'))?'Staking pool':nm.has('totalBurned')?'Token':'contract';
+  const rsv=window.TX&&TX.reserve('Deploy '+kind);
+  let k;try{k=await f.deploy(...args)}finally{if(rsv) TX.release(rsv)}
   log('Waiting for deployment…');
   await k.waitForDeployment();
   return k.getAddress();
@@ -2471,7 +2596,24 @@ window.addEventListener('hashchange',()=>show(location.hash.slice(1)));
 
 /* ---------- standard launch pipeline ---------- */
 const DEAD='0x000000000000000000000000000000000000dEaD';
-LBPAIR_ABI.push('function safeBatchTransferFrom(address from,address to,uint256[] ids,uint256[] amounts,bytes data)');
+/* LP lock: LFJ Liquidity Book pairs transfer LP with batchTransferFrom(from,to,ids,amounts) (v2.1/2.2).
+   Older v2.0 pairs call it safeBatchTransferFrom with the same four arguments. Pick whichever the pool really has. */
+const LB_XFER_VARIANTS=[
+  {fn:'batchTransferFrom',abi:['function batchTransferFrom(address from,address to,uint256[] ids,uint256[] amounts)']},
+  {fn:'safeBatchTransferFrom',abi:['function safeBatchTransferFrom(address from,address to,uint256[] ids,uint256[] amounts)']},
+  {fn:'safeBatchTransferFrom',abi:['function safeBatchTransferFrom(address from,address to,uint256[] ids,uint256[] amounts,bytes data)'],data:true}
+];
+async function lbBatchTransfer(pair,to,ids,amts,label){
+  let lastErr=null;
+  for(const v of LB_XFER_VARIANTS){
+    const c=new ethers.Contract(pair,v.abi,signer);
+    const args=v.data?[account,to,ids,amts,'0x']:[account,to,ids,amts];
+    try{await c[v.fn].estimateGas(...args)}catch(e){lastErr=e;continue}   // this pool does not have that function
+    return sendTx(label,c[v.fn](...args,{}));
+  }
+  const why=String(lastErr&&(lastErr.shortMessage||lastErr.reason||lastErr.message)||'unknown error').slice(0,140);
+  throw new Error('The pool rejected the LP transfer ('+why+')');
+}
 const PRESETS={
   standard:{pct:40,avax:2,rew:15,apr:12,burn:true,stake:true,ren:false},
   community:{pct:60,avax:1,rew:25,apr:10,burn:true,stake:true,ren:true}
@@ -2530,8 +2672,7 @@ async function lockLP(t){
     await new Promise(r=>setTimeout(r,3000));
   }
   if(!pd||!pd.pair||!hasPos(pd)) throw new Error('No LP position found to lock (RPC has not indexed it yet; retry later)');
-  const p=wr(pd.pair,LBPAIR_ABI);
-  await sendTx('Lock LP (sent to burn address)',p.safeBatchTransferFrom(account,DEAD,pd.pos.map(m=>m.id),pd.pos.map(m=>m.bal),'0x'));
+  await lbBatchTransfer(pd.pair,DEAD,pd.pos.map(m=>m.id),pd.pos.map(m=>m.bal),'Lock LP (sent to burn address)');
 }
 function renderLaunches(){
   const L=state.launches||[];
@@ -3512,8 +3653,10 @@ async function openDexToken(addr){
   const liq=pd.pair?Number(fe(pd.avaxRes))+Number(fu(pd.tokRes,dec))*(price||0):null;
   const mcap=price!=null?Number(fu(sup,dec))*price:null;
   const tile=(l,v)=>`<div class="stat"><span>${l}</span><b>${esc(v)}</b></div>`;
-  $('dxPrice').textContent=price==null?'No pool yet':price.toPrecision(5)+' AVAX';
-  $('dxTiles').innerHTML=tile('Liquidity',liq==null?'—':liq.toLocaleString(undefined,{maximumFractionDigits:2})+' AVAX')+tile('Market cap (est.)',mcap==null?'—':mcap.toLocaleString(undefined,{maximumFractionDigits:2})+' AVAX')+tile('Total supply',fmt(sup,dec,0)+' '+t.sym)+tile('Burned',burned==null?'n/a':fmt(burned,dec,0)+' '+t.sym);
+  $('dxPrice').innerHTML=price==null?'No pool yet':`<span data-usd-avax="${price}"></span> <span class="dim" style="font-size:12px">${price.toPrecision(5)} AVAX</span>`;
+  const avTile=(l,v)=>`<div class="stat"><span>${l}</span><b data-usd-avax="${v==null?'':v}">—</b></div>`;
+  $('dxTiles').innerHTML=avTile('Liquidity',liq)+avTile('Market cap (est.)',mcap)+tile('Total supply',fmt(sup,dec,0)+' '+t.sym)+tile('Burned',burned==null?'n/a':fmt(burned,dec,0)+' '+t.sym);
+  if(window.usd) usd.refreshTags();
   const kv=(l,v)=>`<div class="kv"><span>${l}</span><span>${v}</span></div>`;
   const link=(a,label)=>`<a href="${FUJI.explorer}/address/${a}" target="_blank">${label} ↗</a>`;
   $('dxInfo').innerHTML=`
@@ -3766,6 +3909,370 @@ let balBusy=false;
 setInterval(async()=>{if(!account||document.hidden||balBusy) return;balBusy=true;try{await refreshBalances()}finally{balBusy=false}},60000);
 
 </script>
+<script id="tx-module">
+/* =====================================================================
+   Global transaction tray. Every transaction signed by the browser wallet
+   (swaps, pools, launches, casino, bots, the stickman game...) happens in the
+   background with no wallet pop-up, so each one gets an animated card:
+   sign -> broadcast -> confirm, with timer, gas cost and explorer link.
+   ===================================================================== */
+(function(){
+'use strict';
+const items=new Map(),queue=[];
+let seq=0,timer=0;
+const tray=document.createElement('div');tray.id='txTray';tray.setAttribute('aria-live','polite');document.body.appendChild(tray);
+const bar=document.createElement('div');bar.id='txBar';document.body.appendChild(bar);
+const more=document.createElement('div');more.className='txmore';more.style.display='none';
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const explorer=()=>(typeof FUJI!=='undefined'&&FUJI.explorer)||'https://testnet.snowtrace.io';
+
+/* ----- readable names for raw transactions ----- */
+const ABI_NAMES=['ERC20_ABI','CG_ABI','STK_ABI','MN_ABI','LS_ABI','TOKEN2_ABI','STAKE_ABI','STAKE2_ABI','ROUTER_ABI','LBROUTER_ABI','FACTORY_ABI','LAUNCH_ABI','FAC_ABI','LBPAIR_ABI'];
+let ifaces=null;
+function getIfaces(){
+  if(ifaces) return ifaces;
+  ifaces=[];
+  for(const n of ABI_NAMES){try{const a=(0,eval)('typeof '+n+'!=="undefined"?'+n+':null');if(a) ifaces.push(new ethers.Interface(a))}catch(e){}}
+  return ifaces;
+}
+const WORDS={approve:'Approve',transfer:'Send',fund:'Fund pool',withdraw:'Withdraw',play:'Casino bet',open:'Open chest',startRun:'Start run',stake:'Stake',unstake:'Unstake',claim:'Claim rewards',
+  addLiquidityNATIVE:'Add liquidity',removeLiquidityNATIVE:'Remove liquidity',createLBPair:'Create pool',batchTransferFrom:'Lock LP',safeBatchTransferFrom:'Lock LP',approveForAll:'Approve LP',mint:'Mint',deposit:'Deposit',addChests:'Add chests',setReward:'Set rewards',setEntryFee:'Set entry fee',renounceOwnership:'Renounce ownership'};
+function describe(tx){
+  try{
+    if(!tx||!tx.to) return 'Deploy contract';
+    const data=tx.data||'0x';
+    if(data==='0x'||data.length<10) return 'Send AVAX';
+    let sym='';
+    try{const t=tokenOf(tx.to);if(t) sym=t.sym}catch(e){}
+    for(const i of getIfaces()){
+      let p=null;try{p=i.parseTransaction({data,value:tx.value||0n})}catch(e){}
+      if(!p) continue;
+      const n=p.name;
+      if(/^swap/i.test(n)) return 'Swap';
+      let w=WORDS[n]||n.replace(/([A-Z])/g,' $1').replace(/^./,c=>c.toUpperCase());
+      if((n==='approve'||n==='transfer')&&sym) w+=' '+sym;
+      return w;
+    }
+  }catch(e){}
+  return 'Transaction';
+}
+function cleanErr(e){
+  let m=String((e&&(e.shortMessage||e.reason||e.message))||e||'Failed');
+  m=m.replace(/\s*\(.*$/,'').replace(/^execution reverted:?\s*/i,'Reverted: ').replace(/^"|"$/g,'');
+  if(/insufficient funds/i.test(m)) return 'Not enough AVAX for gas. Fund the browser wallet in the Wallet tab.';
+  if(/user (rejected|denied)/i.test(m)) return 'Cancelled in the wallet.';
+  if(/transaction execution reverted|CALL_EXCEPTION|missing revert data/i.test(m)) return 'The transaction was rejected on-chain.';
+  if(/timeout|timed out/i.test(m)) return 'Still not confirmed after a long wait. Check the explorer link.';
+  return m.length>130?m.slice(0,130)+'…':m;
+}
+
+/* ----- DOM ----- */
+function build(it){
+  const el=document.createElement('div');
+  el.className='txc prep';el.dataset.id=it.id;
+  el.innerHTML=`<div class="txi"><svg class="spin" viewBox="0 0 40 40"><circle class="trk" cx="20" cy="20" r="16"/><circle class="arc" cx="20" cy="20" r="16"/><circle class="core" cx="20" cy="20" r="3.5"/></svg>
+    <svg class="ck" viewBox="0 0 40 40"><circle cx="20" cy="20" r="16"/><path d="M12 21l6 6 11-13"/></svg>
+    <svg class="xx" viewBox="0 0 40 40"><circle cx="20" cy="20" r="16"/><path d="M14 14l12 12M26 14L14 26"/></svg></div>
+    <div class="txb"><div class="txt"></div><div class="txs"></div></div>
+    <div class="txr"><a class="txl hidden" target="_blank" rel="noopener" title="View on Snowtrace">↗</a><button class="txx" title="Dismiss">✕</button></div>
+    <div class="txst"><b></b><b></b><b></b></div>`;
+  el.querySelector('.txx').onclick=()=>remove(it.id);
+  el.addEventListener('mouseenter',()=>{it.hover=true});
+  el.addEventListener('mouseleave',()=>{it.hover=false;it.expire=Date.now()+2500});
+  tray.appendChild(el);
+  it.el=el;
+}
+function paint(it){
+  if(!it.el) build(it);
+  const el=it.el,secs=((it.tEnd||Date.now())-it.t0)/1000;
+  el.className='txc '+it.state+(it.leaving?' leaving':'');
+  el.querySelector('.txt').textContent=it.label;
+  const s=el.querySelector('.txs');
+  if(it.state==='prep') s.innerHTML='Signing with your browser wallet<span class="dots"></span>';
+  else if(it.state==='sent') s.innerHTML='Broadcast. Waiting for the next block<span class="dots"></span> '+secs.toFixed(1)+'s';
+  else if(it.state==='ok') s.textContent='Confirmed in '+secs.toFixed(1)+'s'+(it.block?' · block '+it.block:'')+(it.fee?' · gas '+it.fee:'');
+  else s.textContent=it.msg||'Failed';
+  const l=el.querySelector('.txl');
+  if(it.hash){l.classList.remove('hidden');l.href=explorer()+'/tx/'+it.hash}
+  const b=el.querySelectorAll('.txst b');
+  const st=it.state;
+  b[0].className=st==='prep'?'run':'on';
+  b[1].className=st==='prep'?'':st==='sent'?'run':'on';
+  b[2].className=st==='ok'?'on':st==='err'?'on':'';
+  if(st==='sent') b[1].className='on', b[2].className='run';
+}
+function pending(){let n=0;items.forEach(i=>{if(i.state==='prep'||i.state==='sent') n++});return n}
+function badge(){
+  const n=pending();
+  bar.classList.toggle('on',n>0);
+  let b=document.getElementById('txBadge');
+  const btn=document.getElementById('actBtn');
+  if(btn&&!b){b=document.createElement('span');b.id='txBadge';b.className='txbadge hidden';btn.appendChild(b)}
+  if(b){b.textContent=n;b.classList.toggle('hidden',n===0)}
+  const vis=[...items.values()].filter(i=>!i.leaving);
+  more.style.display='none';
+  if(vis.length>5){
+    vis.sort((a,b)=>a.id-b.id);
+    for(const i of vis.slice(0,vis.length-5)){if(i.state==='ok'||i.state==='err') remove(i.id)}
+  }
+}
+function tick(){
+  let any=false;const now=Date.now();
+  items.forEach(it=>{
+    if(it.state==='prep'||it.state==='sent'){any=true;paint(it)}
+    else if(it.expire&&!it.hover&&now>it.expire) remove(it.id);
+  });
+  if(!any&&!timer) return;
+}
+function ensureTimer(){if(!timer) timer=setInterval(()=>{tick();if(!items.size){clearInterval(timer);timer=0}},100)}
+function remove(id){
+  const it=items.get(id);if(!it||it.leaving) return;
+  it.leaving=true;paint(it);
+  setTimeout(()=>{if(it.el) it.el.remove();items.delete(id);badge()},520);
+}
+
+/* ----- API ----- */
+const TX={
+  reserve(label){const r={label,used:false};queue.push(r);return r},
+  release(r){const i=queue.indexOf(r);if(i>=0) queue.splice(i,1)},
+  take(){const r=queue.shift();return r?r.label:null},
+  begin(label,tx){
+    const it={id:++seq,label:label||describe(tx),state:'prep',t0:Date.now(),hash:null};
+    items.set(it.id,it);paint(it);badge();ensureTimer();emit(it);return it.id;
+  },
+  sent(id,resp){
+    const it=items.get(id);if(!it) return;
+    it.state='sent';it.hash=resp&&resp.hash;paint(it);emit(it);
+    if(resp&&resp.wait) resp.wait(1,300000).then(rc=>TX.confirmed(id,rc),e=>TX.failed(id,e));
+  },
+  confirmed(id,rc){
+    const it=items.get(id);if(!it||it.state==='ok'||it.state==='err') return;
+    if(rc&&rc.status===0) return TX.failed(id,new Error('The transaction was rejected on-chain.'));
+    it.state='ok';it.tEnd=Date.now();
+    try{it.block=rc&&rc.blockNumber;it.fee=rc&&rc.fee!=null?fmt(rc.fee,18,5)+' AVAX':''}catch(e){}
+    it.expire=Date.now()+6500;paint(it);badge();emit(it);
+  },
+  failed(id,e){
+    const it=items.get(id);if(!it||it.state==='ok'||it.state==='err') return;
+    it.state='err';it.tEnd=Date.now();it.msg=cleanErr(e);it.expire=Date.now()+30000;paint(it);badge();emit(it);
+  },
+  /* sendTx / bot helpers: give the card its proper name, or create one for transactions the extension signed */
+  adopt(tx,label){
+    if(!tx||!tx.hash) return;
+    for(const it of items.values()){ if(it.hash&&it.hash.toLowerCase()===tx.hash.toLowerCase()){ if(label){it.label=label;paint(it)} return it.id } }
+    const id=++seq;const it={id,label:label||describe(tx),state:'sent',t0:Date.now(),hash:tx.hash};
+    items.set(id,it);paint(it);badge();ensureTimer();emit(it);
+    if(tx.wait) tx.wait(1,300000).then(rc=>TX.confirmed(id,rc),e=>TX.failed(id,e));
+    return id;
+  },
+  on(fn){listeners.push(fn)},
+  pending
+};
+const listeners=[];
+function emit(it){listeners.forEach(f=>{try{f(it)}catch(e){}})}
+window.TX=TX;
+
+/* the tray must live inside the fullscreen element, or it would be invisible in fullscreen */
+function reparent(){
+  const host=document.fullscreenElement||document.webkitFullscreenElement||document.body;
+  if(tray.parentNode!==host) host.appendChild(tray);
+  if(bar.parentNode!==host) host.appendChild(bar);
+}
+document.addEventListener('fullscreenchange',reparent);
+document.addEventListener('webkitfullscreenchange',reparent);
+window.addEventListener('load',badge);
+badge();
+})();
+</script>
+<script id="usd-module">
+/* AVAX price in USD, read from MAINNET markets and used for every network (testnet included).
+   Testnet AVAX has no real market, so testnet USD values are an estimate using the mainnet price. */
+(function(){
+'use strict';
+const S={avax:null,at:0,src:''};
+const fmtUsdRaw=v=>{
+  if(v==null||!isFinite(v)) return '—';
+  const a=Math.abs(v);
+  if(a>=1e6) return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',notation:'compact',maximumFractionDigits:2}).format(v);
+  if(a>=1) return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:2}).format(v);
+  return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumSignificantDigits:3}).format(v);
+};
+async function fetchAvax(){
+  const tries=[
+    ['https://api.coingecko.com/api/v3/simple/price?ids=avalanche-2&vs_currencies=usd',j=>j['avalanche-2']&&j['avalanche-2'].usd,'CoinGecko'],
+    ['https://api.binance.com/api/v3/ticker/price?symbol=AVAXUSDT',j=>+j.price,'Binance']
+  ];
+  for(const [url,pick,name] of tries){
+    try{
+      const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),6000);
+      const r=await fetch(url,{signal:ctl.signal,cache:'no-store'});clearTimeout(t);
+      if(!r.ok) continue;
+      const v=Number(pick(await r.json()));
+      if(v>0){S.avax=v;S.at=Date.now();S.src=name;return v}
+    }catch(e){}
+  }
+  return S.avax;
+}
+function refreshTags(){
+  document.querySelectorAll('[data-usd-avax]').forEach(el=>{
+    const v=parseFloat(el.dataset.usdAvax);
+    if(!isFinite(v)||el.dataset.usdAvax===''){el.textContent='—';return}
+    el.textContent=S.avax?fmtUsdRaw(v*S.avax):v.toLocaleString(undefined,{maximumFractionDigits:4})+' AVAX';
+  });
+  const p=document.getElementById('usdPill');
+  if(p) p.textContent=S.avax?'AVAX '+fmtUsdRaw(S.avax):'AVAX price…';
+}
+window.usd={
+  get avax(){return S.avax},
+  get source(){return S.src},
+  get at(){return S.at},
+  fmt:fmtUsdRaw,
+  refreshTags,
+  fetch:fetchAvax,
+  toUsd:v=>S.avax&&v!=null?v*S.avax:null
+};
+window.fmtUsd=fmtUsdRaw;
+async function tick(){await fetchAvax();refreshTags();window.dispatchEvent(new Event('usd:update'))}
+tick();
+setInterval(()=>{if(!document.hidden) tick()},60000);
+window.addEventListener('load',refreshTags);
+})();
+</script>
+<script id="chat-module">
+/* Per-token chat. Each message is signed with the browser wallet (no pop-up) and the signature is checked in
+   the reader's browser, so the wallet on each message is provably the author. Storage: a Supabase table when a
+   backend is connected, otherwise this device only. */
+(function(){
+'use strict';
+if(typeof ethers==='undefined'||typeof state==='undefined'||typeof VIEWS==='undefined') return;
+const CFG='fuji-forge:chat-backend',NAME='fuji-forge:chat-name',LOC='fuji-forge:chat-local:';
+const cfg=()=>{try{return JSON.parse(localStorage.getItem(CFG)||'null')}catch(e){return null}};
+const $c=id=>document.getElementById(id);
+const esc2=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let room=null,msgs=[],poll=0,lastSend=0,busy=false,stamp='';
+
+function sqlHelp(){return `create table if not exists token_chat (
+  id bigint generated always as identity primary key,
+  token text not null,
+  wallet text not null,
+  name text,
+  body text not null,
+  ts bigint not null,
+  sig text not null
+);
+create index if not exists token_chat_token_ts on token_chat (token, ts);
+alter table token_chat enable row level security;
+create policy "anyone can read" on token_chat for select using (true);
+create policy "anyone can post" on token_chat for insert with check (char_length(body) <= 280);`}
+
+async function sb(path,opts={}){
+  const c=cfg();
+  const r=await fetch(c.url.replace(/\/$/,'')+'/rest/v1/'+path,{...opts,headers:{apikey:c.key,Authorization:'Bearer '+c.key,'Content-Type':'application/json',...(opts.headers||{})}});
+  if(!r.ok) throw new Error('Chat backend error '+r.status+': '+(await r.text()).slice(0,140));
+  return r.status===204?null:r.json();
+}
+async function load(tok){
+  if(!cfg()) return JSON.parse(localStorage.getItem(LOC+tok)||'[]');
+  const rows=await sb(`token_chat?token=eq.${tok}&order=ts.desc&limit=100`);
+  return rows.reverse();
+}
+async function post(row){
+  if(!cfg()){const k=LOC+row.token;const a=JSON.parse(localStorage.getItem(k)||'[]');a.push(row);localStorage.setItem(k,JSON.stringify(a.slice(-200)));return}
+  await sb('token_chat',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(row)});
+}
+const payloadOf=(tok,ts,body)=>`Fuji Forge chat\nToken: ${tok}\nTime: ${ts}\n${body}`;
+function verify(m){
+  try{return ethers.verifyMessage(payloadOf(m.token,m.ts,m.body),m.sig).toLowerCase()===String(m.wallet).toLowerCase()}catch(e){return false}
+}
+
+function rooms(){
+  const el=$c('chRooms');
+  const L=state.tokens||[];
+  if(!L.length){el.innerHTML='<div class="dim" style="font-size:13px">Launch a token first. Every token gets its own room.</div>';return}
+  if(!room) room=L[0].addr.toLowerCase();
+  el.innerHTML='<div class="rooms">'+L.map(t=>{const a=t.addr.toLowerCase();return `<button class="room ${a===room?'on':''}" data-r="${a}">${av(t,'sm')}<span><b>${esc2(t.name||t.sym)}</b> <span class="dim">${esc2(t.sym)}</span><small>${esc2(short(t.addr))}</small></span></button>`}).join('')+'</div>';
+}
+function renderMsgs(){
+  const box=$c('chList');
+  const near=box.scrollHeight-box.scrollTop-box.clientHeight<120;
+  const me=account?account.toLowerCase():'';
+  box.innerHTML=msgs.length?msgs.map(m=>{
+    const ok=m._ok;
+    const t=new Date(Number(m.ts)).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    return `<div class="chm ${m.wallet===me?'me':''} ${m._pend?'pend':''}"><div class="hd"><b>${esc2(m.name||short(m.wallet))}</b><span class="${ok?'ok':'bad'}" title="${ok?'Signature matches this wallet':'Signature does not match'}">${ok?'✓ signed':'✕ unverified'}</span><span>${t}</span></div><div class="tx">${esc2(m.body)}</div></div>`;
+  }).join(''):'<div class="dim" style="font-size:13px;text-align:center;padding:40px 0">No messages yet. Say hi to the community.</div>';
+  if(near||m_first) box.scrollTop=box.scrollHeight;
+  m_first=false;
+}
+let m_first=true;
+function backendPill(){
+  const p=$c('chBackend'),c=cfg();
+  p.textContent=c?'Shared · Supabase':'Local only';p.className='pill'+(c?' live':'');
+  $c('chNote').textContent=c?'Messages are stored on the backend and signed by your wallet.':'Local only: other people will not see these messages until a backend is connected below.';
+  $c('chUrl').value=c?c.url:'';$c('chKey').value=c?c.key:'';
+  $c('chName').value=localStorage.getItem(NAME)||'';
+}
+async function refresh(){
+  if(!room||$c('v-chat').classList.contains('hidden')) return;
+  const tok=room;
+  try{
+    const list=await load(tok);
+    if(tok!==room) return;
+    for(const m of list) m._ok=verify(m);
+    const pend=msgs.filter(m=>m._pend&&!list.some(x=>x.sig===m.sig));
+    msgs=list.concat(pend);
+    const t=state.tokens.find(x=>x.addr.toLowerCase()===tok);
+    $c('chTitle').textContent=t?`${t.name} chat`:'Token chat';
+    $c('chCount').textContent=msgs.length+' messages';
+    renderMsgs();
+  }catch(e){$c('chNote').textContent=String(e.message||e).slice(0,160)}
+}
+function setRoom(a){room=a;msgs=[];rooms();refresh()}
+async function send(){
+  if(busy) return;
+  const body=$c('chBody').value.trim();
+  if(!body) return;
+  if(!room) throw new Error('Pick a token room first');
+  if(Date.now()-lastSend<2000) throw new Error('Slow down a little');
+  if(!account||!window.BWS){window.bwPrompt&&window.bwPrompt();throw new Error('Unlock your browser wallet to chat')}
+  busy=true;
+  try{
+    const name=$c('chName').value.trim().slice(0,20);
+    localStorage.setItem(NAME,name);
+    const ts=Date.now();
+    const sig=await BWS.signMessage(payloadOf(room,ts,body));
+    const row={token:room,wallet:account.toLowerCase(),name,body,ts,sig};
+    row._pend=true;row._ok=true;msgs.push(row);renderMsgs();
+    $c('chBody').value='';lastSend=Date.now();
+    try{await post(row)}
+    finally{row._pend=false}
+    await refresh();
+  }finally{busy=false}
+}
+
+document.addEventListener('click',e=>{const b=e.target.closest('[data-r]');if(b&&b.closest('#chRooms')) setRoom(b.dataset.r)});
+$c('chSend').onclick=()=>run(send);
+$c('chBody').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();run(send)}});
+$c('chSave').onclick=()=>{
+  const url=$c('chUrl').value.trim(),key=$c('chKey').value.trim();
+  if(!/^https:\/\/.+/.test(url)||key.length<20) return toast('Enter the https project URL and the anon key','err');
+  localStorage.setItem(CFG,JSON.stringify({url,key}));backendPill();refresh();toast('Chat backend saved','ok');
+};
+$c('chOff').onclick=()=>{localStorage.removeItem(CFG);backendPill();refresh();toast('Using local chat only')};
+$c('chName').addEventListener('change',()=>localStorage.setItem(NAME,$c('chName').value.trim().slice(0,20)));
+$c('chSqlBox').textContent=sqlHelp();
+
+if(!VIEWS.includes('chat')) VIEWS.push('chat');
+const _show=window.show;
+window.show=function(view){
+  _show(view);
+  if(view==='chat'){rooms();backendPill();refresh();clearInterval(poll);poll=setInterval(()=>{if(!document.hidden) refresh()},3000)}
+  else clearInterval(poll);
+};
+window.addEventListener('eip6963:announceProvider',()=>{});
+rooms();backendPill();
+})();
+</script>
 <script id="wallet-module">
 /* =====================================================================
    Browser wallet module. ONE in-browser wallet signs every action in the
@@ -3797,18 +4304,21 @@ class QSigner extends ethers.AbstractSigner{
   signMessage(m){return this.w.signMessage(m)}
   signTypedData(d,t,v){return this.w.signTypedData(d,t,v)}
   sendTransaction(tx){
+    const tlabel=window.TX?TX.take():null;
+    const tid=window.TX?TX.begin(tlabel,tx):0;
     /* Extension wallets pad gas estimates; a bare wallet must too, or games whose gas use depends on the
        random roll (casino win vs lose) can run out of gas. 30% headroom, capped below the block limit. */
     const go=async()=>{
       const t=Object.assign({},tx);
-      if(t.gasLimit==null){
+      if(t.gasLimit==null&&(!t.data||t.data==='0x')&&t.to){t.gasLimit=21000n}   // plain AVAX transfer: no estimate round-trip
+      else if(t.gasLimit==null){
         const est=await this.w.estimateGas(t);
         const padded=est*130n/100n+20000n;
         t.gasLimit=padded>12000000n?(est>12000000n?est:12000000n):padded;
       }
       return this.w.sendTransaction(t);
     };
-    const p=this.q.then(go,go);
+    const p=this.q.then(go,go).then(resp=>{if(window.TX) TX.sent(tid,resp);return resp},err=>{if(window.TX) TX.failed(tid,err);throw err});
     this.q=p.then(()=>{},()=>{});
     return p;
   }
@@ -4210,7 +4720,9 @@ async function refreshBot(){
 
 /* ---------- bot transactions (always signed by the bot wallet) ---------- */
 async function btx(label,p){
+  const rsv=window.TX&&TX.reserve(label);
   const tx=await p;
+  if(window.TX){TX.release(rsv);TX.adopt(tx,label)}
   log('🤖 '+label+' submitted…','','/tx/'+tx.hash);
   const rc=await withTimeout(tx.wait(),180000,'Timed out waiting for '+label+' to confirm');
   if(!rc||rc.status===0) throw new Error(label+' reverted on-chain');
@@ -4799,7 +5311,9 @@ async function refreshCB(){
 
 /* ---------- bot transactions (always signed by the bot wallet) ---------- */
 async function btx(label,p){
+  const rsv=window.TX&&TX.reserve(label);
   const tx=await p;
+  if(window.TX){TX.release(rsv);TX.adopt(tx,label)}
   log('🎰 '+label+' submitted…','','/tx/'+tx.hash);
   const rc=await withTimeout(tx.wait(),180000,'Timed out waiting for '+label+' to confirm');
   if(!rc||rc.status===0) throw new Error(label+' reverted on-chain');
