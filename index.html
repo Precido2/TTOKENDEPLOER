@@ -441,7 +441,7 @@ header.nav #connect::after{content:"";position:absolute;inset:0;background:linea
   </nav>
   <div class="navr">
     <button class="pillbtn" id="actBtn" title="Activity"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></button>
-    <span class="pill" id="netPill">Not connected</span>
+    <span class="pill" id="netPill">No wallet</span>
     <span class="pill" id="hBal"></span>
     <button class="btn" id="connect">Create wallet</button>
     <button class="pillbtn" id="setBtn" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
@@ -950,7 +950,10 @@ header.nav #connect::after{content:"";position:absolute;inset:0;background:linea
         <div class="kv"><span>Status</span><b id="wlXStatus">Not linked</b></div>
         <div class="kv"><span>Address</span><b class="mono bot-addr" id="wlXAddr">—</b></div>
         <div class="kv"><span>AVAX balance</span><b id="wlXAvax">—</b></div>
+        <div id="wlXErr" class="err" style="font-size:13px;margin-top:10px"></div>
+        <div id="wlXPick" class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap"></div>
         <div class="row" style="margin-top:12px"><button class="btn" id="wlXBtn">Link wallet</button></div>
+        <p class="dim" id="wlXHelp" style="font-size:12px;margin:10px 0 0"></p>
       </div>
     </div>
 
@@ -1540,12 +1543,13 @@ async function ensureFuji(raw){
   }
 }
 /* Wallets announce themselves (EIP-6963) or inject window.ethereum, sometimes a moment after load. Poll briefly. */
+let xPref='';try{xPref=localStorage.getItem('fuji-forge:xwallet')||''}catch(e){}
 function findProvider(timeout){
   return new Promise(res=>{
     const t0=Date.now();
     const tick=()=>{
       window.dispatchEvent(new Event('eip6963:requestProvider'));
-      const p=wallets[0]?.provider||window.ethereum;
+      const p=(xPref&&wallets.find(w=>w.info.uuid===xPref)?.provider)||wallets[0]?.provider||window.ethereum;
       if(p) return res(p);
       if(Date.now()-t0>timeout) return res(null);
       setTimeout(tick,100);
@@ -1560,16 +1564,16 @@ function walletMissingMsg(){
 }
 /* ---------- linked (extension) wallet: only used to move funds in and out of the browser wallet ---------- */
 let xProvider=null,xSigner=null,xAccount=null,xBound=false;
-async function connect(silent=false){
-  try{ await connectInner(silent) }
+async function connect(silent=false,forced=null){
+  try{ await connectInner(silent,forced) }
   catch(e){
     if(e?.code===4001) throw new Error('Linking cancelled in the wallet. Press Link wallet to try again.');
     if(e?.code===-32002) throw new Error('A wallet request is already open. Open your wallet, finish or cancel that request, then try again.');
     throw e;
   }
 }
-async function connectInner(silent){
-  const raw=await findProvider(silent?300:2000);
+async function connectInner(silent,forced){
+  const raw=forced||await findProvider(silent?300:2000);
   if(!raw){
     if(silent) return;
     throw new Error(walletMissingMsg());
@@ -3782,7 +3786,7 @@ const wrJ=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));return true}catc
 const sleepUI=()=>new Promise(r=>setTimeout(r,30));
 
 let store=rdJ(WK,null),wallet=null,keyT=null;
-const X={bal:{}};                       // linked wallet balances
+const X={bal:{},err:''};                // linked wallet balances + last link error
 
 /* Serialises sends so the manual actions and the bots never reuse a nonce. */
 class QSigner extends ethers.AbstractSigner{
@@ -3934,6 +3938,11 @@ function render(){
   $('wlXAddr').textContent=xAccount||'—';
   $('wlXAvax').textContent=xAccount&&X.bal.native!=null?fmt(X.bal.native,18,4)+' AVAX':'—';
   $('wlXBtn').textContent=xAccount?'Refresh linked balance':'Link wallet';
+  $('wlXErr').textContent=xAccount?'':(X.err||'');
+  const det=detected();
+  $('wlXPick').innerHTML=(det.length>1)?'<span class="dim" style="font-size:12px;width:100%">'+(xAccount?'Switch to another detected wallet:':'Several wallets found. Pick one:')+'</span>'+det.map((d,i)=>`<button class="btn ghost sm" data-xw="${i}">${d.icon?`<img src="${esc(d.icon)}" alt="" style="width:16px;height:16px;border-radius:4px;vertical-align:-3px;margin-right:6px">`:''}${esc(d.name)}</button>`).join(''):'';
+  $('wlXBtn').classList.toggle('hidden',!xAccount&&det.length>1);
+  $('wlXHelp').textContent=xAccount?'':det.length?'Linking is optional. You can also just send AVAX and tokens to the browser wallet address from any wallet.':'No wallet extension was found in this browser. Linking is optional: copy the browser wallet address above and send it AVAX from any wallet or the Fuji faucet. On a phone, open this page inside your wallet app\'s browser to link it.';
   // legacy / import helper
   const lg=legacyList();
   $('wlLegacy').innerHTML=lg.length?lg.map((l,i)=>`<div class="kv"><span>${esc(l.label)} · ${esc(short(l.s.address))}</span><button class="btn sm ghost" data-legacy="${i}">Use as browser wallet</button></div>`).join('')+'<p class="dim" style="font-size:12px;margin:6px 0 0">Keeps its original password. The bots now use the browser wallet, so adopt the one that holds your funds.</p>':'';
@@ -3967,21 +3976,37 @@ async function refreshX(){
   if(t&&t.addr!=='native') try{X.bal[K(t.addr)]=await rd(t.addr,ERC20_ABI).balanceOf(xAccount)}catch(e){}
   render();
 }
-window.onExtLinked=()=>{refreshX()};
+function detected(){
+  const l=wallets.map(w=>({name:w.info.name||'Wallet',icon:w.info.icon||'',uuid:w.info.uuid,provider:w.provider}));
+  if(window.ethereum&&!l.some(x=>x.provider===window.ethereum)) l.push({name:'Browser wallet',icon:'',uuid:'injected',provider:window.ethereum});
+  return l;
+}
+async function link(d){
+  X.err='';render();
+  try{
+    if(d){xPref=d.uuid==='injected'?'':d.uuid;try{localStorage.setItem('fuji-forge:xwallet',xPref)}catch(e){}}
+    await connect(false,d?d.provider:null);
+  }catch(e){
+    X.err=String(e&&(e.shortMessage||e.message)||e).slice(0,240);render();throw e;
+  }
+}
+window.onExtLinked=()=>{X.err='';refreshX()};
+window.addEventListener('eip6963:announceProvider',()=>render());
+window.dispatchEvent(new Event('eip6963:requestProvider'));
 
 async function doTransfer(){
   if(!store) throw new Error('Create the browser wallet first');
   const t=assetTok();if(!t) throw new Error('Choose an asset');
   const amt=parseAmt($('wlAmt').value,t.dec);if(amt<=0n) throw new Error('Enter an amount');
   if(tr.dir==='fund'){
-    if(!xSigner) await connect(false);
+    if(!xSigner) await link(null);
     await connect(true);                     // re-checks the account and switches the wallet to Fuji
     if(!xSigner) throw new Error('Link your wallet first');
     if(t.addr==='native') await sendTx('Fund browser wallet with AVAX',xSigner.sendTransaction({to:store.address,value:amt}));
     else await sendTx(`Fund browser wallet with ${t.sym}`,new ethers.Contract(t.addr,ERC20_ABI,xSigner).transfer(store.address,amt));
   }else{
     if(!wallet) throw new Error('Unlock the browser wallet first');
-    if(!xAccount) await connect(false);
+    if(!xAccount) await link(null);
     if(!xAccount) throw new Error('Link your wallet first. Withdrawals go to it.');
     if(t.addr==='native') await sendTx('Withdraw AVAX to linked wallet',signer.sendTransaction({to:xAccount,value:amt}));
     else await sendTx(`Withdraw ${t.sym} to linked wallet`,new ethers.Contract(t.addr,ERC20_ABI,signer).transfer(xAccount,amt));
@@ -4031,7 +4056,8 @@ $('wlKeep').onchange=e=>{
   if(e.target.checked&&!wallet) e.target.checked=false;
 };
 
-$('wlXBtn').onclick=()=>run(async()=>{if(xAccount) await refreshX();else await connect(false)});
+$('wlXBtn').onclick=()=>run(async()=>{if(xAccount) await refreshX();else await link(null)});
+$('wlXPick').onclick=e=>{const b=e.target.closest('[data-xw]');if(!b) return;const d=detected()[+b.dataset.xw];if(d) run(()=>link(d))};
 document.querySelectorAll('#wlDir button').forEach(b=>b.onclick=()=>{tr.dir=b.dataset.d;refreshX();renderTransfer()});
 $('wlAsset').onchange=()=>{$('wlAmt').value='';refreshX();renderTransfer()};
 numField($('wlAmt'));
