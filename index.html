@@ -622,6 +622,36 @@ header.nav #connect::after{content:"";position:absolute;inset:0;background:linea
 @keyframes txSpark{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.2)}}
 @media(prefers-reduced-motion:reduce){.txc,.txc::before,.txbar i::after,.txst span.on::before,.txorb svg.ring,.txg .row2.run i{animation:none!important}.txorb .ic svg path{animation:none;stroke-dashoffset:0}}
 </style>
+<style id="chat-css">
+#v-chat .rooms{display:flex;flex-direction:column;gap:6px;max-height:340px;overflow:auto}
+#v-chat .room{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:#eee;cursor:pointer;text-align:left;font:inherit}
+#v-chat .room:hover{background:rgba(255,255,255,.08)}
+#v-chat .room.on{border-color:rgba(255,160,64,.5);background:rgba(255,138,40,.1)}
+#v-chat .room small{display:block;color:rgba(255,255,255,.5);font-size:11px}
+#v-chat .unread{width:9px;height:9px;border-radius:50%;background:#ff8a1f;box-shadow:0 0 10px #ff8a1f;flex:none}
+.chlist{height:460px;overflow:auto;display:flex;flex-direction:column;gap:8px;padding:8px 4px}
+.chm{max-width:86%;padding:9px 12px;border-radius:16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);animation:chin .35s ease-out both}
+.chm.me{align-self:flex-end;background:rgba(255,138,40,.16);border-color:rgba(255,160,64,.35)}
+.chm.hid{opacity:.45}.chm.pend{opacity:.6}
+.chm .hd{display:flex;gap:6px;align-items:center;font-size:11px;color:rgba(255,255,255,.55);margin-bottom:3px;flex-wrap:wrap}
+.chm .hd b{color:#ffd3a8;font-weight:700}
+.chm .ok{color:#34d399}.chm .bad{color:#f87171}
+.chm .tx{font-size:14px;line-height:1.4;word-break:break-word;white-space:pre-wrap}
+.chq{font-size:12px;color:rgba(255,255,255,.6);border-left:2px solid rgba(255,160,64,.6);padding:2px 8px;margin:0 0 6px;word-break:break-word}
+.chact{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;align-items:center}
+.chr{font:inherit;font-size:12px;padding:2px 8px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#eee;cursor:pointer}
+.chr.mine{border-color:rgba(255,160,64,.7);background:rgba(255,138,40,.18)}
+.chb{font:inherit;font-size:11px;padding:2px 7px;border-radius:8px;background:transparent;border:1px solid transparent;color:rgba(255,255,255,.5);cursor:pointer}
+.chb:hover{color:#fff;border-color:rgba(255,255,255,.15)}
+.chpick{display:inline-flex;gap:3px;padding:3px;border-radius:12px;background:rgba(20,20,24,.9);border:1px solid rgba(255,255,255,.14);margin-top:4px}
+.chpick button{font-size:15px;background:none;border:0;cursor:pointer;padding:2px 4px;border-radius:8px}
+.chpick button:hover{background:rgba(255,255,255,.1)}
+.chreply{font-size:12px;color:rgba(255,255,255,.7);padding:6px 10px;border-radius:10px;background:rgba(255,138,40,.1);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.chreply.hidden{display:none}
+.chquick{display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap}
+.chquick button{font-size:16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:3px 7px;cursor:pointer}
+@keyframes chin{from{opacity:0;transform:translateY(8px) scale(.97)}to{opacity:1;transform:none}}
+</style>
 </head><body>
 <div id="intro" aria-hidden="true"><div class="sqgrid"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
 <div class="bg"><div class="aur"><i class="o1"></i><i class="o2"></i><i class="o3"></i><i class="o4"></i></div><div class="gridmv"><i></i></div><div class="dots"><b style="left:44%;width:2px;height:2px;--t:17s;--dx:-51px;animation-delay:-26s"></b><b style="left:71%;width:2px;height:2px;--t:34s;--dx:-53px;animation-delay:-29s"></b><b style="left:67%;width:2px;height:2px;--t:18s;--dx:-5px;animation-delay:-13s"></b><b style="left:11%;width:2px;height:2px;--t:33s;--dx:-6px;animation-delay:-1s"></b><b style="left:75%;width:2px;height:2px;--t:34s;--dx:-53px;animation-delay:-18s"></b><b style="left:77%;width:2px;height:2px;--t:23s;--dx:-55px;animation-delay:-17s"></b><b style="left:20%;width:2px;height:2px;--t:20s;--dx:9px;animation-delay:-3s"></b><b style="left:76%;width:2px;height:3px;--t:21s;--dx:-47px;animation-delay:-18s"></b><b style="left:76%;width:3px;height:2px;--t:27s;--dx:-48px;animation-delay:-17s"></b><b style="left:94%;width:2px;height:3px;--t:17s;--dx:19px;animation-delay:-6s"></b><b style="left:66%;width:3px;height:3px;--t:29s;--dx:39px;animation-delay:-10s"></b><b style="left:62%;width:3px;height:2px;--t:27s;--dx:-22px;animation-delay:-7s"></b><b style="left:26%;width:3px;height:2px;--t:18s;--dx:13px;animation-delay:-9s"></b><b style="left:70%;width:2px;height:2px;--t:30s;--dx:-24px;animation-delay:-19s"></b><b style="left:12%;width:2px;height:3px;--t:29s;--dx:-39px;animation-delay:-24s"></b><b style="left:46%;width:2px;height:2px;--t:29s;--dx:-55px;animation-delay:-30s"></b><b style="left:88%;width:2px;height:3px;--t:34s;--dx:41px;animation-delay:-28s"></b><b style="left:43%;width:2px;height:3px;--t:27s;--dx:16px;animation-delay:-15s"></b></div></div>
@@ -630,6 +660,7 @@ header.nav #connect::after{content:"";position:absolute;inset:0;background:linea
   <a class="brand" href="#swap"><div class="logo">F</div><b>Fuji Forge</b><span class="testnet">Fuji</span></a>
   <nav class="tabs" id="tabs">
     <span class="tabglow" id="tabGlow"></span>
+    <button data-view="chat" title="Chat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span class="lb">Chat</span></button>
     <button data-view="wallet" title="Wallet"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18M16 14.5h2"/></svg><span class="lb">Wallet</span></button>
     <button data-view="swap" title="Swap"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h11l-3-3M17 17H6l3 3"/></svg><span class="lb">Swap</span></button>
     <button data-view="dex" title="DEX"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.2-4.2"/></svg><span class="lb">DEX</span></button>
@@ -647,6 +678,7 @@ header.nav #connect::after{content:"";position:absolute;inset:0;background:linea
   <div class="navr">
     <button class="pillbtn" id="actBtn" title="Activity"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></button>
     <span class="pill" id="netPill">No wallet</span>
+    <span class="pill" id="usdPill" title="AVAX price from mainnet markets (used for testnet values too)">AVAX…</span>
     <span class="pill" id="hBal"></span>
     <button class="btn" id="connect">Create wallet</button>
     <button class="pillbtn" id="setBtn" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
@@ -1261,6 +1293,39 @@ header.nav #connect::after{content:"";position:absolute;inset:0;background:linea
     </details>
   </section>
 
+
+  <section id="v-chat" class="view hidden">
+    <div class="pagehead"><div><h1>Token chat</h1><p>Every token has its own room. Messages are signed by the author's browser wallet, so anyone can check who wrote what. React, reply, and see who is talking.</p></div>
+      <div class="row"><span class="pill" id="chBackend">Local only</span></div></div>
+    <div class="grid2">
+      <div class="card"><h2>Rooms</h2><p class="sub">One room per token. A dot means new messages.</p><div id="chRooms"></div>
+        <h3 style="margin:16px 0 6px;font-size:14px">Members <span id="chMemberCount" class="dim" style="font-size:12px;font-weight:400"></span></h3>
+        <div id="chMembers"></div>
+      </div>
+      <div class="card">
+        <div class="row" style="justify-content:space-between;margin-bottom:6px"><h2 id="chTitle">Choose a token</h2><span class="dim" id="chCount" style="font-size:12px"></span></div>
+        <div id="chList" class="chlist"></div>
+        <div class="chcomp" style="border-top:1px solid rgba(255,255,255,.08);padding-top:10px;margin-top:8px">
+          <div id="chReply" class="chreply hidden"></div>
+          <div class="chquick" id="chQuick"><button>👍</button><button>🔥</button><button>😂</button><button>❤️</button><button>🚀</button><button>👀</button></div>
+          <div class="row" style="gap:8px;margin-bottom:8px"><input id="chName" maxlength="20" placeholder="Display name (optional)" style="flex:1"></div>
+          <div class="row" style="gap:8px"><input id="chBody" maxlength="280" placeholder="Write a message…" style="flex:1"><button class="btn" id="chSend">Send</button></div>
+          <div class="row" style="justify-content:space-between;margin-top:6px"><p class="dim" id="chNote" style="font-size:12px;margin:0"></p><button class="chb" id="chShowHidden" style="font-size:12px"></button></div>
+          <span id="chHidden" class="dim" style="font-size:11px"></span>
+        </div>
+      </div>
+    </div>
+    <div class="card bot-gap">
+      <h2>Chat backend</h2>
+      <p class="sub">Chat is stored on this device until you connect a backend. To share it with everyone, create a free Supabase project and paste its URL and anon key here.</p>
+      <div class="grid2">
+        <div><label>Supabase project URL</label><input id="chUrl" placeholder="https://xxxx.supabase.co"></div>
+        <div><label>Anon (public) key</label><input id="chKey" class="mono" placeholder="eyJ…"></div>
+      </div>
+      <div class="row" style="margin-top:10px"><button class="btn sm" id="chSave">Save backend</button><button class="btn sm ghost" id="chOff">Use local only</button></div>
+      <details style="margin-top:12px"><summary class="dim">Create the chat tables (run once in the Supabase SQL editor)</summary><pre class="mono" id="chSqlBox" style="white-space:pre-wrap;font-size:12px;margin:8px 0 0"></pre></details>
+    </div>
+  </section>
 </main>
 
 <!-- token modal -->
@@ -2050,6 +2115,7 @@ class GatedProvider extends ethers.JsonRpcProvider{
   }
 }
 const readP=new GatedProvider(localStorage.getItem('fuji-forge:rpc-url')||FUJI.rpc[0],FUJI.chainId);
+readP.pollingInterval=900; // faster receipt detection (default is 4s)
 const wallets=[];
 window.addEventListener('eip6963:announceProvider',e=>{if(!wallets.some(w=>w.info.uuid===e.detail.info.uuid)) wallets.push(e.detail)});
 const rd=(addr,abi)=>new ethers.Contract(addr,abi,readP);
@@ -2337,6 +2403,7 @@ async function connectInner(silent,forced){
   rawProv=raw;
   const fujiNet=ethers.Network.from(FUJI.chainId);
   xProvider=new ethers.BrowserProvider(raw,fujiNet,{staticNetwork:fujiNet});
+  xProvider.pollingInterval=900;
   xSigner=await xProvider.getSigner();
   xAccount=await xSigner.getAddress();
   if(!xBound){
@@ -4313,8 +4380,10 @@ async function openDexToken(addr){
   const liq=pd.pair?Number(fe(pd.avaxRes))+Number(fu(pd.tokRes,dec))*(price||0):null;
   const mcap=price!=null?Number(fu(sup,dec))*price:null;
   const tile=(l,v)=>`<div class="stat"><span>${l}</span><b>${esc(v)}</b></div>`;
-  $('dxPrice').textContent=price==null?'No pool yet':price.toPrecision(5)+' AVAX';
-  $('dxTiles').innerHTML=tile('Liquidity',liq==null?'—':liq.toLocaleString(undefined,{maximumFractionDigits:2})+' AVAX')+tile('Market cap (est.)',mcap==null?'—':mcap.toLocaleString(undefined,{maximumFractionDigits:2})+' AVAX')+tile('Total supply',fmt(sup,dec,0)+' '+t.sym)+tile('Burned',burned==null?'n/a':fmt(burned,dec,0)+' '+t.sym);
+  $('dxPrice').innerHTML=price==null?'No pool yet':`<span data-usd-avax="${price}"></span> <span class="dim" style="font-size:12px">${price.toPrecision(5)} AVAX</span>`;
+  const avTile=(l,v)=>`<div class="stat"><span>${l}</span><b data-usd-avax="${v==null?'':v}">—</b></div>`;
+  $('dxTiles').innerHTML=avTile('Liquidity',liq)+avTile('Market cap (est.)',mcap)+tile('Total supply',fmt(sup,dec,0)+' '+t.sym)+tile('Burned',burned==null?'n/a':fmt(burned,dec,0)+' '+t.sym);
+  if(window.usd) usd.refreshTags();
   const kv=(l,v)=>`<div class="kv"><span>${l}</span><span>${v}</span></div>`;
   const link=(a,label)=>`<a href="${FUJI.explorer}/address/${a}" target="_blank">${label} ↗</a>`;
   $('dxInfo').innerHTML=`
@@ -4567,6 +4636,292 @@ let balBusy=false;
 setInterval(async()=>{if(!account||document.hidden||balBusy) return;balBusy=true;try{await refreshBalances()}finally{balBusy=false}},60000);
 
 </script>
+<script id="usd-module">
+/* AVAX price in USD, read from MAINNET markets and used for every network (testnet included).
+   Testnet AVAX has no real market, so testnet USD values are an estimate using the mainnet price. */
+(function(){
+'use strict';
+const S={avax:null,at:0,src:''};
+const fmtUsdRaw=v=>{
+  if(v==null||!isFinite(v)) return '—';
+  const a=Math.abs(v);
+  if(a>=1e6) return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',notation:'compact',maximumFractionDigits:2}).format(v);
+  if(a>=1) return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:2}).format(v);
+  return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumSignificantDigits:3}).format(v);
+};
+async function fetchAvax(){
+  const tries=[
+    ['https://api.coingecko.com/api/v3/simple/price?ids=avalanche-2&vs_currencies=usd',j=>j['avalanche-2']&&j['avalanche-2'].usd,'CoinGecko'],
+    ['https://api.binance.com/api/v3/ticker/price?symbol=AVAXUSDT',j=>+j.price,'Binance']
+  ];
+  for(const [url,pick,name] of tries){
+    try{
+      const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),6000);
+      const r=await fetch(url,{signal:ctl.signal,cache:'no-store'});clearTimeout(t);
+      if(!r.ok) continue;
+      const v=Number(pick(await r.json()));
+      if(v>0){S.avax=v;S.at=Date.now();S.src=name;return v}
+    }catch(e){}
+  }
+  return S.avax;
+}
+function refreshTags(){
+  document.querySelectorAll('[data-usd-avax]').forEach(el=>{
+    const v=parseFloat(el.dataset.usdAvax);
+    if(!isFinite(v)||el.dataset.usdAvax===''){el.textContent='—';return}
+    el.textContent=S.avax?fmtUsdRaw(v*S.avax):v.toLocaleString(undefined,{maximumFractionDigits:4})+' AVAX';
+  });
+  const p=document.getElementById('usdPill');
+  if(p) p.textContent=S.avax?'AVAX '+fmtUsdRaw(S.avax):'AVAX price…';
+}
+window.usd={
+  get avax(){return S.avax},
+  get source(){return S.src},
+  get at(){return S.at},
+  fmt:fmtUsdRaw,
+  refreshTags,
+  fetch:fetchAvax,
+  toUsd:v=>S.avax&&v!=null?v*S.avax:null
+};
+window.fmtUsd=fmtUsdRaw;
+async function tick(){await fetchAvax();refreshTags();window.dispatchEvent(new Event('usd:update'))}
+tick();
+setInterval(()=>{if(!document.hidden) tick()},60000);
+window.addEventListener('load',refreshTags);
+})();
+</script>
+<script id="chat-module">
+/* Token chat. Messages are signed with the browser wallet (no pop-up) and checked on every device.
+   Features: rooms per token, replies, emoji reactions, unread dots, members list, hide-for-me.
+   Storage: Supabase when a backend is saved, otherwise this device only. */
+(function(){
+'use strict';
+if(typeof ethers==='undefined'||typeof state==='undefined'||typeof VIEWS==='undefined') return;
+const CFG='fuji-forge:chat-backend',NAME='fuji-forge:chat-name',LOC='fuji-forge:chat-local:',RLOC='fuji-forge:chat-react:',
+      SEEN='fuji-forge:chat-seen',LAST='fuji-forge:chat-last',HIDE='fuji-forge:chat-hidden';
+const EMOJI=['👍','🔥','😂','❤️','🚀','👀'];
+const $c=id=>document.getElementById(id);
+const esc2=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const lsJ=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)||'null')??d}catch(e){return d}};
+const lsS=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+const cfg=()=>lsJ(CFG,null);
+const payloadOf=(tok,ts,body,reply)=>`Fuji Forge chat\nToken: ${tok}\nTime: ${ts}\nReply: ${reply||'-'}\n${body}`;
+const verify=m=>{try{return ethers.verifyMessage(payloadOf(m.token,m.ts,m.body,m.reply),m.sig).toLowerCase()===String(m.wallet).toLowerCase()}catch(e){return false}};
+const me=()=>account?account.toLowerCase():'';
+
+let room=null,msgs=[],reacts=[],poll=0,lastSend=0,busy=false,replyTo=null,pickerFor=null,showHidden=false,hideSet=new Set(lsJ(HIDE,[]));
+
+/* ---------- backend ---------- */
+async function sb(path,opts={}){
+  const c=cfg();
+  const r=await fetch(c.url.replace(/\/$/,'')+'/rest/v1/'+path,{...opts,headers:{apikey:c.key,Authorization:'Bearer '+c.key,'Content-Type':'application/json',...(opts.headers||{})}});
+  if(!r.ok) throw new Error('Chat backend '+r.status+': '+(await r.text()).slice(0,140));
+  return r.status===204?null:r.json();
+}
+async function loadMsgs(tok){
+  if(!cfg()) return lsJ(LOC+tok,[]);
+  return (await sb(`token_chat?token=eq.${encodeURIComponent(tok)}&order=ts.desc&limit=150`)).reverse();
+}
+async function postMsg(row){
+  if(!cfg()){const a=lsJ(LOC+row.token,[]);a.push(row);lsS(LOC+row.token,a.slice(-300));return}
+  await sb('token_chat',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(row)});
+}
+async function loadReacts(tok){
+  if(!cfg()) return lsJ(RLOC+tok,[]);
+  return sb(`token_chat_react?token=eq.${encodeURIComponent(tok)}&select=msg,wallet,emoji&limit=5000`);
+}
+async function toggleReact(tok,msg,emoji,wallet){
+  const has=reacts.some(r=>r.msg===msg&&r.emoji===emoji&&r.wallet===wallet);
+  if(!cfg()){
+    let a=lsJ(RLOC+tok,[]);
+    a=has?a.filter(r=>!(r.msg===msg&&r.emoji===emoji&&r.wallet===wallet)):a.concat([{msg,emoji,wallet}]);
+    lsS(RLOC+tok,a.slice(-3000));return
+  }
+  if(has){
+    await sb(`token_chat_react?token=eq.${encodeURIComponent(tok)}&msg=eq.${encodeURIComponent(msg)}&emoji=eq.${encodeURIComponent(emoji)}&wallet=eq.${wallet}`,{method:'DELETE',headers:{Prefer:'return=minimal'}});
+  }else{
+    await sb('token_chat_react',{method:'POST',headers:{Prefer:'return=minimal,resolution=ignore-duplicates'},body:JSON.stringify({token:tok,msg,emoji,wallet})});
+  }
+}
+
+/* ---------- rooms, unread, members ---------- */
+function rooms(){
+  const el=$c('chRooms');
+  const L=state.tokens||[];
+  if(!L.length){el.innerHTML='<div class="dim" style="font-size:13px">Launch a token first. Every token gets its own room.</div>';return}
+  if(!room) room=L[0].addr.toLowerCase();
+  const last=lsJ(LAST,{}),seen=lsJ(SEEN,{});
+  el.innerHTML='<div class="rooms">'+L.map(t=>{
+    const a=t.addr.toLowerCase(),unread=a!==room&&(last[a]||0)>(seen[a]||0);
+    return `<button class="room ${a===room?'on':''}" data-r="${a}">${av(t,'sm')}<span style="flex:1;min-width:0"><b>${esc2(t.name||t.sym)}</b> <span class="dim">${esc2(t.sym)}</span><small>${esc2(short(t.addr))}</small></span>${unread?'<i class="unread" title="New messages"></i>':''}</button>`;
+  }).join('')+'</div>';
+}
+function renderMembers(){
+  const box=$c('chMembers');if(!box) return;
+  const by=new Map();
+  for(const m of msgs){if(hideSet.has(m.sig)&&!showHidden) continue;const e=by.get(m.wallet)||{name:'',n:0};e.n++;if(m.name) e.name=m.name;by.set(m.wallet,e)}
+  const L=[...by.entries()].sort((a,b)=>b[1].n-a[1].n);
+  box.innerHTML=L.length?L.slice(0,25).map(([w,e])=>`<div class="kv" style="font-size:13px"><span>${esc2(e.name||short(w))}${w===me()?' <span class="dim">(you)</span>':''}</span><b class="dim">${e.n} msg</b></div>`).join(''):'<div class="dim" style="font-size:13px">No one has posted yet.</div>';
+  $c('chMemberCount').textContent=L.length+' members';
+}
+function header(){
+  const t=state.tokens.find(x=>x.addr.toLowerCase()===room);
+  $c('chTitle').textContent=t?`${t.name} chat`:'Token chat';
+}
+
+/* ---------- rendering ---------- */
+function reactOf(sig){
+  const out={};
+  for(const r of reacts) if(r.msg===sig){const o=out[r.emoji]||(out[r.emoji]={n:0,mine:false});o.n++;if(r.wallet===me()) o.mine=true}
+  return out;
+}
+function renderMsgs(){
+  const box=$c('chList');
+  const near=box.scrollHeight-box.scrollTop-box.clientHeight<140;
+  const byS=new Map(msgs.map(m=>[m.sig,m]));
+  const vis=msgs.filter(m=>showHidden||!hideSet.has(m.sig));
+  box.innerHTML=vis.length?vis.map(m=>{
+    const ok=m._ok,mine=m.wallet===me();
+    const t=new Date(Number(m.ts)).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    const par=m.reply?byS.get(m.reply):null;
+    const quote=m.reply?`<div class="chq">↪ ${par?esc2((par.name||short(par.wallet)))+': '+esc2(par.body.slice(0,80)):'<i>original message not loaded</i>'}</div>`:'';
+    const ro=reactOf(m.sig);
+    const chips=Object.entries(ro).map(([e,o])=>`<button class="chr ${o.mine?'mine':''}" data-act="react" data-sig="${m.sig}" data-e="${esc2(e)}">${esc2(e)} ${o.n}</button>`).join('');
+    const picker=pickerFor===m.sig?`<span class="chpick">${EMOJI.map(e=>`<button data-act="react" data-sig="${m.sig}" data-e="${esc2(e)}">${e}</button>`).join('')}</span>`:'';
+    return `<div class="chm ${mine?'me':''} ${m._pend?'pend':''} ${hideSet.has(m.sig)?'hid':''}" data-sig="${m.sig}">
+      <div class="hd"><b>${esc2(m.name||short(m.wallet))}</b><span class="${ok?'ok':'bad'}" title="${ok?'Signature matches this wallet':'Signature does not match'}">${ok?'✓':'✕ unverified'}</span><span>${t}</span></div>
+      ${quote}<div class="tx">${esc2(m.body)}</div>
+      <div class="chact">${chips}<button class="chb" data-act="picker" data-sig="${m.sig}" title="React">☺+</button><button class="chb" data-act="reply" data-sig="${m.sig}" title="Reply">↩ reply</button><button class="chb" data-act="hide" data-sig="${m.sig}" title="Hide for me">${hideSet.has(m.sig)?'show':'hide'}</button></div>${picker}
+    </div>`;
+  }).join(''):'<div class="dim" style="font-size:13px;text-align:center;padding:40px 0">No messages yet. Say hi to the community.</div>';
+  if(near) box.scrollTop=box.scrollHeight;
+}
+function renderReply(){
+  const b=$c('chReply');
+  if(!replyTo){b.classList.add('hidden');b.innerHTML='';return}
+  const m=msgs.find(x=>x.sig===replyTo);
+  b.classList.remove('hidden');
+  b.innerHTML=`Replying to <b>${esc2(m?(m.name||short(m.wallet)):'message')}</b> <button class="chb" data-act="cancelreply">✕</button>`;
+}
+function backendPill(){
+  const p=$c('chBackend'),c=cfg();
+  p.textContent=c?'Shared · Supabase':'Local only';p.className='pill'+(c?' live':'');
+  $c('chNote').textContent=c?'Messages are stored on the backend and signed by your wallet.':'Local only: other people will not see these messages until a backend is connected below.';
+  $c('chUrl').value=c?c.url:'';$c('chKey').value=c?c.key:'';
+  $c('chName').value=localStorage.getItem(NAME)||'';
+  $c('chHidden').textContent=hideSet.size?(showHidden?'Hide hidden ':'Show ')+hideSet.size+' hidden':'';
+}
+async function refresh(){
+  if(!room||$c('v-chat').classList.contains('hidden')) return;
+  const tok=room;
+  try{
+    const [list,rs]=await Promise.all([loadMsgs(tok),loadReacts(tok)]);
+    if(tok!==room) return;
+    list.forEach(m=>m._ok=verify(m));
+    const pend=msgs.filter(m=>m._pend&&!list.some(x=>x.sig===m.sig));
+    msgs=list.concat(pend);reacts=rs;
+    const newest=msgs.length?Number(msgs[msgs.length-1].ts):0;
+    const last=lsJ(LAST,{});last[tok]=newest;lsS(LAST,last);
+    const seen=lsJ(SEEN,{});seen[tok]=newest;lsS(SEEN,seen);
+    header();$c('chCount').textContent=msgs.length+' messages';
+    renderMsgs();renderMembers();renderReply();rooms();
+  }catch(e){$c('chNote').textContent=String(e.message||e).slice(0,160)}
+}
+function setRoom(a){room=a;msgs=[];reacts=[];replyTo=null;pickerFor=null;renderReply();rooms();refresh()}
+
+/* ---------- actions ---------- */
+async function send(){
+  if(busy) return;
+  const body=$c('chBody').value.trim();
+  if(!body) return;
+  if(!room) throw new Error('Pick a token room first');
+  if(Date.now()-lastSend<1500) throw new Error('Slow down a little');
+  if(!account||!window.BWS){window.bwPrompt&&window.bwPrompt();throw new Error('Unlock your browser wallet to chat')}
+  busy=true;
+  try{
+    const name=$c('chName').value.trim().slice(0,20);
+    localStorage.setItem(NAME,name);
+    const ts=Date.now(),reply=replyTo||null;
+    const sig=await BWS.signMessage(payloadOf(room,ts,body,reply));
+    const row={token:room,wallet:account.toLowerCase(),name,body,ts,sig,reply};
+    row._pend=true;row._ok=true;msgs.push(row);renderMsgs();
+    $c('chBody').value='';replyTo=null;renderReply();lastSend=Date.now();
+    try{await postMsg(row)}finally{row._pend=false}
+    await refresh();
+  }finally{busy=false}
+}
+async function react(sig,emoji){
+  if(!account||!window.BWS){window.bwPrompt&&window.bwPrompt();throw new Error('Unlock your browser wallet to react')}
+  pickerFor=null;
+  await toggleReact(room,sig,emoji,me());
+  await refresh();
+}
+function toggleHide(sig){
+  if(hideSet.has(sig)) hideSet.delete(sig);else hideSet.add(sig);
+  lsS(HIDE,[...hideSet]);renderMsgs();backendPill();
+}
+
+/* ---------- wiring ---------- */
+document.addEventListener('click',e=>{const r=e.target.closest('[data-r]');if(r&&r.closest('#chRooms')) setRoom(r.dataset.r)});
+$c('chList').addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b) return;
+  const sig=b.dataset.sig,act=b.dataset.act;
+  if(act==='reply'){replyTo=sig;renderReply();$c('chBody').focus()}
+  else if(act==='picker'){pickerFor=pickerFor===sig?null:sig;renderMsgs()}
+  else if(act==='react') run(()=>react(sig,b.dataset.e));
+  else if(act==='hide') toggleHide(sig);
+});
+$c('chReply').addEventListener('click',e=>{if(e.target.closest('[data-act="cancelreply"]')){replyTo=null;renderReply()}});
+document.querySelectorAll('#chQuick button').forEach(b=>b.onclick=()=>{const i=$c('chBody');i.value+=b.textContent;i.focus()});
+$c('chSend').onclick=()=>run(send);
+$c('chBody').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();run(send)}else if(e.key==='Escape'){replyTo=null;renderReply()}});
+$c('chSave').onclick=()=>{
+  const url=$c('chUrl').value.trim(),key=$c('chKey').value.trim();
+  if(!/^https:\/\/.+/.test(url)||key.length<20) return toast('Enter the https project URL and the anon key','err');
+  lsS(CFG,{url,key});backendPill();refresh();toast('Chat backend saved','ok');
+};
+$c('chOff').onclick=()=>{localStorage.removeItem(CFG);backendPill();refresh();toast('Using local chat only')};
+$c('chName').addEventListener('change',()=>localStorage.setItem(NAME,$c('chName').value.trim().slice(0,20)));
+$c('chShowHidden').onclick=()=>{showHidden=!showHidden;backendPill();renderMsgs();renderMembers()};
+$c('chSqlBox').textContent=`create table if not exists token_chat (
+  id bigint generated always as identity primary key,
+  token text not null, wallet text not null, name text,
+  body text not null, ts bigint not null, sig text not null, reply text
+);
+create index if not exists token_chat_token_ts on token_chat (token, ts);
+alter table token_chat enable row level security;
+create policy "read chat" on token_chat for select using (true);
+create policy "post chat" on token_chat for insert with check (char_length(body) <= 280);
+
+create table if not exists token_chat_react (
+  token text not null, msg text not null, wallet text not null, emoji text not null,
+  primary key (token, msg, wallet, emoji)
+);
+alter table token_chat_react enable row level security;
+create policy "read reactions" on token_chat_react for select using (true);
+create policy "add reactions" on token_chat_react for insert with check (true);
+create policy "remove reactions" on token_chat_react for delete using (true);`;
+
+if(!VIEWS.includes('chat')) VIEWS.push('chat');
+const _show=window.show;
+let _t=0;
+window.show=function(view){
+  _show(view);
+  clearInterval(_t);
+  if(view==='chat'){rooms();backendPill();refresh();_t=setInterval(()=>{if(!document.hidden) refresh()},2500)}
+};
+rooms();backendPill();
+// unread dots on the other rooms: refresh the rooms' latest timestamps every 20s
+setInterval(async()=>{
+  if($c('v-chat').classList.contains('hidden')) return;
+  for(const t of (state.tokens||[]).slice(0,12)){
+    const a=t.addr.toLowerCase();if(a===room) continue;
+    try{const l=await loadMsgs(a);const last=lsJ(LAST,{});last[a]=l.length?Number(l[l.length-1].ts):0;lsS(LAST,last)}catch(e){}
+  }
+  rooms();
+},20000);
+})();
+</script>
 <script id="wallet-module">
 /* =====================================================================
    Browser wallet module. ONE in-browser wallet signs every action in the
@@ -4602,7 +4957,8 @@ class QSigner extends ethers.AbstractSigner{
        random roll (casino win vs lose) can run out of gas. 30% headroom, capped below the block limit. */
     const go=async()=>{
       const t=Object.assign({},tx);
-      if(t.gasLimit==null){
+      if(t.gasLimit==null&&(!t.data||t.data==='0x')&&t.to){t.gasLimit=21000n} // plain AVAX transfer: skip the estimate round-trip
+      else if(t.gasLimit==null){
         const est=await this.w.estimateGas(t);
         const padded=est*130n/100n+20000n;
         t.gasLimit=padded>12000000n?(est>12000000n?est:12000000n):padded;
