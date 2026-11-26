@@ -572,6 +572,7 @@ header.nav #connect::after{content:"";position:absolute;inset:0;background:linea
 .rp-pack:hover .rp-wrap{transform:rotate(2deg) scale(1.05)}
 .rp-wrap:before,.rp-wrap:after{content:"";position:absolute;left:0;right:0;height:12px;background:repeating-linear-gradient(90deg,#ffffff55 0 5px,#ffffff10 5px 10px)}.rp-wrap:before{top:0}.rp-wrap:after{bottom:0}
 .rp-wrap img{width:112%;max-height:78%;object-fit:contain;filter:drop-shadow(0 6px 10px #000a);transition:.3s}
+.rp-wrap .hatart{position:absolute;width:62%;left:19%;top:20%;filter:drop-shadow(0 6px 10px #000a)}.rs-half .hatart{position:absolute;width:58%;left:21%;top:16%}
 .rp-wrap .cardimg{width:78%;border-radius:6px;transform:rotate(3deg)}
 .rp-wrap .shine{position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,#ffffff40 46%,transparent 60%);transform:translateX(-120%);animation:rpShine 3.6s infinite}
 @keyframes rpShine{0%,55%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
@@ -676,6 +677,50 @@ header.nav #connect::after{content:"";position:absolute;inset:0;background:linea
 @media(max-width:640px){.rp-shelf{grid-template-columns:1fr}}
 .rp-cell{position:relative}.rp-sel{position:absolute;top:-6px;left:-6px;z-index:4;width:26px;height:26px;border-radius:50%;border:2px solid #fff8;background:#000b;color:#fff;cursor:pointer;font-weight:800;padding:0}
 .rp-sel:hover{border-color:var(--acc)}
+</style>
+<style id="refresh-css">
+/* Design refresh: grouped navigation, readable secondary text, visible focus, comfortable touch targets */
+:root{--mute:#a9a9b0;--line2:#3a3a40}
+label{font-size:12.5px;color:#b9b9c0;font-weight:500;letter-spacing:.01em}
+.dim{color:var(--mute)}
+::placeholder{color:#6d6d75;opacity:1}
+.pagehead p,.sub{color:#b4b4bb;max-width:68ch;line-height:1.55}
+.stat b,.pill,.mono,td,.num{font-variant-numeric:tabular-nums}
+:where(button,a,input,select,textarea,summary,[tabindex]):focus-visible{outline:2px solid var(--acc2);outline-offset:2px;border-radius:10px}
+input:focus-visible,select:focus-visible,textarea:focus-visible{outline-offset:0;border-color:var(--acc2)}
+input[type=file]{padding:8px;color:#b9b9c0}
+input[type=file]::file-selector-button{margin-right:12px;padding:8px 14px;border:1px solid var(--line2);border-radius:10px;background:#1a1a1f;color:var(--text);font-weight:600;cursor:pointer;transition:.15s}
+input[type=file]::file-selector-button:hover{border-color:var(--acc);background:#241710}
+.empty>div:first-child{filter:grayscale(1) opacity(.55)}
+/* hide the old 15-icon strip (kept in the DOM so every existing handler still works) */
+header.nav .tabs{display:none!important}
+.gnav{display:flex;gap:2px;padding:4px;border-radius:16px;background:rgba(14,14,17,.72);border:1px solid rgba(255,255,255,.1)}
+.gnav button{display:flex;align-items:center;gap:8px;padding:9px 16px;border:0;border-radius:12px;background:none;color:#b4b4bb;font-weight:650;cursor:pointer;transition:.15s;white-space:nowrap}
+.gnav button svg,.gdock button svg,.subnav button svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.gnav button:hover{color:var(--text);background:#ffffff0d}
+.gnav button[aria-current=true]{color:#fff;background:linear-gradient(180deg,#2a1b12,#1c1310);box-shadow:inset 0 0 0 1px #ff6a1a66,0 0 22px #ff6a1a22}
+.gnav button[aria-current=true] svg{color:var(--acc2)}
+.subnav{max-width:1180px;margin:14px auto 0;padding:0 24px;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.subnav::-webkit-scrollbar{display:none}
+.subnav button{display:flex;align-items:center;gap:7px;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:rgba(18,18,20,.7);color:#b9b9c0;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap;transition:.15s;flex:none}
+.subnav button:hover{color:var(--text);border-color:var(--line2)}
+.subnav button[aria-current=true]{color:#fff;border-color:var(--acc);background:#1d120b}
+.subnav button[aria-current=true] svg{color:var(--acc2)}
+.gdock{display:none}
+@media(max-width:1380px) and (min-width:861px){.gnav button{padding:9px 11px}.gnav button svg{display:none}header.nav{gap:10px;padding-left:18px;padding-right:18px}header.nav .testnet{display:none}}
+@media(max-width:860px){
+  .gnav{display:none}
+  .subnav{padding:0 12px;margin-top:8px}
+  .gdock{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;position:fixed;left:10px;right:10px;bottom:max(10px,env(safe-area-inset-bottom));z-index:40;padding:6px;border-radius:22px;background:rgba(16,16,19,.72);-webkit-backdrop-filter:blur(26px) saturate(175%);backdrop-filter:blur(26px) saturate(175%);border:1px solid rgba(255,255,255,.15);box-shadow:0 18px 50px rgba(0,0,0,.65),inset 0 1px 0 rgba(255,255,255,.2)}
+  .gdock button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:54px;border:0;border-radius:16px;background:none;color:#b0b0b8;font-size:11px;font-weight:650;cursor:pointer}
+  .gdock button svg{width:22px;height:22px}
+  .gdock button[aria-current=true]{color:#fff;background:linear-gradient(180deg,#2a1b12,#1c1310);box-shadow:inset 0 0 0 1px #ff6a1a66}
+  .gdock button[aria-current=true] svg{color:var(--acc2)}
+  main{padding-bottom:calc(104px + env(safe-area-inset-bottom))}
+  .btn,button.go,input,select{min-height:44px}
+  .pagehead h1{font-size:30px}
+}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 </style>
 <style id="tx-css">
 /* ---------- transaction dock: live progress for every transaction, in the background ---------- */
@@ -7996,15 +8041,23 @@ const pendKey=()=>'fuji-forge:rip-pending:'+(V?V.addr.toLowerCase():'')+':'+Stri
 const pendLoad=()=>{try{return JSON.parse(localStorage.getItem(pendKey())||'[]')}catch(e){return[]}};
 const pendSave=l=>{try{localStorage.setItem(pendKey(),JSON.stringify(l))}catch(e){}};
 /* ---------- card data ---------- */
-const imgUrl=(game,code)=>{
-  if(game==='op') return 'https://en.onepiece-cardgame.com/images/cardlist/card/'+code+'.png';
-  const i=code.lastIndexOf('-');return 'https://images.pokemontcg.io/'+code.slice(0,i)+'/'+code.slice(i+1)+'_hires.png';
+const OPV='261016';
+const imgSrcs=(game,code)=>{
+  if(game==='op'){const b=code.split('_')[0],sf=code.includes('_')?'_'+code.split('_')[1]:'';
+    return ['https://en.onepiece-cardgame.com/images/cardlist/card/'+code+'.png?'+OPV,'https://en.onepiece-cardgame.com/images/cardlist/card/'+code+'.png','https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/one-piece/'+b.slice(0,4)+'/'+b+sf+'_EN.webp']}
+  const i=code.lastIndexOf('-'),s=code.slice(0,i),n=code.slice(i+1);
+  return ['https://images.pokemontcg.io/'+s+'/'+n+'_hires.png','https://images.pokemontcg.io/'+s+'/'+n+'.png'];
 };
+const imgUrl=(game,code)=>imgSrcs(game,code)[0];
+const imgTag=(game,code,alt,extra)=>{const l=imgSrcs(game,code);return `<img class="rip-img" src="${l[0]}" data-srcs="${l.join('|')}" alt="${esc(alt||'')}" referrerpolicy="no-referrer" ${extra||''}>`};
 const artUrl=id=>'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/'+id+'.png';
+const HAT='<svg class="hatart" viewBox="0 0 120 100" aria-hidden="true"><ellipse cx="60" cy="68" rx="54" ry="16" fill="#e9c46a" stroke="#a9792b" stroke-width="3"/><path d="M26 66C26 34 42 20 60 20s34 14 34 46c-10 7-58 7-68 0z" fill="#f4d58d" stroke="#a9792b" stroke-width="3"/><path d="M27 58c20 8 46 8 66 0l1 9c-22 9-46 9-68 0z" fill="#d62828"/></svg>';
+const FLAG='<svg class="hatart" viewBox="0 0 120 100" aria-hidden="true"><rect x="14" y="10" width="92" height="80" rx="8" fill="#0b132b" stroke="#6fffe9" stroke-width="3"/><circle cx="60" cy="44" r="20" fill="#f1f1f1"/><rect x="50" y="58" width="20" height="10" fill="#f1f1f1"/><circle cx="53" cy="42" r="5" fill="#0b132b"/><circle cx="67" cy="42" r="5" fill="#0b132b"/><path d="M30 78l60-14M90 78L30 64" stroke="#f1f1f1" stroke-width="5" stroke-linecap="round"/></svg>';
 function packArt(p){
   const c=p.cat;if(!c) return '';
   if(c.game==='pk'&&PACKCFG[p.id]&&PACKCFG[p.id].art) return `<img src="${artUrl(PACKCFG[p.id].art)}" alt="" referrerpolicy="no-referrer">`;
-  const t=c.tiers[5][0];return t?`<img class="cardimg rip-img" src="${imgUrl(c.game,t[0])}" alt="" referrerpolicy="no-referrer" data-fb="1">`:'';
+  const t=c.tiers[5][0];
+  return (p.id===3?FLAG:HAT)+(t?imgTag(c.game,t[0],'','data-fb="1" style="position:absolute;inset:auto;width:70%;left:15%;top:14%;border-radius:6px;transform:rotate(3deg);box-shadow:0 8px 20px #000a"'):'');
 }
 function info(packId,tier,idx){
   const p=V&&V.packs[packId],c=p&&p.cat;
@@ -8015,7 +8068,7 @@ const cardOf=r=>({...r,...info(r.packId,r.tier,r.idx)});
 /* slab markup (graded case, flip faces, holo layer) */
 function slabHTML(c,o){
   o=o||{};const cert=String(100000000+Number(c.tid||c.id||0)).slice(-8);
-  const img=c.img?`<img class="rip-img" src="${c.img}" alt="${esc(c.name)}" referrerpolicy="no-referrer" ${o.eager?'':'loading="lazy"'} data-fb="1">`:fbHTML(c);
+  const img=c.code?imgTag(c.game,c.code,c.name,(o.eager?'':'loading="lazy"')+' data-fb="1"'):fbHTML(c);
   return `<div class="slab t${c.tier}${o.flipped?' flipped':''}${o.hint&&c.tier>=3?' hint':''}${o.sold?' sold':''}${o.sel?' sel':''}" data-id="${c.tid||c.id||''}" ${o.attr||''}>
   <div class="slab-tilt"><div class="slab-in">
    <div class="sface sback"><b>FORGE</b></div>
@@ -8026,7 +8079,7 @@ function slabHTML(c,o){
 const fbHTML=c=>`<div class="cfb"><b>${esc(c.name)}</b><small>${c.game==='op'?'One Piece':'Pokémon'} · ${TN[c.tier]}</small></div>`;
 document.addEventListener('error',e=>{
   const t=e.target;if(!t||t.tagName!=='IMG'||!t.classList.contains('rip-img')) return;
-  const sl=t.closest('.slab'),cls=sl?[...sl.classList].find(x=>/^t\d$/.test(x)):'t0';
+  const list=(t.dataset.srcs||'').split('|').filter(Boolean),n=(+t.dataset.n||0)+1;if(n<list.length){t.dataset.n=n;t.src=list[n];return}
   const d=document.createElement('div');d.className='cfb';d.innerHTML=`<b>${esc(t.alt||'Card')}</b><small>image unavailable</small>`;
   if(t.closest('.swin')) t.replaceWith(d);else t.remove();
 },true);
@@ -8140,7 +8193,7 @@ function openOdds(i){
   const p=V.packs[i],c=p.cat,v=$('ripView');
   const rows=p.odds.map((o,k)=>{
     const val=p.price*BigInt(p.mult[k])/10000n,bb=val*BigInt(V.buybackBps)/10000n;
-    const th=c?c.tiers[k].slice(0,8).map(e=>`<img class="rip-img" loading="lazy" referrerpolicy="no-referrer" alt="${esc(e[1])}" title="${esc(e[1])}" src="${imgUrl(c.game,e[0])}" style="height:62px;border-radius:4px" data-fb="1">`).join(''):'';
+    const th=c?c.tiers[k].slice(0,8).map(e=>imgTag(c.game,e[0],e[1],'loading="lazy" title="'+esc(e[1])+'" style="height:62px;border-radius:4px" data-fb="1"')).join(''):'';
     return `<div style="padding:10px 0;border-bottom:1px solid #ffffff18"><div style="display:flex;justify-content:space-between;gap:10px"><b style="color:${TCOL[k]}">${TN[k]}</b><span>${(o/100).toFixed(2)}%</span></div><div class="dim" style="font-size:12px">Slab value ${esc(T$(val,V.dec))} ${esc(V.sym)} · buyback ${esc(T$(bb,V.dec))} · ${p.pool[k]} cards in pool</div><div style="display:flex;gap:4px;overflow:auto;margin-top:6px">${th}</div></div>`}).join('');
   v.innerHTML=`<div class="box" style="display:block;max-width:760px;width:100%;background:#0d0d14;border:1px solid #ffffff20;border-radius:18px;padding:18px"><div style="display:flex;justify-content:space-between;align-items:center"><h2 style="font-size:20px">${esc(c?c.name:'Pack '+i)} · odds</h2><button class="btn ghost sm" id="ripVClose" type="button">Close</button></div>${rows}<p class="dim" style="font-size:12px">Odds are fixed on-chain. Every ${p.pityEvery||'n/a'} rips without a Rare or better forces a Rare+ pull. Slab grade (7 to 10) is cosmetic.</p></div>`;
   v.classList.remove('hidden');$('ripVClose').onclick=()=>v.classList.add('hidden');
@@ -8523,6 +8576,45 @@ if(pj){run(async()=>{await enterVault(pj);window.show('rip')})}else if(location.
       requestAnimationFrame(()=>{pend=false;bg.style.setProperty('--mx',px.toFixed(3));bg.style.setProperty('--my',py.toFixed(3))});
     },{passive:true});
   }
+})();
+</script>
+<script id="refresh-js">
+(function(){
+'use strict';
+const tabs=document.getElementById('tabs'),hdr=document.querySelector('header.nav');
+if(!tabs||!hdr||typeof window.show!=='function') return;
+const meta={};
+tabs.querySelectorAll('button[data-view]').forEach(b=>{const l=b.querySelector('.lb'),s=b.querySelector('svg');meta[b.dataset.view]={label:(l?l.textContent:b.title||b.dataset.view).trim(),icon:s?s.outerHTML:''}});
+const G=[
+ {id:'trade',name:'Trade',icon:'swap',views:['swap','dex','pools','lev','port']},
+ {id:'earn',name:'Earn',icon:'earn',views:['earn','mine']},
+ {id:'create',name:'Create',icon:'launch',views:['launch','bot']},
+ {id:'play',name:'Play',icon:'casino',views:['casino','chest','rip','cbot']},
+ {id:'account',name:'Account',icon:'wallet',views:['wallet','chat']}
+];
+const known=new Set(G.flatMap(g=>g.views));Object.keys(meta).forEach(v=>{if(!known.has(v)) G[0].views.push(v)});
+G.forEach(g=>{g.views=g.views.filter(v=>meta[v])});
+const groupOf=v=>G.find(g=>g.views.includes(v))||G[0];
+const last={};
+const mk=(cls,tag)=>{const e=document.createElement(tag||'div');e.className=cls;return e};
+const gnav=mk('gnav','nav'),gdock=mk('gdock','nav'),sub=mk('subnav','nav');
+gnav.setAttribute('aria-label','Sections');gdock.setAttribute('aria-label','Sections');sub.setAttribute('aria-label','Pages');
+const gbtn=g=>`<button type="button" data-g="${g.id}" aria-label="${g.name}">${(meta[g.icon]||{}).icon||''}<span>${g.name}</span></button>`;
+gnav.innerHTML=G.map(gbtn).join('');gdock.innerHTML=G.map(gbtn).join('');
+tabs.before(gnav);hdr.after(sub);document.body.appendChild(gdock);
+function go(e){const b=e.target.closest('button[data-g]');if(!b) return;const g=G.find(x=>x.id===b.dataset.g);window.show(last[g.id]||g.views[0])}
+gnav.onclick=go;gdock.onclick=go;
+sub.onclick=e=>{const b=e.target.closest('button[data-v]');if(b) window.show(b.dataset.v)};
+function sync(){
+  const on=tabs.querySelector('button.on'),v=on?on.dataset.view:'swap',g=groupOf(v);last[g.id]=v;
+  [gnav,gdock].forEach(n=>n.querySelectorAll('button').forEach(b=>b.setAttribute('aria-current',b.dataset.g===g.id?'true':'false')));
+  sub.innerHTML=g.views.map(x=>`<button type="button" data-v="${x}" aria-current="${x===v}">${meta[x].icon}<span>${meta[x].label}</span></button>`).join('');
+  sub.style.display=g.views.length>1?'':'none';
+  const cur=sub.querySelector('[aria-current=true]');if(cur&&cur.scrollIntoView) cur.scrollIntoView({block:'nearest',inline:'center'});
+}
+const _show=window.show;
+window.show=function(){const r=_show.apply(this,arguments);sync();return r};
+sync();
 })();
 </script>
 </body></html>
